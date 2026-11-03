@@ -3420,6 +3420,254 @@ def _b_materials(materials: dict[str, Any], authority_pointer: dict[str, Any],
     return emitted, result
 
 
+_INTERRUPTED_A_SCOPE = "INTERRUPTED_A_WITH_INDEPENDENT_COMPLETION"
+_INTERRUPTED_A_KEYS = ("scope", "original_session", "context", "worker_close", "completion")
+
+# The same read-only consumer is installed in both future Root callers. It does
+# not import/execute the completion actor, query Docker, or fill an old receipt.
+_INTERRUPTED_A_CONSUMER = r'''
+def current_completion_file(path):
+    path=Path(path);current_assert(path.is_absolute() and '..' not in path.parts,'COMPLETION_ABSOLUTE_PUBLIC_PATH')
+    for node in (path,*path.parents):
+        facts=node.lstat();current_assert(not stat.S_ISLNK(facts.st_mode)
+            and not(getattr(facts,'st_file_attributes',0)&1024),'COMPLETION_PUBLIC_PATH_NO_LINK_OR_REPARSE')
+    current_assert(path.is_file() and path.stat().st_nlink==1,'COMPLETION_REGULAR_SINGLE_LINK_PUBLIC_FILE')
+    raw=path.read_bytes()
+    pointer={'path':path.as_posix(),'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+    current_assert(current_stream(pointer,True)==raw,'COMPLETION_FULL_PUBLIC_FILE_READBACK')
+    return pointer,raw
+
+def current_completion_outer(a):
+    current_assert(type(a) is dict and set(a)=={'scope','original_session','context','worker_close','completion'}
+        and a['scope']=='INTERRUPTED_A_WITH_INDEPENDENT_COMPLETION'
+        and type(a['original_session']) is int and a['original_session']==84600,'ONE_EXACT_INTERRUPTED_A_INPUT')
+    c=a['completion'];current_assert(type(c) is dict and set(c)=={'source','source_review','result','windows','outer'},'EXACT_COMPLETION_FIVE_PROOFS')
+    outer=c['outer'];current_assert(type(outer) is dict and set(outer)=={'created','terminal','stdout','stderr'},'COMPLETION_ORIGINAL_OUTER_FOUR')
+    made=current_json(outer['created']);terminal=current_json(outer['terminal'])
+    current_assert(set(made)=={'scope','pid','argv','started_ns'}
+        and made['scope']=='CURRENT_INTERRUPTED_A_INDEPENDENT_COMPLETION_ACTOR_ONLY'
+        and type(made['pid']) is int and made['pid']>0 and type(made['started_ns']) is int
+        and set(terminal)=={'pid','native_exit','wait_returncode','finished_ns','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256'}
+        and type(terminal['pid']) is int and terminal['pid']==made['pid']
+        and type(terminal['native_exit']) is int and type(terminal['wait_returncode']) is int
+        and terminal['native_exit']==terminal['wait_returncode']==0
+        and type(terminal['finished_ns']) is int and terminal['finished_ns']>made['started_ns'],
+        'COMPLETION_SAME_REAL_PID_NATURAL_WAIT_ZERO')
+    argv=made['argv'];current_assert(type(argv) is list and len(argv)==14 and all(type(x) is str for x in argv) and Path(argv[0]).is_absolute()
+        and argv[1:5]==['-I','-B','-X','utf8'] and Path(argv[5])==Path(c['source']['path'])
+        and argv[6:]==['--context',a['context']['path'],'--close-result-sha256',a['worker_close']['sha256'],
+            '--source-review-file',c['source_review']['path'],'--source-review-sha256',c['source_review']['sha256']],
+        'COMPLETION_EXACT_REVIEWED_ORIGINAL_ACTOR_ARGV')
+    for kind in ('stdout','stderr'):
+        raw=current_stream(outer[kind],True)
+        current_assert(type(terminal[kind+'_bytes']) is int and terminal[kind+'_bytes']==len(raw)
+            and terminal[kind+'_sha256']==hashlib.sha256(raw).hexdigest()
+            and (raw==b'' if kind=='stderr' else bool(raw)),'COMPLETION_FULL_ACTUAL_OUTER_STREAMS')
+    return made
+
+def current_interrupted_a(a,authority_pointer,normal_root,freeze_sha):
+    made=current_completion_outer(a);c=a['completion'];source=current_stream(c['source'],True)
+    tree=ast.parse(source);constants={}
+    for node in tree.body:
+        if isinstance(node,ast.Assign):
+            for name in node.targets:
+                if isinstance(name,ast.Name) and name.id=='CI':constants['CI']=ast.literal_eval(node.value)
+    ci=constants['CI'];review=current_json(c['source_review']);result=current_json(c['result'])
+    current_assert(type(ci['schema']) is int and ci['schema']==1 and ci['scope']=='CURRENT_A_INTERRUPTION_READ_ONLY_INDEPENDENT_COMPLETION'
+        and ci['original_A']=='UNKNOWN/INTERRUPTED' and ci['normal_root']==Path(normal_root).as_posix()
+        and ci['freeze_sha256']==freeze_sha and ci['fixed']['authority']==authority_pointer
+        and ci['fixed']['context']==a['context'] and ci['fixed']['close']==a['worker_close']
+        and ci['original_pids']==[34032,41428,36932,5968],'COMPLETION_FIXED_ORIGINAL_SOURCE_AND_ONE_INTERRUPTION')
+    current_assert(set(review)=={'schema','scope','status','reviewer','candidate','author_source','bindings','checks','findings'}
+        and type(review['schema']) is int and review['schema']==1
+        and review['scope']=='CURRENT_A_INTERRUPTION_COMPLETION_SOURCE_REVIEW'
+        and review['status']=='PASS_SOURCE_REVIEW_ONLY' and review['reviewer']!='a_interruption_options'
+        and type(review['reviewer']) is str and bool(review['reviewer']) and review['findings']==[]
+        and review['candidate']==c['source'] and review['author_source']==ci['author_source'] and review['bindings']==ci
+        and review['checks']=={'whole_source_inverse':True,'unchanged_reachable_functions':135,
+            'only_read_only_native_commands':True,'original_A':'UNKNOWN/INTERRUPTED'},'COMPLETION_EXACT_INDEPENDENT_SOURCE_REVIEW')
+    current_stream(ci['author_source'])
+    current_assert(set(result)=={'schema','scope','status','run_id','source_sha','freeze_sha256','original_A',
+        'independent_zero_verification','source','source_review','bindings','verification_return_code','actor_native_exit',
+        'actor_outer_terminal','ci_declared_public_inputs_and_root_metadata_held','resource_mutations','formal_B','full_acceptance','stopped_samples'}
+        and type(result['schema']) is int and result['schema']==1 and result['scope']==ci['scope']
+        and result['status']=='VERIFIED_INDEPENDENT_COMPLETION_OF_INTERRUPTED_A_ONLY'
+        and result['bindings']==ci and result['source']==c['source'] and result['source_review']==c['source_review']
+        and type(result['verification_return_code']) is int and result['verification_return_code']==0
+        and result['actor_native_exit'] is None and result['actor_outer_terminal']=='REQUIRED_FROM_ROOT_ORIGINAL_NATIVE_HANDLE'
+        and result['ci_declared_public_inputs_and_root_metadata_held'] is True and result['resource_mutations']=='NONE'
+        and result['formal_B']=='NOT SIGNED' and result['full_acceptance']=='INCOMPLETE' and result['stopped_samples']=='NOT RUN'
+        and result['original_A']=={'status':'UNKNOWN/INTERRUPTED','native_exit':None,'wait_returncode':None,
+            'coordinator_commands_1_to_205':ci['coordinator_complete'],'206_terminal':'ABSENT_NOT_REPLACED',
+            'old_Root_RESULT_and_outer_terminal':'ABSENT_NOT_CREATED'},'COMPLETION_RESULT_NEVER_REPLACES_THE_OLD_A')
+    context_raw=current_stream(a['context'],True);context=json.loads(context_raw);close_raw=current_stream(a['worker_close'],True)
+    close=json.loads(close_raw);zero=result['independent_zero_verification'];authority=current_json(authority_pointer)
+    current_assert(all(result[k]==context[k]==ci[k] for k in ('run_id','source_sha','freeze_sha256'))
+        and context['source_sha']==authority['source_sha'] and context['repo_dir']==authority['validation_root']
+        and context['prep_dir']==ci['profile'] and context['run_dir']==ci['run_root']
+        and ci['candidate_root']==authority['candidate_root'] and ci['validation_root']==authority['validation_root'],
+        'COMPLETION_REAL_SOURCE_RUN_CONTEXT_M_JOIN')
+    for value,status,scope in ((close,'VERIFIED_MS4_WORKER_NORMAL_CLOSE_ZERO_RESIDUAL','MS4_WORKER_NORMAL_CLOSE_ONLY'),
+            (zero,'VERIFIED_MS4_WORKER_NORMAL_INDEPENDENT_SIX_QUERY_ZERO','MS4_WORKER_NORMAL_CLOSE_INDEPENDENT_ZERO_ONLY')):
+        current_assert(value['status']==status and value['scope']==scope
+            and all(value[k]==context[k] for k in ('run_id','source_sha','freeze_sha256'))
+            and value['context_sha256']==hashlib.sha256(context_raw).hexdigest()
+            and type(value['native_exit']) is int and value['native_exit']==0
+            and value['full_acceptance']=='INCOMPLETE' and value['stopped_samples']=='NOT RUN','COMPLETION_ORIGINAL_CLOSE_AND_FULL_ZERO_SCOPE')
+    current_assert(close['exact_nonforce_removed']=={'containers':4,'networks':1,'volumes':9}
+        and close['ordinary_stop_and_exact_nonforce_remove'] is True
+        and close['close_source_sha256']==zero['close_source_sha256']==hashlib.sha256((Path(ci['profile'])/'normal-close-ms4-fulfillment.py').read_bytes()).hexdigest()
+        and close['reviewed_host_sha256']==zero['host_source_sha256']==hashlib.sha256((Path(ci['profile'])/'ms4-host.py').read_bytes()).hexdigest()
+        and zero['zero_source_sha256']==c['source']['sha256'] and zero['close_result_sha256']==a['worker_close']['sha256']
+        and close['final_inventory']=={kind:{'project':[],'run':[]} for kind in ('container','network','volume')},
+        'COMPLETION_UNCHANGED_CLOSE_RESOURCES_AND_ACTUAL_DERIVED_ZERO_SOURCE')
+    current_assert(json.loads(current_stream(c['outer']['stdout'],True))=={k:result[k] for k in (
+        'status','run_id','source_sha','verification_return_code','actor_native_exit','full_acceptance')},'COMPLETION_OUTER_STDOUT_RESULT_JOIN')
+    functions={n.name:n for n in tree.body if isinstance(n,ast.FunctionDef)};needed=set();pending=['interruption_coordinators','public_native_records','interruption_native_context']
+    while pending:
+        name=pending.pop()
+        if name in needed:continue
+        needed.add(name);pending.extend(n.func.id for n in ast.walk(functions[name])
+            if isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id in functions)
+    current_assert(needed=={'sha','require','regular','load','public_native_records','paid_equal',
+        'interruption_ordinary','interruption_read','interruption_fixed','interruption_coordinators','interruption_native_context'},
+        'COMPLETION_ONLY_PINNED_PURE_READING_AND_ARGV_CONSUMERS')
+    namespace={'Path':Path,'os':os,'stat':stat,'re':re,'json':json,'hashlib':hashlib,'CI':ci,
+        '_CI_STAT':('st_dev','st_ino','st_mode','st_nlink','st_uid','st_gid','st_size','st_mtime_ns','st_ctime_ns'),
+        '_CI_STATE':{'admitted':True,'context':context}}
+    code='\n\n'.join(ast.get_source_segment(source.decode('utf-8'),functions[n]) for n in sorted(needed))
+    exec(compile(code,'reviewed-completion-pure-public-consumers','exec'),namespace)
+    completed=namespace['interruption_coordinators']();current_assert(completed==ci['coordinator_complete']
+        and completed['count']==205,'COMPLETION_FULL_205_NATIVE_AND_UNIQUE_UNFINISHED_206')
+    run=Path(ci['run_root']);output=Path(ci['output_root']);current_assert(Path(c['result']['path'])==output/'RESULT.json'
+        and Path(c['windows']['path'])==output/'PUBLIC-INPUT-WINDOWS.json','COMPLETION_REAL_CREATE_ONLY_OUTPUT_PATHS')
+    for p in (run/'root-orchestration/RESULT.json',run/'evidence/ms4-worker-normal-independent-zero.json',
+            run/'evidence/core-native-worker-zero-before.json',run/'evidence/core-native-worker-zero-after.json'):
+        current_assert(not p.exists() and not p.is_symlink(),'COMPLETION_NO_NEW_OLD_SUCCESS_RECEIPTS')
+    for root,stem in ((Path(ci['capture_root']),'actual'),(Path(ci['normal_root'])/'launcher','normal-start')):
+        for suffix in ('terminal.json','stdout','stderr'):
+            p=root/(stem+'.'+suffix);current_assert(not p.exists() and not p.is_symlink(),'COMPLETION_ORIGINAL_OUTER_STILL_UNKNOWN')
+    fresh=namespace['public_native_records']({'run_dir':output.as_posix()})
+    for row in fresh:namespace['interruption_native_context'](context,row['argv'],row['stage'],None,row['legacy_receipt'])
+    expected_operations=[]
+    for phase in ('before','after'):
+        value=zero['global_consumers'][phase]
+        current_assert(set(value)=={'inspected_container_count','operations','original_container_ids','allowed_original_consumers','unexpected_original_resource_consumers'}
+            and value['allowed_original_consumers']==[] and type(value['unexpected_original_resource_consumers']) is int
+            and value['unexpected_original_resource_consumers']==0 and type(value['inspected_container_count']) is int
+            and value['inspected_container_count']>=0 and len(value['operations'])==value['inspected_container_count']+2,
+            'COMPLETION_ORIGINAL_GLOBAL_CONSUMER_PROOF')
+        if phase=='after':
+            current_assert([(q['kind'],q['label']) for q in zero['queries']]==[(k,l) for k in ('container','network','volume') for l in ('project','run')],
+                'COMPLETION_ALL_SIX_QUERY_ORDER')
+            for q in zero['queries']:
+                kind=q['kind'];argv={'container':['ps','-aq','--no-trunc'],'network':['network','ls','-q'],'volume':['volume','ls','-q']}[kind]
+                label=('com.docker.compose.project='+context['project']) if q['label']=='project' else ('tianli.audit.run='+context['run_id'])
+                expected_operations.append({'argv':['docker',*argv,'--filter','label='+label],**{k:q[k] for k in ('native_exit','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256')}})
+                current_assert(type(q['native_exit']) is int and q['native_exit']==0 and q['stdout_bytes']==q['stderr_bytes']==0
+                    and q['stdout_sha256']==q['stderr_sha256']==hashlib.sha256(b'').hexdigest(),'COMPLETION_SIX_NATIVE_ZERO_EMPTY_COMPLETE_STREAMS')
+        expected_operations.extend(dict(row,argv=['docker',*row['argv']]) for row in value['operations'])
+    current_assert(len(fresh)==len(expected_operations),'COMPLETION_FULL_NEW_NATIVE_NAMESPACE')
+    for row,expected in zip(fresh,expected_operations):
+        native=json.loads(current_completion_file(output/row['files']['terminal']['path'])[1])
+        current_assert(expected=={'argv':native['argv'],'native_exit':native['native_exit'],
+            **{kind+'_'+field:native[kind][field] for kind in ('stdout','stderr') for field in ('bytes','sha256')}},
+            'COMPLETION_EVERY_SAME_PID_NATIVE_QUERY_AND_GLOBAL_OPERATION_JOIN')
+    before=current_json(current_completion_file(output/'evidence/completion-zero-before.json')[0])
+    after=current_json(current_completion_file(output/'evidence/completion-zero-after.json')[0])
+    side_keys={'schema','scope','phase','original_A','run_id','source_sha','freeze_sha256','old_records','fresh_records','prefix','complete_namespaces'}
+    for value,phase in ((before,'ZERO_BEFORE'),(after,'ZERO_AFTER')):
+        current_assert(set(value)==side_keys and type(value['schema']) is int and value['schema']==1 and value['scope']==ci['scope']
+            and value['phase']==phase and value['original_A']=='UNKNOWN/INTERRUPTED' and value['complete_namespaces'] is True
+            and all(value[k]==context[k] for k in ('run_id','source_sha','freeze_sha256')),'COMPLETION_EXACT_TWO_NEW_SIDECARS')
+    current_assert(before['fresh_records']==[] and before['prefix'] is None and after['fresh_records']==fresh
+        and before['old_records']==after['old_records'] and after['prefix']==current_completion_file(output/'evidence/completion-zero-before.json')[0],
+        'COMPLETION_SEPARATE_UNCHANGED_OLD_AND_REAL_NEW_LEDGERS')
+    windows=current_json(c['windows']);window=windows['before'];scope='COMPLETE_CI_DECLARED_PUBLIC_SET_AND_RUN_ROOT_MEMBER_METADATA_ONLY'
+    current_assert(set(windows)=={'scope','before','after_equal_to_before','after_sha256'}
+        and set(window)=={'scope','files','directories','run_root_stat9','run_root_members','non_whitelisted_root_bodies_or_private_payloads'}
+        and windows['scope']==window['scope']==scope
+        and windows['after_equal_to_before'] is True
+        and windows['after_sha256']==hashlib.sha256((json.dumps(window,sort_keys=True,ensure_ascii=False)+'\n').encode()).hexdigest()
+        and window['non_whitelisted_root_bodies_or_private_payloads']=='NOT READ OR HASHED OR RECURSED',
+        'COMPLETION_ACTUAL_DECLARED_PUBLIC_WINDOW_NOT_AN_ALL_EXTERNAL_DEPENDENCY_CLAIM')
+    for row in before['old_records']:
+        for descriptor in row['files'].values():
+            path=(run/descriptor['path']).as_posix();record=window['files'][path]
+            current_assert({k:record[k] for k in ('bytes','sha256')}=={k:descriptor[k] for k in ('bytes','sha256')},'COMPLETION_OLD_NATIVE_LEDGER_FULL_WINDOW_JOIN')
+    roots=[run/'evidence',run/'root-orchestration',Path(ci['profile']),Path(normal_root)/'validation/materialize-freeze-assets-r1',
+        Path(normal_root)/'validation/native-normal-start-assets-r1',Path(normal_root)/'materializer']
+    files=[Path(normal_root)/'validation'/n for n in ('DESIGN-TASKS.md','run.py','PINS.json','PROFILE-PINS.json','PROFILE-PUBLICATION.json')]
+    files += [run/n for n in ci['public_root_files']+['proof-php-ini/99-ms4-proof-memory.ini']]
+    public={}
+    def add(pointer):
+        current_stream(pointer);current_assert(pointer['path'] not in public or public[pointer['path']]==pointer,'COMPLETION_IDENTICAL_PUBLIC_OVERLAP')
+        public[pointer['path']]=pointer
+    for name,record in window['files'].items():
+        path=Path(name)
+        if path not in files and not any(path.is_relative_to(root) for root in roots):
+            add({'path':name,**{k:record[k] for k in ('bytes','sha256')}})
+    source_root=Path(c['source']['path']).parent;capture_root=Path(c['outer']['created']['path']).parent
+    current_assert({p.name for p in source_root.iterdir()}=={'completion.py','SOURCE-CHECKS.json','SOURCE-REVIEW.json'}
+        and Path(c['source']['path'])==source_root/'completion.py' and Path(c['source_review']['path'])==source_root/'SOURCE-REVIEW.json'
+        and {p.name for p in capture_root.iterdir()}=={'actual.created.json','actual.terminal.json','actual.stdout','actual.stderr'}
+        and all(Path(c['outer'][k]['path'])==capture_root/('actual.'+('created.json' if k=='created' else 'terminal.json' if k=='terminal' else k)) for k in c['outer'])
+        and {p.name for p in output.iterdir()}=={'evidence','PUBLIC-INPUT-WINDOWS.json','RESULT.json'}
+        and {p.name for p in (output/'evidence').iterdir()}=={'native-streams','completion-zero-before.json','completion-zero-after.json'},
+        'COMPLETION_EXACT_SOURCE_CAPTURE_AND_RUNTIME_PUBLIC_CLOSED_SETS')
+    checks=json.loads(current_completion_file(source_root/'SOURCE-CHECKS.json')[1])
+    current_assert(checks['status']=='PASS_SOURCE_ONLY' and checks['candidate']=={k:c['source'][k] for k in ('bytes','sha256')}
+        and checks['original_zero']==ci['fixed']['original_zero'] and checks['whole_source_inverse'] is True
+        and checks['unchanged_reachable_functions']==135 and checks['changed_functions']==['public_native_process','public_native_sidecar','worker_main'],
+        'COMPLETION_ACTUAL_SOURCE_CHECKS_JOIN')
+    new_paths=set();root_counts={}
+    for root in (source_root,capture_root,output):
+        root_files=set()
+        for protected in (Path(ci['normal_root']),run,Path(ci['candidate_root']),Path(ci['validation_root']),Path(ci['author_worktree'])):
+            current_assert(not root.is_relative_to(protected) and not protected.is_relative_to(root),'COMPLETION_PUBLIC_OUTPUTS_DISJOINT_FROM_OLD_SOURCE_AND_RUN')
+        for path in sorted(root.rglob('*')):
+            current_assert(not path.is_symlink() and not(getattr(path.lstat(),'st_file_attributes',0)&1024),'COMPLETION_PUBLIC_CLOSED_SET_NO_LINKS')
+            if path.is_file():
+                add(current_completion_file(path)[0]);new_paths.add(path.as_posix());root_files.add(path.as_posix())
+        root_counts[root.as_posix()]=len(root_files)
+    return {'context':context,'context_raw':context_raw,'close':close,'close_raw':close_raw,'zero':zero,
+        'result':result,'result_raw':current_stream(c['result'],True),'bindings':ci,'outer_created':made,
+        'coordinator_complete':completed,'fresh_native_count':len(fresh),'public_rows':[public[n] for n in sorted(public)],
+        'public_closure_counts':{'new_source_runtime_capture_roots':root_counts,'new_roots_unique_files':len(new_paths),
+            'ci_bound_public_files_outside_new_roots':len(set(public)-new_paths),'derived_unique_union_files':len(public)}}
+'''
+
+
+def _interrupted_a(a: dict[str, Any]) -> bool:
+    return type(a) is dict and a.get("scope") == _INTERRUPTED_A_SCOPE
+
+
+def _interrupted_core(a: dict[str, Any]) -> dict[str, Any]:
+    return {key: a[key] for key in _INTERRUPTED_A_KEYS}
+
+
+def _interruption_namespace() -> dict[str, Any]:
+    namespace = {"Path": Path, "os": os, "stat": stat, "re": re, "json": json,
+                 "hashlib": hashlib, "ast": ast, "current_assert": require,
+                 "current_json": lambda pointer: decode(read_pointer(pointer)),
+                 "current_stream": lambda pointer, keep=False: read_pointer(pointer)}
+    exec(compile(_INTERRUPTED_A_CONSUMER, "interrupted-a-read-only-consumer", "exec"), namespace)
+    return namespace
+
+
+def _interrupted_completion(a: dict[str, Any], authority_pointer: dict[str, Any],
+                            normal_root: Path, freeze_sha: str) -> dict[str, Any]:
+    return _interruption_namespace()["current_interrupted_a"](_interrupted_core(a), authority_pointer,
+                                                             normal_root.as_posix(), freeze_sha)
+
+
+def _interrupted_qualification(a: dict[str, Any], post_history: dict[str, Any]) -> dict[str, Any]:
+    return {"scope": _INTERRUPTED_A_SCOPE, "original_session": a["original_session"],
+            "original_A_status": "UNKNOWN/INTERRUPTED", "original_outer_native_exit": None,
+            "completion_outer_native_exit": 0, "worker_close": a["worker_close"],
+            "completion": a["completion"], "post_a_history": post_history}
+
+
 def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
                         authority_pointer: dict[str, Any], authority: dict[str, Any]) -> tuple:
     """Shared B/post-A gate; observe the real outer terminal before any Run read."""
@@ -3504,12 +3752,50 @@ def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
     return consumer, setup, context, raw
 
 
+def _completed_a(normal: dict[str, Any], a: dict[str, Any],
+                 authority_pointer: dict[str, Any], authority: dict[str, Any]) -> tuple:
+    if not _interrupted_a(a):
+        return _completed_normal_a(normal, a, authority_pointer, authority)
+    core = _interrupted_core(a)
+    _interruption_namespace()["current_completion_outer"](core)
+    require(set(normal) == {"root", "review", "result", "outer"}, "B_EXACT_CURRENT_NORMAL_M_INPUTS")
+    normal_root = Path(normal["root"])
+    binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
+    require(binding["technical_authority"] == authority_pointer
+            and binding["source_sha"] == authority["source_sha"], "B_CURRENT_NORMAL_SAME_REVIEWED_SOURCE")
+    created, _ = _b_outer(normal["outer"], normal["review"])
+    argv = created["argv"]
+    require(len(argv) == 11 and argv[1:5] == ["-I", "-B", "-X", "utf8"]
+            and Path(argv[5]) == normal_root / "launcher/launch.py" and argv[6] == "materialize"
+            and argv[7] == "--source-review-file" and Path(argv[8]) == Path(normal["review"]["path"])
+            and argv[9:] == ["--source-review-sha256", normal["review"]["sha256"]],
+            "B_ORIGINAL_CURRENT_NORMAL_LAUNCHER_MODE_AND_REVIEW_ARGV")
+    consumer = _b_normal_consumer(normal_root, binding, normal["review"], normal["result"])
+    namespace = {"Path": Path, "os": os, "stat": stat, "re": re, "json": json, "hashlib": hashlib,
+                 "argparse": argparse, "sys": __import__("sys"), "sha": lambda raw: pin(raw)["sha256"],
+                 "REPO": Path(authority["validation_root"])}
+    exec(compile(consumer, "reviewed-current-normal-readonly-preflight", "exec"), namespace)
+    setup = namespace["current_b_normal_materialization"]()
+    proof = _interrupted_completion(core, authority_pointer, normal_root, setup["freeze_sha256"])
+    context = proof["context"]
+    frozen = stable_read(Path(context["run_dir"]) / "preparation-source-binding.json")
+    require(frozen == read_pointer({"path": setup["freeze"], "bytes": len(frozen), "sha256": setup["freeze_sha256"]})
+            and decode(frozen)["source_sha"] == authority["source_sha"], "A_ORIGINAL_RUN_AND_M_FREEZE_BYTES")
+    raw = {"context": proof["context_raw"], "worker_close": proof["close_raw"], "completion": proof["result_raw"],
+           "_completion_public_rows": encode(proof["public_rows"]),
+           "_completion_public_counts": encode(proof["public_closure_counts"]),
+           "_completion_native_counts": encode({"original_completed": proof["coordinator_complete"]["count"],
+                                                 "fresh_completion": proof["fresh_native_count"]})}
+    return consumer, setup, context, raw
+
+
 def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
                    fixed_inputs_pointer: dict[str, Any]) -> dict[str, Any]:
     """Publish a Source candidate only after every original actual B prerequisite."""
     fixed = decode(read_pointer(fixed_inputs_pointer))
-    require(type(fixed) is dict and set(fixed) == {"schema", "scope", "source_authority", "normal",
-        "A", "materials", "build_proofs", "base_source", "history", "runtime_root", "network_subnets"}
+    fixed_keys = {"schema", "scope", "source_authority", "normal", "A", "materials", "build_proofs", "base_source", "history", "runtime_root", "network_subnets"}
+    if type(fixed) is dict and _interrupted_a(fixed.get("A")): fixed_keys |= {"post_a"}
+    require(type(fixed) is dict and set(fixed) == fixed_keys
         and fixed["schema"] == 1 and fixed["scope"] == "CURRENT_B_FIXED_ACTUAL_PREREQUISITES"
         and fixed["source_authority"] == authority_pointer, "B_EXPLICIT_FIXED_ACTUAL_PREREQUISITES")
     derived = derive_b_profile(authority_pointer, fixed["network_subnets"])
@@ -3524,11 +3810,16 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
         require(not out.is_relative_to(protected) and not protected.is_relative_to(out), "B_OUTPUT_DISJOINT_FROM_ACTUAL_INPUT_PACKETS")
     require(not Path(fixed_inputs_pointer["path"]).is_relative_to(out), "B_FIXED_INPUT_DESCRIPTOR_OUTSIDE_NEW_OUTPUT")
     a = fixed["A"]
-    require(type(a) is dict and set(a) == {"session", "outer", "normal_root_result", "worker_close",
-        "independent_zero", "post_a_history", "context", "post_a_contract"}, "B_ALL_FIVE_ACTUAL_A_PROOFS_REQUIRED")
-    consumer, setup, context, _ = _completed_normal_a(fixed["normal"], a, authority_pointer, authority)
-    post = decode(read_pointer(a["post_a_history"]))
-    post_contract = a["post_a_contract"]
+    if _interrupted_a(a):
+        require(set(a) == set(_INTERRUPTED_A_KEYS) and type(fixed["post_a"]) is dict
+                and set(fixed["post_a"]) == {"history", "contract"}, "B_EXACT_INTERRUPTED_COMPLETION_AND_POST_HISTORY")
+        post_pointer, post_contract = fixed["post_a"]["history"], fixed["post_a"]["contract"]
+    else:
+        require(type(a) is dict and set(a) == {"session", "outer", "normal_root_result", "worker_close",
+            "independent_zero", "post_a_history", "context", "post_a_contract"}, "B_ALL_FIVE_ACTUAL_A_PROOFS_REQUIRED")
+        post_pointer, post_contract = a["post_a_history"], a["post_a_contract"]
+    consumer, setup, context, _ = _completed_a(fixed["normal"], a, authority_pointer, authority)
+    post = decode(read_pointer(post_pointer))
     require(set(post_contract) == {"header", "files_key", "retained_public_files", "prior_public_inventory",
                                    "public_roots", "public_root_files"}
             and set(post) == set(post_contract["header"]) | {post_contract["files_key"]}
@@ -3656,6 +3947,25 @@ def _post_a_rows(contract: dict[str, Any], roots: list[Path], files: list[Path],
     return sorted(expected.values(), key=lambda row: row["path"])
 
 
+def _interrupted_post_a_consumer(source: bytes) -> str:
+    original = _source_function(source, "current_post_a_history")
+    first = "def current_post_a_history(args,context,final_raw,close_raw,zero_raw):"
+    require(original.count(first) == 1, "COMPLETION_ONE_ORIGINAL_POST_A_SIGNATURE")
+    marker = "    for item,data in [(OLD_RESULT,final_raw),(OLD_ROOT/'evidence/ms4-worker-normal-close-result.json',close_raw),"
+    require(original.count(marker) == 1, "COMPLETION_ONE_ORIGINAL_THREE_SUCCESS_FILES_FOOTER")
+    prefix = original[:original.index(marker)].replace(first, "def current_interrupted_post_a_history(args,context):", 1)
+    footer = '''    for descriptor in CURRENT_COMPLETION_PUBLIC_ROWS + [CURRENT_INTERRUPTED_A['context'],CURRENT_INTERRUPTED_A['worker_close']]:
+        assert expected[descriptor['path']] == descriptor, 'B_COMPLETE_INTERRUPTION_PUBLIC_CLOSURE_IN_POST_HISTORY'
+    return rows+[{'path':path.as_posix(),'bytes':len(raw),'sha256':sha(raw)}], {
+        'completion_result':A_QUALIFICATION['completion']['result'],
+        'original_A_status':'UNKNOWN/INTERRUPTED',
+        'history_inventory':{'path':path.as_posix(),'bytes':len(raw),'sha256':sha(raw)}}'''
+    candidate = prefix + footer
+    compile(candidate, "current-interrupted-post-a-public-consumer", "exec")
+    require(candidate[:len(prefix)] == prefix, "COMPLETION_ORIGINAL_POST_A_UNION_ALGORITHM_EXACT")
+    return candidate
+
+
 def _post_a_consume(source: bytes, contract: dict[str, Any], history: dict[str, Any],
                     normal_root: Path, runtime: Path, context: dict[str, Any], a: dict[str, Any],
                     raw: dict[str, bytes]) -> list[dict[str, Any]]:
@@ -3665,12 +3975,23 @@ def _post_a_consume(source: bytes, contract: dict[str, Any], history: dict[str, 
         "POST_A_HISTORY_CONTRACT": contract, "A_QUALIFICATION": {**a, "post_a_history": history},
         "OLD_ROOT": run, "OLD_ARCHIVE": run / "root-orchestration", "OLD_PROFILE": normal_root / "validation/actual-profile",
         "NORMAL_SOURCE": normal_root / "validation", "RUNTIME": runtime,
-        "OLD_RESULT": Path(a["normal_root_result"]["path"]), "PUBLIC_ROOT_FILES": constant(source, "PUBLIC_ROOT_FILES")}
-    names = ("sha", "ordinary", "file_pin", "tree", "current_post_a_history")
-    code = "\n\n".join(_source_function(source, name) for name in names)
+        "PUBLIC_ROOT_FILES": constant(source, "PUBLIC_ROOT_FILES")}
+    if _interrupted_a(a):
+        namespace.update(A_QUALIFICATION=_interrupted_qualification(a, history),
+                         CURRENT_INTERRUPTED_A=_interrupted_core(a),
+                         CURRENT_COMPLETION_PUBLIC_ROWS=decode(raw["_completion_public_rows"]))
+        code = "\n\n".join(_source_function(source, name) for name in ("sha", "ordinary", "file_pin", "tree"))
+        code += "\n\n" + _interrupted_post_a_consumer(source)
+    else:
+        namespace["OLD_RESULT"] = Path(a["normal_root_result"]["path"])
+        names = ("sha", "ordinary", "file_pin", "tree", "current_post_a_history")
+        code = "\n\n".join(_source_function(source, name) for name in names)
     exec(compile(code, "original-six-key-post-a-public-consumer", "exec"), namespace)
     args = argparse.Namespace(public_history_inventory=history["path"], public_history_inventory_sha256=history["sha256"])
-    rows, _ = namespace["current_post_a_history"](args, context, raw["normal_root_result"], raw["worker_close"], raw["independent_zero"])
+    if _interrupted_a(a):
+        rows, _ = namespace["current_interrupted_post_a_history"](args, context)
+    else:
+        rows, _ = namespace["current_post_a_history"](args, context, raw["normal_root_result"], raw["worker_close"], raw["independent_zero"])
     return rows
 
 
@@ -3687,18 +4008,25 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
             and fixed["scope"] == "CURRENT_POST_A_FIXED_PUBLIC_INPUTS" and fixed["source_authority"] == authority_pointer,
             "POST_A_EXPLICIT_FIXED_PUBLIC_INPUTS")
     a, normal = fixed["A"], fixed["normal"]
-    require(type(a) is dict and set(a) == {"session", "outer", "context", "normal_root_result", "worker_close", "independent_zero"},
-            "POST_A_COMPLETED_A_INPUTS_WITHOUT_FUTURE_HISTORY")
+    if _interrupted_a(a):
+        require(set(a) == set(_INTERRUPTED_A_KEYS), "POST_A_EXACT_INTERRUPTION_WITHOUT_FUTURE_HISTORY")
+    else:
+        require(type(a) is dict and set(a) == {"session", "outer", "context", "normal_root_result", "worker_close", "independent_zero"},
+                "POST_A_COMPLETED_A_INPUTS_WITHOUT_FUTURE_HISTORY")
     # This must precede authority/M traversal, context access and every Run read.
-    created, _ = _b_outer(a["outer"])
-    for row in a["outer"].values(): reads.pointer(row)
+    if _interrupted_a(a):
+        created = _interruption_namespace()["current_completion_outer"](a)
+        for row in a["completion"]["outer"].values(): reads.pointer(row)
+    else:
+        created, _ = _b_outer(a["outer"])
+        for row in a["outer"].values(): reads.pointer(row)
     reads.pointer(authority_pointer)
     authority, _ = reviewed_authority(authority_pointer)
     for row in (authority["capture"], authority["independent_review"]): reads.pointer(row)
     capture = decode(reads.pointer(authority["capture"]))
     for name in ("SOURCE-INVENTORY.jsonl", "SOURCE-DELTA.json", "BASELINE-INVENTORY.jsonl"):
         reads.pointer(capture["files"][name])
-    _, setup, context, actual_raw = _completed_normal_a(normal, a, authority_pointer, authority)
+    _, setup, context, actual_raw = _completed_a(normal, a, authority_pointer, authority)
     normal_root, run, out, runtime = Path(normal["root"]), Path(context["run_dir"]), Path(output), Path(fixed["runtime_root"])
     ordinary(out, missing_leaf=True); ordinary(runtime, missing_leaf=True)
     require(out.is_absolute() and not out.exists() and out.parent.is_dir(), "POST_A_ONE_NEW_EXTERNAL_DIRECTORY")
@@ -3721,18 +4049,34 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
         "OLD_COORDINATOR_SHA": pin(reads.read(normal_root / "validation/run.py"))["sha256"],
         "OLD_CLI_PINS": {name: pin(reads.read(normal_root / "validation/actual-profile" / name))["sha256"]
                          for name in ("ms4-host.py", "normal-close-ms4-fulfillment.py", "verify-zero-ms4-fulfillment.py")}}
-    code = "\n\n".join(_source_function(original, name) for name in ("sha", "ordinary", "prior_native_history"))
-    exec(compile(code, "original-readonly-coordinator-history-consumer", "exec"), native_namespace)
-    commands = native_namespace["prior_native_history"](context, actual_raw["worker_close"], actual_raw["independent_zero"])
-    for row in native_namespace["OLD_NATIVE_PINS"]: reads.pointer(row)
+    if _interrupted_a(a):
+        counts = decode(actual_raw["_completion_native_counts"])
+        command_count = counts["original_completed"]
+    else:
+        code = "\n\n".join(_source_function(original, name) for name in ("sha", "ordinary", "prior_native_history"))
+        exec(compile(code, "original-readonly-coordinator-history-consumer", "exec"), native_namespace)
+        commands = native_namespace["prior_native_history"](context, actual_raw["worker_close"], actual_raw["independent_zero"])
+        command_count = len(commands)
+        for row in native_namespace["OLD_NATIVE_PINS"]: reads.pointer(row)
     roots, files = _post_a_paths(normal_root, run, constant(original, "PUBLIC_ROOT_FILES"))
     contract = fixed["post_a_contract"]
-    header = {"schema": 1, "scope": "CURRENT_NORMAL_A_POST_SUCCESS_PUBLIC_HISTORY", "run_id": context["run_id"],
-              "source_sha": authority["source_sha"], "freeze_sha256": setup["freeze_sha256"],
-              "outer_session": a["session"], "outer_pid": created["pid"], "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
+    if _interrupted_a(a):
+        header = {"schema": 1, "scope": "CURRENT_INTERRUPTED_A_COMPLETION_PUBLIC_HISTORY", "run_id": context["run_id"],
+                  "source_sha": authority["source_sha"], "freeze_sha256": setup["freeze_sha256"],
+                  "original_outer_session": a["original_session"], "original_A_status": "UNKNOWN/INTERRUPTED",
+                  "original_outer_native_exit": None, "completion_outer_pid": created["pid"], "completion_outer_native_exit": 0,
+                  "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
+        extra = decode(actual_raw["_completion_public_rows"])
+        require(all(row in contract["retained_public_files"] for row in extra), "POST_A_ALL_COMPLETION_PUBLIC_CLOSED_SETS_RETAINED")
+    else:
+        header = {"schema": 1, "scope": "CURRENT_NORMAL_A_POST_SUCCESS_PUBLIC_HISTORY", "run_id": context["run_id"],
+                  "source_sha": authority["source_sha"], "freeze_sha256": setup["freeze_sha256"],
+                  "outer_session": a["session"], "outer_pid": created["pid"], "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
     require(contract["header"] == header and contract["files_key"] == "files", "POST_A_EXACT_CURRENT_PUBLIC_ONLY_HEADER")
-    for row in [*normal["outer"].values(), normal["review"], normal["result"],
-                *(a[key] for key in ("context", "normal_root_result", "worker_close", "independent_zero"))]: reads.pointer(row)
+    a_rows = [a[key] for key in (("context", "worker_close") if _interrupted_a(a) else
+                              ("context", "normal_root_result", "worker_close", "independent_zero"))]
+    if _interrupted_a(a): a_rows += decode(actual_raw["_completion_public_rows"])
+    for row in [*normal["outer"].values(), normal["review"], normal["result"], *a_rows]: reads.pointer(row)
     review = decode(reads.pointer(normal["review"]))
     for name, row in review["members"].items():
         require(not Path(name).is_absolute() and ".." not in Path(name).parts, "POST_A_NORMAL_REVIEW_SAFE_MEMBER")
@@ -3741,9 +4085,13 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
     rows = _post_a_rows(contract, roots, files, reads)
     for path in [Path(row["path"]) for row in reads.files.values()]:
         require(not path.is_relative_to(out) and not out.is_relative_to(path), "POST_A_NO_INPUT_OUTPUT_OVERLAP")
-    for key in ("normal_root_result", "worker_close", "independent_zero"):
-        require(a[key] in rows and pin(actual_raw[key]) == {name: a[key][name] for name in ("bytes", "sha256")},
-                "POST_A_UNION_CONTAINS_ORIGINAL_SUCCESS_BYTES")
+    if _interrupted_a(a):
+        require(all(row in rows for row in [a["context"], a["worker_close"], *decode(actual_raw["_completion_public_rows"])]),
+                "POST_A_UNION_CONTAINS_ACTUAL_INTERRUPTION_COMPLETION_PUBLIC_BYTES")
+    else:
+        for key in ("normal_root_result", "worker_close", "independent_zero"):
+            require(a[key] in rows and pin(actual_raw[key]) == {name: a[key][name] for name in ("bytes", "sha256")},
+                    "POST_A_UNION_CONTAINS_ORIGINAL_SUCCESS_BYTES")
     reads.finish()
     history_raw = encode({**header, "files": rows})
     history = {"path": (out / "POST-A-PUBLIC-HISTORY.json").as_posix(), **pin(history_raw)}
@@ -3767,8 +4115,16 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
         "original_consumer": consumer_pointer, "original_consumer_origin": consumer_origin,
         "history": history, "contract": contract_pointer, "windows": windows_pointer,
         "public_files": len(rows), "original_six_key_consumer_accepted": True, "all_windows_ended": True,
-        "original_coordinator_native_commands": len(commands),
+        "original_coordinator_native_commands": command_count,
         "original_close_zero_consumed_without_rerun": True, "B_generated": False, "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
+    if _interrupted_a(a):
+        result.update(status="COLLECTED_INTERRUPTED_A_COMPLETION_PUBLIC_HISTORY_ONLY",
+                      original_A_status="UNKNOWN/INTERRUPTED", original_outer_native_exit=None,
+                      completion_outer_native_exit=0, completion_native_commands=counts["fresh_completion"],
+                      original_six_key_consumer_accepted=False, declared_completion_six_key_consumer_accepted=True)
+        result["completion_public_closure_counts"] = decode(actual_raw["_completion_public_counts"])
+        result.pop("original_close_zero_consumed_without_rerun")
+        result["original_close_and_completion_consumed_without_business_replay"] = True
     write("RESULT.json", encode(result))
     return result
 
@@ -3902,6 +4258,105 @@ def _b_proof(name: str, before: bytes, after: bytes, previous: dict[str, Any],
     return {"name": name, "before": previous, "after": current, "stages": stages, "unchanged_chunks": chunks}
 
 
+_INTERRUPTED_B_QUALIFICATION = r'''
+def current_interrupted_precondition():
+    return {'original_session':CURRENT_INTERRUPTED_A['original_session'],'original_A_status':'UNKNOWN/INTERRUPTED',
+        'original_A_native_exit':None,'completion_native_exit':0,'completion_outer':CURRENT_INTERRUPTED_A['completion']['outer'],
+        'materializer_observation':'ORIGINAL_A_UNKNOWN_NEW_COMPLETION_ORIGINAL_OUTER_ZERO'}
+
+def current_interrupted_qualification():
+    current_assert(type(A_QUALIFICATION) is dict and set(A_QUALIFICATION)=={'scope','original_session','original_A_status',
+        'original_outer_native_exit','completion_outer_native_exit','worker_close','completion','post_a_history'}
+        and A_QUALIFICATION['scope']=='INTERRUPTED_A_WITH_INDEPENDENT_COMPLETION'
+        and A_QUALIFICATION['original_session']==A_OUTER_SESSION==CURRENT_INTERRUPTED_A['original_session']
+        and A_QUALIFICATION['original_A_status']=='UNKNOWN/INTERRUPTED' and A_QUALIFICATION['original_outer_native_exit'] is None
+        and type(A_QUALIFICATION['completion_outer_native_exit']) is int and A_QUALIFICATION['completion_outer_native_exit']==0
+        and A_QUALIFICATION['worker_close']==CURRENT_INTERRUPTED_A['worker_close']
+        and A_QUALIFICATION['completion']==CURRENT_INTERRUPTED_A['completion'],'B_EXACT_INTERRUPTED_A_QUALIFICATION')
+    current_completion_outer(CURRENT_INTERRUPTED_A)
+'''
+
+
+def _b_interrupted_review_runtime(raw: str) -> str:
+    before = '''    current_b_outer(fixed['normal']['outer'],fixed['normal']['review']);current_b_outer(fixed['A']['outer'])
+    current_assert(fixed['A']['session']==A_OUTER_SESSION
+        and all(fixed['A'][key]==A_QUALIFICATION[key] for key in ['normal_root_result','worker_close','independent_zero','post_a_history']),
+        'B_REVIEW_REAL_A_FIVE_PROOFS_STILL_EXACT')
+    for name in ['normal_root_result','worker_close','independent_zero','post_a_history','context']:current_stream(fixed['A'][name])'''
+    after = '''    global CURRENT_COMPLETION_PUBLIC_ROWS,CURRENT_COMPLETION_NATIVE_COUNT
+    current_b_outer(fixed['normal']['outer'],fixed['normal']['review'])
+    current_assert(set(fixed)=={'schema','scope','source_authority','normal','A','materials','build_proofs','base_source','history','runtime_root','network_subnets','post_a'}
+        and type(fixed['A']) is dict and fixed['A']==CURRENT_INTERRUPTED_A
+        and type(fixed['post_a']) is dict and set(fixed['post_a'])=={'history','contract'}
+        and fixed['post_a']['history']==A_QUALIFICATION['post_a_history']
+        and fixed['post_a']['contract']==POST_A_HISTORY_CONTRACT,'B_REVIEW_EXACT_INTERRUPTION_AND_POST_HISTORY')
+    current_interrupted_qualification()
+    proof=current_interrupted_a(CURRENT_INTERRUPTED_A,CURRENT_B_TECHNICAL_AUTHORITY,CURRENT_COMPLETION_NORMAL_ROOT,CURRENT_COMPLETION_FREEZE)
+    CURRENT_COMPLETION_PUBLIC_ROWS=proof['public_rows']
+    CURRENT_COMPLETION_NATIVE_COUNT=proof['fresh_native_count']
+    current_stream(fixed['post_a']['history'])'''
+    require(raw.count(before) == 1, "B_ONE_ORIGINAL_REVIEW_A_ZERO_GATE")
+    candidate = raw.replace(before, after, 1)
+    require(candidate.replace(after, before, 1) == raw, "B_INTERRUPTION_REVIEW_GATE_WHOLE_INVERSE")
+    return candidate
+
+
+def _b_interrupted_retirement(source: bytes) -> str:
+    original = _source_function(source, "current_original_retirement")
+    first = original.index("    final_raw = file_pin(OLD_RESULT,")
+    last = original.index("    context_raw = file_pin(", first)
+    candidate = original[:first] + '''    proof=current_interrupted_a(CURRENT_INTERRUPTED_A,SOURCE_REVIEW_AUTHORITY,CURRENT_COMPLETION_NORMAL_ROOT,CURRENT_COMPLETION_FREEZE)
+    assert args.interrupted_completion_result_sha256==CURRENT_INTERRUPTED_A['completion']['result']['sha256']
+    global CURRENT_COMPLETION_PUBLIC_ROWS
+    CURRENT_COMPLETION_PUBLIC_ROWS=proof['public_rows']
+''' + original[last:]
+    candidate = candidate.replace("def current_original_retirement(args):", "def current_interrupted_retirement(args):", 1)
+    old = "    zero_path = evidence / 'ms4-worker-normal-independent-zero.json'; zero_raw = file_pin(zero_path,A_QUALIFICATION['independent_zero']); zero = json.loads(zero_raw)"
+    new = "    zero = proof['zero']"
+    require(candidate.count(old) == 1, "B_ONE_ORIGINAL_ZERO_PATH_JOIN")
+    candidate = candidate.replace(old, new, 1)
+    old = "zero['zero_source_sha256'] == OLD_CLI_PINS['verify-zero-ms4-fulfillment.py']"
+    new = "zero['zero_source_sha256'] == CURRENT_INTERRUPTED_A['completion']['source']['sha256']"
+    require(candidate.count(old) == 1, "B_ONE_ORIGINAL_ZERO_SOURCE_JOIN")
+    candidate = candidate.replace(old, new, 1)
+    candidate = once(candidate.encode(), b"    commands = prior_native_history(context, close_raw, zero_raw)",
+                     b"    commands = proof['coordinator_complete']").decode()
+    candidate = once(candidate.encode(), b"    preserved,prior = current_post_a_history(args,context,final_raw,close_raw,zero_raw)",
+                     b"    preserved,prior = current_interrupted_post_a_history(args,context)").decode()
+    candidate = once(candidate.encode(), b"    prior['native_commands'] = len(commands)",
+                     b"    prior['native_commands'] = commands['count']\n    prior['completion_native_commands'] = proof['fresh_native_count']\n    prior['original_incomplete_sequence'] = 206").decode()
+    compile(candidate, "current-interrupted-original-retirement", "exec")
+    return candidate
+
+
+def _b_interrupted_root(raw: bytes, name: str) -> bytes:
+    """Specialize only a newly derived B; archived/ordinary A0 bodies stay raw."""
+    text = raw.decode("utf-8")
+    if name == "root-ui-materialize-freeze.py":
+        before = "    assert type(A_QUALIFICATION) is dict and set(A_QUALIFICATION) == {'outer_native_exit','normal_root_result','worker_close','independent_zero','post_a_history'}, 'INCOMPLETE_R40_A_QUALIFICATION_REQUIRED'\n    assert type(A_QUALIFICATION['outer_native_exit']) is int and A_QUALIFICATION['outer_native_exit'] == 0"
+        text = once(text.encode(), before.encode(), b"    current_interrupted_qualification()").decode()
+        text = once(text.encode(), b"    assert all(type(A_QUALIFICATION[key]) is dict for key in ['normal_root_result','worker_close','independent_zero','post_a_history'])",
+                     b"    assert all(type(A_QUALIFICATION[key]) is dict for key in ['worker_close','completion','post_a_history'])").decode()
+        text = once(text.encode(), b"    parser.add_argument('--normal-root-result-sha256',required=True)",
+                     b"    parser.add_argument('--interrupted-completion-result-sha256',required=True)").decode()
+        text = once(text.encode(), b"    assert re.fullmatch('[a-f0-9]{64}',args.normal_root_result_sha256)",
+                     b"    assert re.fullmatch('[a-f0-9]{64}',args.interrupted_completion_result_sha256)").decode()
+        text = once(text.encode(), b"        'prior_normal_root_result':prior['normal_root_result'],'prior_public_history_inventory':prior['history_inventory'],",
+                     b"        'prior_interrupted_A_completion':prior['completion_result'],'prior_public_history_inventory':prior['history_inventory'],\n        'prior_original_A_status':prior['original_A_status'],'prior_completion_native_commands_verified':prior['completion_native_commands'],").decode()
+        before = "        'outer_coordinator_precondition':{'original_session':A_OUTER_SESSION,\n            'native_exit_zero':'MUST_HAVE_BEEN_VERIFIED_BY_ROOT_BEFORE_INVOCATION',\n            'materializer_observation':'NOT_OBSERVED_OR_INFERRED_FROM_INTERNAL_CHILD_RECEIPTS'},"
+        text = once(text.encode(), before.encode(), b"        'outer_coordinator_precondition':current_interrupted_precondition(),").decode()
+        text = text.replace("INCOMPLETE_NOT_EXECUTABLE: Root must first bind actual current R40 A outer0 and full normal/close/zero/post-A history; identity and internal receipts do not prove that terminal.",
+                            "Root requires the exact interrupted A and a separately reviewed independent completion with real native outer0; original A remains unknown.", 1)
+    else:
+        require(name == "root-ui-start-to-ready.py", "B_ONLY_TWO_INTERRUPTED_ROOT_CALLERS")
+        before = "    require(type(A_QUALIFICATION) is dict and set(A_QUALIFICATION) == {'outer_native_exit','normal_root_result','worker_close','independent_zero','post_a_history'}, 'INCOMPLETE_R40_A_QUALIFICATION_REQUIRED')\n    require(type(A_QUALIFICATION['outer_native_exit']) is int and A_QUALIFICATION['outer_native_exit'] == 0, 'ACTUAL_R40_NORMAL_OUTER_ZERO_REQUIRED')"
+        text = once(text.encode(), before.encode(), b"    current_interrupted_qualification()").decode()
+        before = "    require(setup['prior_normal_root_result'] == A_QUALIFICATION['normal_root_result'] and setup['prior_public_history_inventory'] == {key:A_QUALIFICATION['post_a_history'][key] for key in ['path','bytes','sha256']}, 'SAME_QUALIFIED_R40_A_PUBLIC_INPUTS')"
+        after = "    require(setup['prior_interrupted_A_completion'] == A_QUALIFICATION['completion']['result'] and setup['prior_original_A_status']=='UNKNOWN/INTERRUPTED'\n        and setup['outer_coordinator_precondition']==current_interrupted_precondition()\n        and type(setup['prior_completion_native_commands_verified']) is int and setup['prior_completion_native_commands_verified']==CURRENT_COMPLETION_NATIVE_COUNT\n        and setup['prior_native_commands_verified']==205\n        and setup['prior_public_history_inventory'] == {key:A_QUALIFICATION['post_a_history'][key] for key in ['path','bytes','sha256']}, 'SAME_QUALIFIED_INTERRUPTION_COMPLETION_PUBLIC_INPUTS')"
+        text = once(text.encode(), before.encode(), after.encode()).decode()
+    return text.encode()
+
+
 def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], derived: dict[str, Any],
                normal_consumer: str, setup: dict[str, Any], context: dict[str, Any],
                materials: dict[str, bytes], material_result: dict[str, Any]) -> dict[str, Any]:
@@ -3913,6 +4368,21 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
     data = decode(read_pointer(binding["source_data"]))
     parent = binding["parent"]; a = fixed["A"]
+    interrupted = _interrupted_a(a)
+    a_session = a["original_session"] if interrupted else a["session"]
+    post_history = fixed["post_a"]["history"] if interrupted else a["post_a_history"]
+    post_contract = fixed["post_a"]["contract"] if interrupted else a["post_a_contract"]
+    if interrupted:
+        note = ("\n\n## 本派生来源的中断后独立完成准入\n\n"
+            "原正常A保持 UNKNOWN/INTERRUPTED、退出码为 null，不生成或替代其206终态、Root RESULT或旧zero。"
+            "本类型只消费原1–205完整原生0、普通close0及独立完成actor的真实四件0，保留全部业务、源保全和六查询断言。\n\n"
+            "新A输入始终为 scope/original_session/context/worker_close/completion 五键；新B输入另以顶层 post_a={history,contract} 保存已采公件，"
+            "合计十二键。原A0的十一键B输入及八键A输入不变。运行本派生Root materializer时使用 --interrupted-completion-result-sha256；"
+            "该参数只绑定新独立完成RESULT，不冒充 --normal-root-result-sha256。\n\n"
+            "本包仍须独立源审和真实B运行。源码发布不等于GUI、原生小程序、资金、完整验收或生产发布通过；停止样本保持 NOT RUN。\n").encode()
+        for name in ("root-source/DESIGN-TASKS.md", "candidate/DESIGN.md"):
+            require(after[name].endswith(b"\n"), "B_INTERRUPTION_DOCUMENTED_EXISTING_SOURCE_RECORD")
+            after[name] += note
     selected_subnets = derived["network_subnets"]
     require(("        - subnet: " + selected_subnets["isolation"] + "\n").encode()
             in stable_read(normal_root / "validation/actual-profile/compose.yml"),
@@ -3959,17 +4429,31 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "source_tree_members":members, "source_authority":fixed["source_authority"],
         "builds":{name:{"actual_proof":proofs["builds"][name], **material_result["builds"][name]}
                   for name in ("h5", "merchant", "admin")}, "runtime_root":runtime.as_posix()}
-    a_qualification = {"outer_native_exit":0, **{key:a[key] for key in (
-        "normal_root_result", "worker_close", "independent_zero", "post_a_history")}}
+    if interrupted:
+        a_qualification = _interrupted_qualification(a, post_history)
+    else:
+        a_qualification = {"outer_native_exit":0, **{key:a[key] for key in (
+            "normal_root_result", "worker_close", "independent_zero", "post_a_history")}}
     interface = decode(after["candidate/interface-v1.json"])
     current = interface["fresh_B_current_UI_profile_source"]
-    current.update(source_sha=head, parent=parent, actual_adoption_authority=fixed["source_authority"],
-        A_outer_exit=0, A_worker_close=a["worker_close"], A_independent_zero=a["independent_zero"],
-        A_post_history=a["post_a_history"], materials_equivalence_authority=fixed["materials"]["independent_review"])
+    if interrupted:
+        current.update(source_sha=head, parent=parent, actual_adoption_authority=fixed["source_authority"],
+            A_outer_exit=None, A_original_status="UNKNOWN/INTERRUPTED", A_completion_outer_exit=0,
+            A_worker_close=a["worker_close"], A_independent_zero=None, A_independent_completion=a["completion"],
+            A_post_history=post_history, materials_equivalence_authority=fixed["materials"]["independent_review"])
+    else:
+        current.update(source_sha=head, parent=parent, actual_adoption_authority=fixed["source_authority"],
+            A_outer_exit=0, A_worker_close=a["worker_close"], A_independent_zero=a["independent_zero"],
+            A_post_history=post_history, materials_equivalence_authority=fixed["materials"]["independent_review"])
     contract = interface["integrated_B_source_tree_contract"]
     contract.update(source_sha=head, parent=parent, actual_adoption_authority=fixed["source_authority"],
         qualified_source_head=head, validation_worktree=authority["validation_root"],
-        build_source=fixed["build_proofs"], actual_A=a_qualification, actual_A_post_history=a["post_a_history"])
+        build_source=fixed["build_proofs"], actual_A=a_qualification, actual_A_post_history=post_history)
+    if interrupted:
+        contract["A_admission_contract"] = {"scope": _INTERRUPTED_A_SCOPE,
+            "original_A_status": "UNKNOWN/INTERRUPTED", "original_outer_native_exit": None,
+            "completion_outer_native_exit": 0, "original_session": a_session,
+            "completion_result": a["completion"]["result"]}
     contract["build_and_materials"].update({name:material_result["builds"][name] for name in ("h5", "merchant", "admin")})
     contract["build_and_materials"]["public_copy"] = fixed["materials"]["producer_result"]
     after["candidate/interface-v1.json"] = encode(interface)
@@ -4069,6 +4553,11 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "browser_compatibility":derived["browser_compatibility"],
         "materializer_detached_main_state":main_state_contract,
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
+    if interrupted:
+        checks["interrupted_A_with_independent_completion"] = checks.pop("original_A_five_proofs")
+        checks["original_A_status"] = "UNKNOWN/INTERRUPTED"
+        checks["original_outer_native_exit"] = None
+        checks["completion_outer_native_exit"] = 0
     after["SOURCE-CHECKS.json"] = encode(checks)
     inputs = decode(before["root-source/INPUTS.json"])
     inputs.update(sealed=True, head=head, parent=parent, root_baseline=BASELINE_PINS,
@@ -4076,15 +4565,15 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         normal_profile_publication=normal_publication, ui_profile_publication={"root":(out / "candidate").as_posix(),
             "PINS":{"path":(out / "candidate/PINS.json").as_posix(),**pin(after["candidate/PINS.json"])},
             "PUBLICATION":{"path":(out / "candidate/PUBLICATION.json").as_posix(),**pin(after["candidate/PUBLICATION.json"])}},
-        committed_files=latest,history=fixed["history"],A_QUALIFICATION=a_qualification,A_OUTER_SESSION=a["session"],
-        source_review_authority=fixed["source_authority"],post_a_history_contract=a["post_a_contract"],
+        committed_files=latest,history=fixed["history"],A_QUALIFICATION=a_qualification,A_OUTER_SESSION=a_session,
+        source_review_authority=fixed["source_authority"],post_a_history_contract=post_contract,
         body_preservation={"path":(out / "SOURCE-CHECKS.json").as_posix(),**pin(after["SOURCE-CHECKS.json"])},
         current_core_aux_authority=core_pointer)
     after["root-source/INPUTS.json"] = encode(inputs)
     constants = {"PREPARED":out,"RUNTIME":runtime,"MAIN":Path(authority["candidate_root"]),
         "REPO":Path(authority["validation_root"]),"PROFILE_SOURCE":out / "candidate",
         "NORMAL_SOURCE":normal_root / "validation","HEAD":head,"PREVIOUS":head,"COMMIT_PARENT":parent,
-        "A_OUTER_SESSION":a["session"],"A_QUALIFICATION":a_qualification,"OLD_RUN":context["run_id"],
+        "A_OUTER_SESSION":a_session,"A_QUALIFICATION":a_qualification,"OLD_RUN":context["run_id"],
         "OLD_FREEZE":setup["freeze_sha256"],"OLD_FREEZE_BYTES":setup["freeze_bytes"],
         "OLD_CONTEXT_PIN":{key:a["context"][key] for key in ("bytes","sha256")},
         "NORMAL_SETUP_PIN":{key:fixed["normal"]["result"][key] for key in ("bytes","sha256")},
@@ -4093,7 +4582,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
                         for name in ("ms4-host.py","normal-close-ms4-fulfillment.py","verify-zero-ms4-fulfillment.py")},
         "DIST_SOURCES":{name:material_result["builds"][name]["dist_root"] for name in ("h5","merchant","admin")},
         "B_SOURCE_TREE_QUALIFICATION":qualification,"ROOT_INPUTS_PIN":pin(after["root-source/INPUTS.json"]),
-        "SOURCE_REVIEW_AUTHORITY":fixed["source_authority"],"POST_A_HISTORY_CONTRACT":a["post_a_contract"],
+        "SOURCE_REVIEW_AUTHORITY":fixed["source_authority"],"POST_A_HISTORY_CONTRACT":post_contract,
         "TOOL_SOURCE":base_root / "observer-source","SOURCE_ROWS":rows,"COMMITTED_FILES":latest,
         "COMMITTED_PATHS":set(row["path"] for row in latest),"NORMAL_SOURCE_PINS":decode(stable_read(normal_root / "validation/PINS.json"))["members"],
         "CURRENT_M_SOURCE_CONTRACT":{"source_sha":head,"SourceRows":list(rows.values()),
@@ -4137,8 +4626,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     projection = b"    public = {'files':{name:row for name,row in public['files'].items() if name!='install' and not name.startswith('install/')},'directories':[name for name in public['directories'] if name!='install' and not name.startswith('install/')]}\n"
     root_m = once(root_m,anchor,anchor+projection)
     root_s = after["root-source/root-ui-start-to-ready.py"]
-    s_constants = {"RUNTIME":runtime,"SOURCE":head,"SOURCE_PARENT":parent,"A_OUTER_SESSION":a["session"],
-        "SOURCE_REVIEW_AUTHORITY":fixed["source_authority"],"POST_A_HISTORY_CONTRACT":a["post_a_contract"],
+    s_constants = {"RUNTIME":runtime,"SOURCE":head,"SOURCE_PARENT":parent,"A_OUTER_SESSION":a_session,
+        "SOURCE_REVIEW_AUTHORITY":fixed["source_authority"],"POST_A_HISTORY_CONTRACT":post_contract,
         "B_SOURCE_TREE_QUALIFICATION":qualification,"ROOT_INPUTS_PIN":pin(after["root-source/INPUTS.json"]),
         "A_QUALIFICATION":a_qualification,"CURRENT_CORE_AUX_AUTHORITY_PIN":core_pointer,
         "REPO":Path(authority["validation_root"]),"RUN_ROOT":runtime / "runs",
@@ -4153,14 +4642,26 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     # SOURCE-PINS omits itself; its fixed digest is installed only after the two
     # callers are complete through an external reviewed publication descriptor.
     review_runtime = _B_SOURCE_REVIEW.replace("**CURRENT_B_SOURCE_PINS", "**review['source_pins']")
+    interruption_runtime = ""
+    if interrupted:
+        review_runtime = _b_interrupted_review_runtime(review_runtime)
+        interruption_runtime = ("\nimport ast\nCURRENT_INTERRUPTED_A = " + repr(_interrupted_core(a))
+            + "\nCURRENT_COMPLETION_NORMAL_ROOT = " + repr(normal_root.as_posix())
+            + "\nCURRENT_COMPLETION_FREEZE = " + repr(setup["freeze_sha256"]) + "\n"
+            + _INTERRUPTED_A_CONSUMER + "\n" + _INTERRUPTED_B_QUALIFICATION + "\n")
     for name,raw,shared in (("root-ui-materialize-freeze.py",root_m,normal_consumer),
                             ("root-ui-start-to-ready.py",root_s,normal_consumer)):
+        if interrupted:
+            raw = _b_interrupted_root(raw, name)
         raw = once(raw,b"import sys\n",b"import sys\nimport os\nimport stat\n") if name.startswith("root-ui-materialize") else raw
         raw = once(raw,b"    args = parser.parse_args()\n",b"    parser.add_argument('--source-review-file',required=True)\n    parser.add_argument('--source-review-sha256',required=True)\n    args = parser.parse_args()\n    current_b_source_review(args.source_review_file,args.source_review_sha256)\n")
         if name == "root-ui-start-to-ready.py":
             anchor = b"    current_b_source_review(args.source_review_file,args.source_review_sha256)\n"
             raw = once(raw,anchor,anchor+b"    current_b_normal_materialization()\n")
-        extra = shared_constants + "CURRENT_B_M_OUTER = "+repr(fixed["normal"]["outer"])+"\n"+shared+review_runtime
+        extra = shared_constants + "CURRENT_B_M_OUTER = "+repr(fixed["normal"]["outer"])+"\n"+shared+interruption_runtime+review_runtime
+        if interrupted and name == "root-ui-materialize-freeze.py":
+            extra += "\n" + _interrupted_post_a_consumer(raw) + "\n" + _b_interrupted_retirement(raw)
+            extra += "\noriginal_retirement=current_interrupted_retirement\n"
         # Insert before the original main dispatch. The single detached branch
         # expectation above is checked separately; other helpers stay intact.
         marker = b"if __name__ == '__main__':\n"
