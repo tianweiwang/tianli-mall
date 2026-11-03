@@ -95,7 +95,7 @@ final class SchemaVersionRuntime
         $expectedClass = $official[$name];
         $expectedFile = $app->getRootPath() . 'vendor/topthink/framework/src/think/console/command/'
             . ($name === 'service:discover' ? 'ServiceDiscover.php' : 'VendorPublish.php');
-        $consoleFile = $app->getRootPath() . 'vendor/topthink/framework/src/think/Console.php';
+        $consoleFile = $app->getRootPath() . 'crmeb/compat/think/Console.php';
         // Container invokes this only after the Console constructor has loaded all command
         // overrides and run all starting callbacks. Never recursively resolve Console here.
         $app->resolving(\think\Console::class, static function ($console, $container) use ($app, $name, $expectedClass, $expectedFile, $consoleFile): void {

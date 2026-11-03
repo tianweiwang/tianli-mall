@@ -76,7 +76,8 @@
             "vendor/topthink/think-helper/src/Collection.php",
             "vendor/xaboy/form-builder/src/Driver/CustomComponent.php",
             "vendor/pimple/pimple/src/Pimple/Container.php",
-            "vendor/workerman/workerman/Events/Select.php"
+            "vendor/workerman/workerman/Events/Select.php",
+            "vendor/topthink/framework/src/think/Console.php"
         ],
         "classmap": [
             "crmeb/services/image/Image.php",
@@ -86,7 +87,8 @@
             "crmeb/compat/think-helper/Collection.php",
             "crmeb/compat/form-builder/Driver/CustomComponent.php",
             "crmeb/compat/pimple/Container.php",
-            "crmeb/compat/workerman/Events/Select.php"
+            "crmeb/compat/workerman/Events/Select.php",
+            "crmeb/compat/think/Console.php"
         ]
     },
     "config": {
