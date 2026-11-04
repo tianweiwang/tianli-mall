@@ -3670,17 +3670,223 @@ def _interrupted_qualification(a: dict[str, Any], post_history: dict[str, Any]) 
             "completion": a["completion"], "post_a_history": post_history}
 
 
+def _reviewed_normal_stage(outcome, normal, stage, reader, check):
+    """Read the two fixed recovered stages; never manufacture a native outer capture."""
+    kind = "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1"
+    base = "H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101"
+    fixed = {
+        "materialize": {"path": base + "/normal-m-original-tool-recovery-r2/RECOVERY.json", "bytes": 19860,
+            "sha256": "410360a413a3f7da957a3fc6324e6789615ccca12a2dc3efcfc4440272c98a9a"},
+        "normal-start": {"path": base + "/normal-a-original-tool-recovery-r1/RECOVERY.json", "bytes": 150411,
+            "sha256": "213db9011a30fb69a10cc3ff37feaf709fcd4ad8028fdd95f177d802c2d09557"},
+    }
+    check(type(outcome) is dict and set(outcome) == {"kind", "recovery"} and outcome["kind"] == kind
+          and stage in fixed and outcome["recovery"] == fixed[stage], "NORMAL_STAGE_EXACT_FIXED_RECOVERY_TYPE")
+    check(type(normal) is dict and set(normal) == {"root", "review", "result", "outer"}
+          and normal["root"] == base + "/normal-source-r2", "NORMAL_STAGE_FIXED_REVIEWED_NORMAL_ROOT")
+    root = Path(normal["root"])
+    public = {}
+    def read(pointer):
+        check(type(pointer) is dict and set(pointer) == {"path", "bytes", "sha256"}
+              and type(pointer["path"]) is str and Path(pointer["path"]).is_absolute()
+              and type(pointer["bytes"]) is int and pointer["bytes"] >= 0
+              and type(pointer["sha256"]) is str and re.fullmatch("[a-f0-9]{64}", pointer["sha256"]) is not None,
+              "NORMAL_STAGE_REAL_PUBLIC_POINTER")
+        raw = reader(pointer)
+        check(type(raw) is bytes and len(raw) == pointer["bytes"]
+              and hashlib.sha256(raw).hexdigest() == pointer["sha256"], "NORMAL_STAGE_COMPLETE_PUBLIC_BYTES")
+        check(pointer["path"] not in public or public[pointer["path"]] == pointer, "NORMAL_STAGE_IDENTICAL_POINTER_OVERLAP")
+        public[pointer["path"]] = pointer
+        return raw
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            check(key not in result, "NORMAL_STAGE_NO_DUPLICATE_JSON_KEYS")
+            result[key] = value
+        return result
+    def load(pointer):
+        return json.loads(read(pointer), object_pairs_hook=pairs)
+    recovered = load(outcome["recovery"])
+    review = load(normal["review"])
+    check(normal["review"] == {"path": base + "/normal-source-independent-review-r2.json", "bytes": 14080,
+          "sha256": "6b9abf792a0ce63e2b0d9bf5cac3c95deafce3602dd36d9211e39b20b3e6627f"}
+          and review["schema"] == 1 and review["status"] == "PASS_CURRENT_NORMAL18_SOURCE_REVIEW"
+          and review["source_sha"] == "46956e5231f9a0a3cd1981d0bc8e315be630be9c"
+          and review["original_business_suffix_exact"] is True and review["source_graph_and_stream_contract_reviewed"] is True
+          and len(review["members"]) == 18, "NORMAL_STAGE_EXACT_EXISTING_NORMAL18_REVIEW")
+    entry = "materializer/prepare.py" if stage == "materialize" else "validation/run.py"
+    for name in ("launcher/launch.py", entry):
+        read({"path": (root / name).as_posix(), **review["members"][name]})
+    expected = ["python", "-I", "-B", "-X", "utf8", (root / "launcher/launch.py").as_posix(), stage,
+                "--source-review-file", normal["review"]["path"], "--source-review-sha256", normal["review"]["sha256"]]
+    command = "python -I -B -X utf8 '" + expected[5] + "' " + stage + " --source-review-file '" + expected[8] + "' --source-review-sha256 " + expected[10]
+    is_m = stage == "materialize"
+    check(type(recovered["schema"]) is int and recovered["schema"] == 1
+          and recovered["scope"] == ("ORIGINAL_M_TOOL_TRACE_RECOVERY_ONLY_NOT_NATIVE_OUTER_CAPTURE" if is_m else
+              "ORIGINAL_A_TOOL_TRACE_RECOVERY_WITH_SEPARATE_ORIGINAL_OS_LAUNCHER_OBSERVATION")
+          and recovered["status"] == ("RECOVERED_ORIGINAL_M_TOOL_EVIDENCE_WITH_EXPLICIT_ORIGINAL_REQUEST_BINDINGS" if is_m else
+              "RECOVERED_ORIGINAL_TOOL_COMMAND_RESPONSES_AND_EXISTING_OS_STAGE_POINTERS")
+          and recovered["observed_tool_exit_code"] == 0
+          and recovered["launcher_independent_raw_stdout"] == recovered["launcher_independent_raw_stderr"] == "NOT_CAPTURED",
+          "NORMAL_STAGE_TRUTHFUL_TOOL_SCOPE_AND_UNCAPTURED_STREAMS")
+    session, child_pid = (10724, 47188) if is_m else (35309, 30616)
+    check(type(recovered["tool_session_id"]) is int and recovered["tool_session_id"] == session,
+          "NORMAL_STAGE_ORIGINAL_TOOL_SESSION_NOT_PROCESS_PID")
+    original = recovered["original_call_M_branch" if is_m else "original_call_A_branch"]
+    arguments = original["original_exec_command_M_branch" if is_m else "original_exec_command_A_branch"]
+    lexical = recovered["exact_command_argv_tokens" if is_m else "exact_launcher_command_argv_tokens"]
+    check(lexical == expected and arguments["workdir"] == recovered["cwd"]
+          and Path(recovered["cwd"]) == Path("H:/天俪商城"), "NORMAL_STAGE_ORIGINAL_LEXICAL_ARGV_AND_CWD")
+    if is_m:
+        check(arguments["cmd"] == command and recovered["launcher_pid"] is None
+              and recovered["launcher_pid_status"] == "NOT_CAPTURED"
+              and recovered["launcher_original_OS_wait_handle_or_wait_returncode"] == "NOT_CAPTURED"
+              and recovered["external_M_capture_path_at_original_invocation"] is None,
+              "NORMAL_M_DIRECT_COMMAND_AND_REAL_OUTER_GAPS")
+        previous = load(recovered["previous_recovery"])
+        check(previous["status"] == "RECOVERED_ORIGINAL_TOOL_COMMAND_RESPONSES_AND_STAGE_POINTERS"
+              and all(recovered[key] == value for key, value in previous.items() if key not in ("status", "created_at_utc")),
+              "NORMAL_M_R1_FACTS_UNCHANGED_ONLY_R2_REQUEST_BINDING_STATUS")
+    else:
+        check(recovered["exact_launcher_command_tail"] == command
+              and arguments["cmd"].endswith("\n" + command)
+              and "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n" in arguments["cmd"],
+              "NORMAL_A_ORIGINAL_ADMISSION_AND_LASTEXITCODE_GATE")
+    responses = recovered["original_M_tool_responses" if is_m else "original_A_tool_responses"]
+    check(type(responses) is list and len(responses) == (5 if is_m else 123)
+          and [row["rollout_line"] for row in responses] == sorted({row["rollout_line"] for row in responses}),
+          "NORMAL_STAGE_COMPLETE_ORDERED_ORIGINAL_TOOL_RESPONSES")
+    chunks = []
+    for index, row in enumerate(responses):
+        if is_m:
+            branch = row["decoded_original_M_branch_result"]
+            check(branch["i"] == 0 and branch["status"] == "fulfilled", "NORMAL_M_ORIGINAL_RESPONSE_BRANCH")
+            value = branch["value"]
+            pair = recovered["request_response_bindings"][index]
+            request, response = pair["request"], pair["response_reference"]
+            check(pair["same_original_call_id"] is True and pair["session_binding"] == session
+                  and request["call_id"] == response["call_id"] == row["call_id"]
+                  and request["rollout_line"] < row["rollout_line"]
+                  and response["prior_recovery_response_index"] == index
+                  and all(response[key] == row[key] for key in ("rollout_line", "timestamp_utc", "original_JSONL_record_including_line_ending")),
+                  "NORMAL_M_ALL_ORIGINAL_REQUEST_RESPONSE_PAIRS")
+            operation = request["original_M_operation_arguments"]
+            check((request["operation"] == "exec_command" and operation == arguments) if index == 0 else
+                  (request["operation"] == "write_stdin" and operation["session_id"] == session and operation["chars"] == ""),
+                  "NORMAL_M_TERMINAL_SESSION_FROM_ORIGINAL_REQUEST")
+        else:
+            value = row["decoded_original_A_tool_value"]
+            check(row["source_call_location"]["call_id"] == row["call_id"]
+                  and row["source_call_location"]["rollout_line"] < row["rollout_line"], "NORMAL_A_ORIGINAL_RESPONSE_REQUEST_LOCATION")
+            if index == len(responses) - 1:
+                operation = row["original_related_operation"]
+                check(operation["tool"] == "write_stdin" and re.search(r"(?:^|[,{])session_id:35309(?:,|})", operation["verbatim_argument_object"]) is not None,
+                      "NORMAL_A_TERMINAL_ORIGINAL_WRITE_STDIN_SESSION")
+        check(type(value["output"]) is str and type(value["original_token_count"]) is int
+              and (value.get("exit_code") == 0 and "session_id" not in value if index == len(responses) - 1 else
+                   "exit_code" not in value and value.get("session_id") == session), "NORMAL_STAGE_LIVE_THEN_ORIGINAL_TOOL_EXIT_ZERO")
+        chunks.append(value["output"].encode("utf-8"))
+    check(value == recovered["terminal_original_tool_value"], "NORMAL_STAGE_REAL_TERMINAL_TOOL_VALUE")
+    merged = recovered["merged_tool_text"]
+    merged_pointer = {key: merged[key] for key in ("path", "bytes", "sha256")}
+    merged_raw = read(merged_pointer)
+    check(merged_raw == b"".join(chunks) and merged["classification"] == "MERGED_TOOL_TEXT_NOT_INDEPENDENT_RAW_STDOUT_STDERR"
+          and merged["ordered_original_chunks"] == len(responses) and merged["nonempty_chunks"] == 2
+          and merged["original_CRLF_preserved"] is True and merged["truncation_marker_present"] is False,
+          "NORMAL_STAGE_COMPLETE_MERGED_TOOL_TEXT_NOT_RAW_STREAMS")
+    states = [json.loads(line, object_pairs_hook=pairs) for line in merged_raw.splitlines()]
+    check(len(states) == (2 if is_m else 3)
+          and states[-2] == {"state": "SAME_NATIVE_PROCESS_LIVE", "stage": stage, "pid": child_pid}
+          and states[-1] == {"state": "ACTUAL_STAGE_TERMINAL", "stage": stage, "pid": child_pid, "native_exit": 0, "wait_returncode": 0},
+          "NORMAL_STAGE_ORIGINAL_LIVE_AND_TERMINAL_CHILD_MARKERS")
+    stage_record = recovered["stage_process"]
+    four = stage_record["existing_original_four_pointers"]
+    check(set(four) == {"created", "terminal", "stdout", "stderr"} and stage_record["pid"] == child_pid
+          and stage_record["reported_native_exit"] == stage_record["reported_wait_returncode"] == 0
+          and stage_record["existing_four_not_copied_or_rewritten"] is True, "NORMAL_STAGE_ORIGINAL_CHILD_FOUR")
+    for key, suffix in (("created", "created.json"), ("terminal", "terminal.json"), ("stdout", "stdout"), ("stderr", "stderr")):
+        check(four[key]["path"] == (root / "launcher" / (stage + "." + suffix)).as_posix(), "NORMAL_STAGE_FIXED_CHILD_CAPTURE_PATH")
+    created, terminal = load(four["created"]), load(four["terminal"])
+    check(set(created) == {"pid", "argv", "started_ns"}
+          and set(terminal) == {"pid", "native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+          and type(created["pid"]) is int and created["pid"] == terminal["pid"] == child_pid
+          and type(created["started_ns"]) is int and type(terminal["finished_ns"]) is int
+          and terminal["finished_ns"] > created["started_ns"]
+          and type(terminal["native_exit"]) is int and type(terminal["wait_returncode"]) is int
+          and terminal["native_exit"] == terminal["wait_returncode"] == 0,
+          "NORMAL_STAGE_SAME_REAL_CHILD_NATIVE_WAIT_AND_TIME")
+    argv = created["argv"]
+    expected_child = ["-B", "-X", "utf8", (root / entry).as_posix()]
+    if not is_m:
+        expected_child += ["--root-source-pins-sha256", review["members"]["validation/PINS.json"]["sha256"],
+                           "--setup-sha256", normal["result"]["sha256"]]
+    expected_child += expected[7:]
+    check(type(argv) is list and len(argv) == len(expected_child) + 1 and Path(argv[0]).is_absolute()
+          and all(Path(actual) == Path(wanted) if index in (3, len(expected_child) - 3) else actual == wanted
+                  for index, (actual, wanted) in enumerate(zip(argv[1:], expected_child))),
+          "NORMAL_STAGE_ORIGINAL_CHILD_ARGV_NOT_RELABELED_AS_LAUNCHER")
+    for key in ("stdout", "stderr"):
+        check(terminal[key] == four[key], "NORMAL_STAGE_REAL_CHILD_FULL_STREAM_POINTER")
+        raw = read(four[key])
+        check(raw == b"" if key == "stderr" else bool(raw), "NORMAL_STAGE_REAL_CHILD_COMPLETE_STREAM")
+    launcher_pid = None
+    if not is_m:
+        admission = load(recovered["original_network_admission_result"])
+        check(admission["status"] == "PASS_NO_OVERLAP" and admission["overlaps"] == []
+              and states[0] == {"result": states[0]["result"], "status": "PASS_NO_OVERLAP",
+                  "network_count": admission["network_count"], "overlaps": []}
+              and Path(states[0]["result"]) == Path(recovered["original_network_admission_result"]["path"]),
+              "NORMAL_A_REAL_ADMISSION_PREFIX_KEPT_IN_MERGED_TEXT")
+        observer = recovered["launcher_OS_observer"]
+        read(observer["source"])
+        live, final = load(observer["observed_live"]), load(observer["os_terminal"])
+        check(all(final[key] == value for key, value in live.items())
+              and live["schema"] == 1 and live["scope"] == "READ_ONLY_EXISTING_ORIGINAL_LAUNCHER_OS_HANDLE_OBSERVATION"
+              and live["original_tool_session"] == session and live["pid"] == recovered["launcher_pid"] == 33680
+              and live["parent_pid"] == recovered["launcher_parent_pid"] == 51924
+              and live["observer_pid"] == observer["observer_pid"] == 17540
+              and live["argv"] == recovered["launcher_observed_argv"] and live["argv"][1:] == expected[1:]
+              and Path(live["argv"][0]) == Path(argv[0])
+              and live["started_ns"] == recovered["launcher_started_ns"]
+              and created["started_ns"] > live["started_ns"]
+              and terminal["finished_ns"] <= final["finished_ns"] == recovered["launcher_finished_ns"]
+              and live["started_ns"] < live["observed_live_at_ns"] < final["finished_ns"] <= final["observed_terminal_at_ns"]
+              and final["status"] == "ORIGINAL_OS_PROCESS_NATURALLY_TERMINAL"
+              and final["native_exit"] == recovered["launcher_OS_native_exit"] == 0
+              and final["os_wait_result"] == recovered["launcher_OS_wait_result"] == 0
+              and final["exit_code_source"] == observer["same_retained_handle_exit_code_source"]
+                  == "GetExitCodeProcess on same retained original OS handle"
+              and live["stdout_stderr_captured_by_this_observer"] is False
+              and live["original_process_restarted_modified_paused_or_injected"] is False
+              and final["streams"] == "NOT_CAPTURED_HERE_USE_ORIGINAL_TOOL_TRANSPORT_RECORDS",
+              "NORMAL_A_ORIGINAL_SAME_RETAINED_OS_HANDLE_LIVE_AND_NATIVE_ZERO")
+        launcher_pid = live["pid"]
+    return {"kind": kind, "stage": stage, "tool_session_id": session, "tool_exit_code": 0,
+            "launcher_pid": launcher_pid, "launcher_OS_native_exit": None if is_m else 0,
+            "launcher_independent_raw_stdout": "NOT_CAPTURED", "launcher_independent_raw_stderr": "NOT_CAPTURED",
+            "child_pid": child_pid, "child_native_exit": 0, "child_wait_returncode": 0,
+            "public_files": [public[name] for name in sorted(public)]}
+
+
 def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
                         authority_pointer: dict[str, Any], authority: dict[str, Any]) -> tuple:
     """Shared B/post-A gate; observe the real outer terminal before any Run read."""
     require(type(a["session"]) is int and a["session"] > 0, "B_REAL_SUCCESSFUL_A_OUTER_SESSION")
-    a_created, _ = _b_outer(a["outer"])
+    a_stage = (_reviewed_normal_stage(a["outer"], normal, "normal-start", read_pointer, require)
+               if a["outer"].get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1" else None)
+    if a_stage is None:
+        a_created, _ = _b_outer(a["outer"])
+    else:
+        require(a["session"] == a_stage["tool_session_id"], "A_RECOVERED_ORIGINAL_TOOL_SESSION")
     require(set(normal) == {"root", "review", "result", "outer"}, "B_EXACT_CURRENT_NORMAL_M_INPUTS")
     normal_root = Path(normal["root"])
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
     require(binding["technical_authority"] == authority_pointer
             and binding["source_sha"] == authority["source_sha"], "B_CURRENT_NORMAL_SAME_REVIEWED_SOURCE")
-    m_created, _ = _b_outer(normal["outer"], normal["review"])
+    m_stage = (_reviewed_normal_stage(normal["outer"], normal, "materialize", read_pointer, require)
+               if normal["outer"].get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1" else None)
+    if m_stage is None:
+        m_created, _ = _b_outer(normal["outer"], normal["review"])
     def actual_normal_argv(created, mode):
         argv = created["argv"]
         require(len(argv) == 11 and argv[1:5] == ["-I", "-B", "-X", "utf8"]
@@ -3688,7 +3894,8 @@ def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
                 and argv[7] == "--source-review-file" and Path(argv[8]) == Path(normal["review"]["path"])
                 and argv[9:] == ["--source-review-sha256", normal["review"]["sha256"]],
                 "B_ORIGINAL_CURRENT_NORMAL_LAUNCHER_MODE_AND_REVIEW_ARGV")
-    actual_normal_argv(m_created, "materialize")
+    if m_stage is None:
+        actual_normal_argv(m_created, "materialize")
     consumer = _b_normal_consumer(normal_root, binding, normal["review"], normal["result"])
     namespace = {"Path": Path, "os": os, "stat": stat, "re": re, "json": json,
                  "hashlib": hashlib, "argparse": argparse, "sys": __import__("sys"),
@@ -3696,7 +3903,8 @@ def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
                  "REPO": Path(authority["validation_root"])}
     exec(compile(consumer, "reviewed-current-normal-readonly-preflight", "exec"), namespace)
     setup = namespace["current_b_normal_materialization"]()
-    actual_normal_argv(a_created, "normal-start")
+    if a_stage is None:
+        actual_normal_argv(a_created, "normal-start")
     raw = {key: read_pointer(a[key]) for key in ("context", "normal_root_result", "worker_close", "independent_zero")}
     context, final, close, zero = (decode(raw[key]) for key in ("context", "normal_root_result", "worker_close", "independent_zero"))
     require(final["status"] == "ROOT_NORMAL_MIGRATIONS_BUSINESS_WORKER_CLOSE_AND_INDEPENDENT_ZERO_NATIVE_ZERO"
@@ -3828,6 +4036,11 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
             and {key: post[key] for key in post_contract["header"]} == post_contract["header"],
             "B_FIXED_REAL_POST_A_INVENTORY_SCHEMA")
     for row in post[post_contract["files_key"]]: read_pointer(row)
+    for stage, outcome in (("materialize", fixed["normal"]["outer"]), ("normal-start", a.get("outer", {}))):
+        if outcome.get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1":
+            observed = _reviewed_normal_stage(outcome, fixed["normal"], stage, read_pointer, require)
+            require(all(row in post[post_contract["files_key"]] for row in observed["public_files"]),
+                    "B_COMPLETE_TYPED_STAGE_EVIDENCE_IN_POST_A_PUBLIC_HISTORY")
     materials, material_result = _b_materials(fixed["materials"], authority_pointer, inventory, fixed["build_proofs"])
     # Construction below has no runtime side effects; all emitted scripts retain
     # the original guards and require a separate fixed independent Source review.
@@ -4015,13 +4228,21 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
     else:
         require(type(a) is dict and set(a) == {"session", "outer", "context", "normal_root_result", "worker_close", "independent_zero"},
                 "POST_A_COMPLETED_A_INPUTS_WITHOUT_FUTURE_HISTORY")
+    stage_public = []
     # This must precede authority/M traversal, context access and every Run read.
     if _interrupted_a(a):
         created = _interruption_namespace()["current_completion_outer"](a)
         for row in a["completion"]["outer"].values(): reads.pointer(row)
     else:
-        created, _ = _b_outer(a["outer"])
-        for row in a["outer"].values(): reads.pointer(row)
+        if a["outer"].get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1":
+            observed = _reviewed_normal_stage(a["outer"], normal, "normal-start", reads.pointer, require)
+            require(a["session"] == observed["tool_session_id"], "POST_A_RECOVERED_ACTUAL_TOOL_SESSION")
+            outer_pid = observed["launcher_pid"]
+            stage_public += observed["public_files"]
+        else:
+            created, _ = _b_outer(a["outer"])
+            for row in a["outer"].values(): reads.pointer(row)
+            outer_pid = created["pid"]
     reads.pointer(authority_pointer)
     authority, _ = reviewed_authority(authority_pointer)
     for row in (authority["capture"], authority["independent_review"]): reads.pointer(row)
@@ -4073,18 +4294,25 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
     else:
         header = {"schema": 1, "scope": "CURRENT_NORMAL_A_POST_SUCCESS_PUBLIC_HISTORY", "run_id": context["run_id"],
                   "source_sha": authority["source_sha"], "freeze_sha256": setup["freeze_sha256"],
-                  "outer_session": a["session"], "outer_pid": created["pid"], "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
+                  "outer_session": a["session"], "outer_pid": outer_pid, "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
     require(contract["header"] == header and contract["files_key"] == "files", "POST_A_EXACT_CURRENT_PUBLIC_ONLY_HEADER")
     a_rows = [a[key] for key in (("context", "worker_close") if _interrupted_a(a) else
                               ("context", "normal_root_result", "worker_close", "independent_zero"))]
     if _interrupted_a(a): a_rows += decode(actual_raw["_completion_public_rows"])
-    for row in [*normal["outer"].values(), normal["review"], normal["result"], *a_rows]: reads.pointer(row)
+    if normal["outer"].get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1":
+        observed = _reviewed_normal_stage(normal["outer"], normal, "materialize", reads.pointer, require)
+        stage_public += observed["public_files"]
+        m_rows = observed["public_files"]
+    else:
+        m_rows = list(normal["outer"].values())
+    for row in [*m_rows, normal["review"], normal["result"], *a_rows]: reads.pointer(row)
     review = decode(reads.pointer(normal["review"]))
     for name, row in review["members"].items():
         require(not Path(name).is_absolute() and ".." not in Path(name).parts, "POST_A_NORMAL_REVIEW_SAFE_MEMBER")
         reads.pointer({"path": (normal_root / name).as_posix(), **row})
     reads.read(normal_root / "qualification/CURRENT-BINDING.json")
     rows = _post_a_rows(contract, roots, files, reads)
+    require(all(row in rows for row in stage_public), "POST_A_COMPLETE_TYPED_STAGE_EVIDENCE_IN_PUBLIC_UNION")
     for path in [Path(row["path"]) for row in reads.files.values()]:
         require(not path.is_relative_to(out) and not out.is_relative_to(path), "POST_A_NO_INPUT_OUTPUT_OVERLAP")
     if _interrupted_a(a):
@@ -4549,6 +4777,40 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     a_session = a["original_session"] if interrupted else a["session"]
     post_history = fixed["post_a"]["history"] if interrupted else a["post_a_history"]
     post_contract = fixed["post_a"]["contract"] if interrupted else a["post_a_contract"]
+    stage_facts = {}
+    normal_stage_review_runtime = None
+    normal_stage_runtime = ""
+    for stage, outcome in (("materialize", fixed["normal"]["outer"]), ("normal-start", a.get("outer", {}))):
+        if outcome.get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1":
+            require(not interrupted, "B_REVIEWED_STAGE_RECOVERY_ONLY_FOR_ORIGINAL_NORMAL_A")
+            stage_facts[stage] = _reviewed_normal_stage(outcome, fixed["normal"], stage, read_pointer, require)
+    if stage_facts:
+        normal_stage_runtime = _source_function(stable_read(Path(__file__).resolve()), "_reviewed_normal_stage")
+        normal_stage_runtime += '''
+
+def current_b_normal_stage(outcome, stage):
+    if outcome.get('kind') == 'REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1':
+        observed = _reviewed_normal_stage(outcome, CURRENT_B_NORMAL_STAGE_INPUTS, stage, lambda pointer: current_stream(pointer, True), current_assert)
+        if stage == 'normal-start':
+            current_assert(observed['tool_session_id'] == A_OUTER_SESSION, 'B_RECOVERED_ORIGINAL_A_TOOL_SESSION')
+        return observed
+    current_b_outer(outcome, CURRENT_B_NORMAL_REVIEW if stage == 'materialize' else None)
+    return None
+'''
+        old_stage_gate = "    current_b_outer(fixed['normal']['outer'],fixed['normal']['review']);current_b_outer(fixed['A']['outer'])\n"
+        new_stage_gate = "    current_b_normal_stage(fixed['normal']['outer'],'materialize');current_b_normal_stage(fixed['A']['outer'],'normal-start')\n"
+        normal_stage_review_runtime = once(_B_SOURCE_REVIEW.encode(), old_stage_gate.encode(), new_stage_gate.encode()).decode()
+        require(once(normal_stage_review_runtime.encode(), new_stage_gate.encode(), old_stage_gate.encode()).decode() == _B_SOURCE_REVIEW,
+                "B_COMPLETE_REVIEW_RUNTIME_ONLY_TYPED_STAGE_DISPATCH_INVERSE")
+        note = ("\n\n## 原正常 M/A 的明确工具终态证据类型\n\n"
+            "normal.outer/A.outer 保留原键，以 REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1 显式绑定固定恢复包。"
+            "M 使用原工具10724正常退出和原child47188四件；launcher PID、OS wait和独立分流仍未捕获。"
+            "A 使用原工具35309、原child30616四件以及原OS observer持同一句柄观测launcher33680自然0。"
+            "191B/389B均为合并工具文本，A含原准入前缀，均不充当独立stdout/stderr。"
+            "旧四件型解析器、完整M来源/原生回执、原A业务及close/zero断言保持；不重跑旧M/A。\n").encode()
+        for name in ("root-source/DESIGN-TASKS.md", "candidate/DESIGN.md"):
+            require(after[name].endswith(b"\n"), "B_TYPED_STAGE_EVIDENCE_DOCUMENTED_EXISTING_RECORD")
+            after[name] += note
     if interrupted:
         note = ("\n\n## 本派生来源的中断后独立完成准入\n\n"
             "原正常A保持 UNKNOWN/INTERRUPTED、退出码为 null，不生成或替代其206终态、Root RESULT或旧zero。"
@@ -4830,6 +5092,10 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
             "git_show_argv_order_and_file_assertions":"UNCHANGED","whole_main_single_seam_inverse":True},
         "materializer_detached_main_state":main_state_contract,
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
+    if stage_facts:
+        checks["reviewed_normal_stage_tool_terminal_evidence"] = stage_facts
+        checks["typed_stage_review_dispatch_whole_inverse_exact"] = True
+        checks["old_outer_four_file_parsers_unchanged"] = True
     if interrupted:
         checks["interrupted_A_with_independent_completion"] = checks.pop("original_A_five_proofs")
         checks["original_A_status"] = "UNKNOWN/INTERRUPTED"
@@ -4893,12 +5159,20 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         b"(PREPARED / 'r20-proof-memory-budget-public-readback-r1/RESULT.json').as_posix()",
         repr(proof_reference["path"]).encode()).decode()
     root_m = _b_replace_function(root_m, "frozen_resources", frozen_resources)
-    root_m = _b_replace_function(root_m, "current_known_normal_root", '''def current_known_normal_root(inputs):
+    known_normal = '''def current_known_normal_root(inputs):
     current_b_outer(CURRENT_B_M_OUTER, CURRENT_B_NORMAL_REVIEW)
     setup=current_b_normal_materialization()
     authority=inputs['normal_root']
     assert authority['root']==NORMAL_SOURCE.as_posix() and setup['root_source_pins']==authority['PINS']
-    return authority,setup''')
+    return authority,setup'''
+    if stage_facts:
+        original_known_normal = known_normal
+        old_m_gate = "    current_b_outer(CURRENT_B_M_OUTER, CURRENT_B_NORMAL_REVIEW)\n"
+        new_m_gate = "    current_b_normal_stage(CURRENT_B_M_OUTER, 'materialize')\n"
+        known_normal = once(known_normal.encode(), old_m_gate.encode(), new_m_gate.encode()).decode()
+        require(once(known_normal.encode(), new_m_gate.encode(), old_m_gate.encode()).decode() == original_known_normal,
+                "B_WHOLE_KNOWN_NORMAL_ROOT_ONLY_TYPED_STAGE_GATE_INVERSE")
+    root_m = _b_replace_function(root_m, "current_known_normal_root", known_normal)
     root_m = _b_replace_function(root_m, "current_consume_materialization", '''def current_consume_materialization(inputs):
     setup=current_known_normal_root(inputs)[1]
     for name,row in CURRENT_READS.items():
@@ -4933,7 +5207,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     shared_constants = "\nCURRENT_B_FIXED_INPUT = "+repr(fixed_pointer)+"\nCURRENT_B_TECHNICAL_AUTHORITY = "+repr(fixed["source_authority"])+"\n"
     # SOURCE-PINS omits itself; its fixed digest is installed only after the two
     # callers are complete through an external reviewed publication descriptor.
-    review_runtime = _B_SOURCE_REVIEW.replace("**CURRENT_B_SOURCE_PINS", "**review['source_pins']")
+    review_runtime = (normal_stage_review_runtime if stage_facts else _B_SOURCE_REVIEW).replace("**CURRENT_B_SOURCE_PINS", "**review['source_pins']")
     interruption_runtime = ""
     if interrupted:
         review_runtime = _b_interrupted_review_runtime(review_runtime)
@@ -4950,7 +5224,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         if name == "root-ui-start-to-ready.py":
             anchor = b"    current_b_source_review(args.source_review_file,args.source_review_sha256)\n"
             raw = once(raw,anchor,anchor+b"    current_b_normal_materialization()\n")
-        extra = shared_constants + "CURRENT_B_M_OUTER = "+repr(fixed["normal"]["outer"])+"\n"+shared+interruption_runtime+review_runtime
+        stage_constants = "CURRENT_B_NORMAL_STAGE_INPUTS = " + repr(fixed["normal"]) + "\n" if stage_facts else ""
+        extra = shared_constants + "CURRENT_B_M_OUTER = "+repr(fixed["normal"]["outer"])+"\n"+stage_constants+shared+interruption_runtime+normal_stage_runtime+review_runtime
         if interrupted and name == "root-ui-materialize-freeze.py":
             extra += "\n" + _interrupted_post_a_consumer(raw) + "\n" + _b_interrupted_retirement(raw)
             extra += "\noriginal_retirement=current_interrupted_retirement\n"
