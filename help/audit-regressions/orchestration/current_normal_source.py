@@ -4915,6 +4915,31 @@ def current_b_normal_stage(outcome, stage):
         after[key] = replace_constant(after[key], "B_SOURCE_TREE_SOURCE_SEAL", "SEALED_BY_ROOT_AFTER_B_SOURCE_TREE_QUALIFICATION")
         if name != "normal-close-ms4-fulfillment.py":
             after[key] = replace_constant(after[key], "SOURCE_TREE_ENTRY_PINS_STATUS", "BOUND_FROZEN_PHP_SOURCE")
+    freeze_host_before = after["candidate/ms4-host.py"]
+    freeze_functions_before = functions(freeze_host_before)
+    freeze_before = freeze_functions_before["freeze"]
+    require(pin(freeze_before) == {"bytes":6166,
+        "sha256":"eb76013e52b13b77f7b8024b423de11178e567105f496d634dc255d4f3915aa9"},
+        "B_ORIGINAL_COMPLETE_FREEZE_PRODUCER")
+    freeze_writer_before = b"    sha = new(output, value)\n"
+    freeze_writer_after = b'''    freeze_path = Path(output)
+    expect(freeze_path.parent.is_dir() and not freeze_path.exists() and not freeze_path.is_symlink(), 'CREATE_ONLY_OUTPUT')
+    freeze_raw = (json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\\n').encode('utf-8')
+    expect(len(freeze_raw) <= 16777216, 'FREEZE_JSON_WITHIN_ORIGINAL_READER_16MIB')
+    with freeze_path.open('xb') as stream:
+        expect(stream.write(freeze_raw) == len(freeze_raw), 'FULL_OUTPUT_WRITE')
+        stream.flush()
+    expect(freeze_path.read_bytes() == freeze_raw, 'FULL_OUTPUT_READBACK')
+    sha = digest(freeze_raw)
+'''
+    freeze_after = once(freeze_before, freeze_writer_before, freeze_writer_after)
+    freeze_host_after = once(freeze_host_before, freeze_before, freeze_after)
+    freeze_writer_inverse_exact = (
+        once(freeze_after, freeze_writer_after, freeze_writer_before) == freeze_before
+        and once(freeze_host_after, freeze_after, freeze_before) == freeze_host_before
+        and functions(freeze_host_after) == {**freeze_functions_before, "freeze":freeze_after})
+    require(freeze_writer_inverse_exact, "B_COMPACT_FREEZE_ONLY_COMPLETE_HOST_INVERSE_AND_ALL_OTHER_BODIES")
+    after["candidate/ms4-host.py"] = freeze_host_after
     joint_php_seal = _b_joint_php_seal(after, inventory)
     observer_host_before = after["candidate/ms4-host.py"]
     observer_functions_before = functions(observer_host_before)
@@ -5071,12 +5096,15 @@ def current_b_normal_stage(outcome, stage):
         "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":(observer_read_inverse_exact
             and observer_zero_read_inverse_exact and observer_browser_manifest_inverse_exact
             and frozen_role_source_inverse_exact and normal_authority_contract["whole_root_inverse_exact"]
-            and joint_php_seal["whole_file_metadata_inverse_exact"]),
+            and joint_php_seal["whole_file_metadata_inverse_exact"] and freeze_writer_inverse_exact),
         "joint_php_entry_and_dependency_seal":joint_php_seal,
+        "freeze_json_writer":{"encoding":"UTF8_COMPACT_LF","maximum_bytes":16777216,
+            "original_function":pin(freeze_before),"candidate_function":pin(freeze_after),
+            "whole_Host_and_function_inverse_exact":freeze_writer_inverse_exact,"generic_new_unchanged":True},
         "normal_source_authority_contract":normal_authority_contract,
         "network_subnets":selected_subnets,
         "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
-        "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business","task2_observer_read"],
+        "changed_python_bodies":{"ms4-host.py":["freeze","verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business","task2_observer_read"],
             "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks","verify_aftersale_review_business","t2z_read"],
             "normal-close-ms4-fulfillment.py":[],
             "root-ui-materialize-freeze.py":["main","main_state","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_sources","frozen_materials","frozen_resources"],
