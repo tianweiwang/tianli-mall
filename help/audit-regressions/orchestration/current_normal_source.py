@@ -2464,6 +2464,8 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     syntax = Path(syntax_result)
     syntax_value = decode(stable_read(syntax))
     require(syntax_value["native_exit"] == syntax_value["wait_returncode"] == 0
+            and type(syntax_value.get("pid")) is int and syntax_value["pid"] > 0
+            and syntax_value.get("scope") == "PHP82_SYNTAX_ONLY_NO_INCLUDE_APP_SQL_OR_BUSINESS"
             and syntax_value["source"] == {"path": (profile / "ms4-initialize.php").as_posix(), **pin(current9["ms4-initialize.php"])},
             "ACTUAL_CURRENT_INITIALIZER_SYNTAX_RECEIPT")
     syntax_group = {"result": _pointer(syntax), "stdout": _pointer(syntax.with_suffix(".stdout")), "stderr": _pointer(syntax.with_suffix(".stderr"))}
