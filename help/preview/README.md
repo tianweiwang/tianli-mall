@@ -26,15 +26,19 @@
 
 同一订单的售后1已通过原页面完成：顾客上传真实收货截图并申请两件、40.30元的“仅申请金额”，平台批准后单独执行明确标注的测试退款。顾客刷新、商家详情和平台详情均显示业务已完成、无需退件、资金已确认，申请/确认/处理中金额为40.30/40.30/0.00。三角色真实接口投影一致；原付款40.30元、发2收2保持，商品及SKU库存仍98。这次没有退件，不回补实物库存，也没有真实资金收退。
 
-原平台客服入口为 `/kefu`，本候选的专用合成账号在实例 `private/customer-service-fixture.json`。顾客从上述订单点击“联系客服”，已实际完成双向文字、发送原订单咨询卡片及双方刷新读取历史。客服摘要中的规格、数量2、单价20.15及实付40.30与原单一致，仅供咨询查看。客服真实连接已收到 `success / kind=kefu / uid=4` 认证；浏览器曾拦截无手势的提示音自动播放，消息收发及历史读取正常。该结果不代签图片、其它客户端或原生小程序客服。
+随后，新根单4（`cp641016661800910848`）完成两件40.30元的测试支付及发收货，仅选择其中一件、20.15元申请退货退款。商家批准并保存合成回寄地址，顾客保存运单 `LOCAL18212R4RETURN1`，商家验收包裹商品5的原序号1，再由平台原页面单独确认执行测试退款。[顾客售后详情](http://127.0.0.1:18212/pages/goods/marketplace_aftersale/index?refund_no=641017855445303296)、[商家售后2](http://127.0.0.1:18212/merchant/#/aftersales/2)和[平台售后2](http://127.0.0.1:18212/admin/marketplace/aftersales/2)及三角色接口均读回 `COMPLETED / RETURN_ACCEPTED / SUCCEEDED`，已确认20.15元、处理中0元。商品5及原SKU104库存98→96→97、销量2→4→3，原发2收2历史保持。库存仅在商家验收时回补1件，测试退款后不再次增加；另一件仍可申请20.15元，原包裹可选退件仅余序号2。本次售后申请自身已全额确认，根单仅退一件。
+
+本轮375宽售后页截图已实际核对；320宽DOM无横向溢出，但截图捕获失败，320视觉验收仍待补。`real_refund_enabled=false`，未发生真实资金退款；本轮不扩签小程序原生、真机、正式B、历史迁移或完整阶段验收。
+
+原平台客服入口为 `/kefu`，本候选的专用合成账号在实例 `private/customer-service-fixture.json`。顾客从根单1点击“联系客服”，已实际完成双向文字、发送原订单咨询卡片及双方刷新读取历史。客服摘要中的规格、数量2、单价20.15及实付40.30与原单一致，仅供咨询查看。客服真实连接已收到 `success / kind=kefu / uid=4` 认证；浏览器曾拦截无手势的提示音自动播放，消息收发及历史读取正常。该结果不代签图片、其它客户端或原生小程序客服。
 
 平台、商家、顾客的合成账号保存在该实例 `private/preview-accounts.json`，不在聊天或Git中公开。可从订单列表查看已保存结果，也可使用现有商品准备新的正常样本；不要重复执行初始化。
 
-平台资金入口：[资金设置](http://127.0.0.1:18212/admin/marketplace/finance-settings)、[测试交易](http://127.0.0.1:18212/admin/marketplace/finance-transactions)。本候选已实际核对根单1的订单金额40.30元、累计已确认退款40.30元、当前占用0元及唯一一次已应用付款。资金设置可记录收款方案、平台费和结算退款规则；本轮仅用未保存表单临时按商品实付40.30元、运费0、5%费率测算，页面结果2.02元，随后重新读取原保存草稿，保留初始草稿、14项未配置和0次修改。5%只用于合成测算，不是已决定的经营费率；通道费、商家实际到账和实际结算仍未确认，真实资金未启用。
+平台资金入口：[资金设置](http://127.0.0.1:18212/admin/marketplace/finance-settings)、[测试交易](http://127.0.0.1:18212/admin/marketplace/finance-transactions)。本候选已实际核对根单1的订单金额40.30元、累计已确认退款40.30元、当前占用0元及唯一一次已应用付款。资金设置可记录收款方案、平台费和结算退款规则；本轮仅用未保存表单临时按商品实付40.30元、运费0、5%费率测算，页面结果2.02元，随后重新读取原保存草稿，保留初始草稿、14项未配置和0次修改。5%只用于合成测算，不是已决定的经营费率；通道费、商家实际到账和实际结算仍未确认，真实资金未启用。随后补验的测试交易页已显示根单4的订单金额40.30元、累计已确认退款20.15元、当前占用0元和1次付款尝试；根单1原40.30元退款事实保持，仍未选择费率版本。
 
 当前小程序导入目录为 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-build18212-r2/mp-weixin/dist`，已实际构建连接18212，使用原接口测试号，并包含同一订单摘要布局修复；H5/MP 的565文件输入摘要均为 `ed9e07537b51ae259d4e364a080f2df4ff3574349b9b920b5591078fb9d8fb87`。原小程序 r1 产物保留。开发者工具扫码由用户选择稍后恢复；当前不签新包原生业务或真机通过。真实资金、正式AppID/隐私选图、历史迁移及完整阶段/发布验收继续保留。
 
-实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`MOBILE375-DISCOVERY.json`、`ORDER-LAYOUT-VERIFICATION-r2.json`、`H5-LAYOUT-INSTALL-r2.json`、`FINANCE-UI-r2.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json` 和 `browser-ui-r1` 截图。原 `FRONTEND-REUSE.json` 保留首次三端装包的历史读回，不将它改签为本轮新顾客构建。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
+实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`MOBILE375-DISCOVERY.json`、`ORDER-LAYOUT-VERIFICATION-r2.json`、`H5-LAYOUT-INSTALL-r2.json`、`FINANCE-UI-r2.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`RETURN-ONE-API-r1.json`、`RETURN-ONE-INVENTORY-r1.json`、`RETURN-ONE-RESULT-r2.json`、`CUSTOMER-SERVICE.json` 和 `browser-ui-r1` 截图。原 `FRONTEND-REUSE.json` 保留首次三端装包的历史读回，不将它改签为本轮新顾客构建。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；首次交易、售后1及客服闭环完成时，临时标签已全部关闭。本次退一件验证结束也已关闭三个临时页，仅保留用户原入驻商家页，浏览器视口已恢复。
 
 ## 双店商品详情与店铺入口（18206，2026-11-03）
 
