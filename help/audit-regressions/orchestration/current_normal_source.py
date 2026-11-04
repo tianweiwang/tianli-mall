@@ -4470,6 +4470,78 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         after[key] = replace_constant(after[key], "B_SOURCE_TREE_SOURCE_SEAL", "SEALED_BY_ROOT_AFTER_B_SOURCE_TREE_QUALIFICATION")
         if name != "normal-close-ms4-fulfillment.py":
             after[key] = replace_constant(after[key], "SOURCE_TREE_ENTRY_PINS_STATUS", "BOUND_FROZEN_PHP_SOURCE")
+    observer_host_before = after["candidate/ms4-host.py"]
+    observer_functions_before = functions(observer_host_before)
+    observer_read_before = observer_functions_before["task2_observer_read"]
+    require(pin(observer_read_before) == {"bytes":537,
+        "sha256":"ac01d0c4ddcc640ad84189cc763f80e229115b0746ccdce72a6d51d9ebaff82f"},
+        "B_ORIGINAL_COMPLETE_TASK2_OBSERVER_READ")
+    observer_read_after = b'''def task2_observer_read(path):
+    path = Path(path); before = task2_observer_path(path)
+    with path.open('rb') as stream:
+        opened = task2_observer_stat(os.fstat(stream.fileno()))
+        # Windows path and handle ctime have different meanings; hold each full stat9 separately.
+        same_identity = (all(opened[name] == before[name] for name in (
+            'st_dev', 'st_ino', 'st_mode', 'st_nlink', 'st_uid', 'st_gid', 'st_size', 'st_mtime_ns'))
+                         if os.name == 'nt' else opened == before)
+        expect(same_identity, 'TASK2_SAME_OPEN_FILE_IDENTITY')
+        raw = stream.read()
+        expect(stream.read(1) == b'' and len(raw) == before['st_size']
+            and task2_observer_stat(os.fstat(stream.fileno())) == opened, 'TASK2_COMPLETE_EOF_HANDLE_STAT')
+    expect(task2_observer_path(path) == before, 'TASK2_CLOSED_PATH_STAT_UNCHANGED')
+    return raw
+'''
+    observer_host_after = once(observer_host_before, observer_read_before, observer_read_after)
+    observer_read_inverse_exact = (once(observer_host_after, observer_read_after, observer_read_before) == observer_host_before
+            and functions(observer_host_after) == {**observer_functions_before,
+                "task2_observer_read":observer_read_after})
+    require(observer_read_inverse_exact, "B_TASK2_OBSERVER_READ_WHOLE_HOST_INVERSE_AND_ALL_NON_TARGET_BODIES")
+    after["candidate/ms4-host.py"] = observer_host_after
+    observer_zero_before = after["candidate/verify-zero-ms4-fulfillment.py"]
+    observer_zero_functions_before = functions(observer_zero_before)
+    observer_zero_read_before = observer_zero_functions_before["t2z_read"]
+    require(pin(observer_zero_read_before) == {"bytes":444,
+        "sha256":"25eae7f8a9fd689b4ec0d15b9bbfd97b608e314714c67a6f3f7986871d1036ec"},
+        "B_ORIGINAL_COMPLETE_TASK2_ZERO_READ")
+    observer_zero_read_after = b'''def t2z_read(path):
+    p = Path(path); before = t2z_path(p)
+    with p.open('rb') as f:
+        opened = t2z_stat(os.fstat(f.fileno()))
+        # Windows path and handle ctime have different meanings; hold each full stat9 separately.
+        same_identity = (all(opened[name] == before[name] for name in (
+            'st_dev', 'st_ino', 'st_mode', 'st_nlink', 'st_uid', 'st_gid', 'st_size', 'st_mtime_ns'))
+                         if os.name == 'nt' else opened == before)
+        require(same_identity, 'T2Z_SAME_OPEN_PATH_HANDLE')
+        raw = f.read()
+        require(len(raw) == before['st_size'] and f.read(1) == b''
+            and t2z_stat(os.fstat(f.fileno())) == opened, 'T2Z_COMPLETE_EOF_AND_HANDLE_STAT')
+    require(t2z_path(p) == before, 'T2Z_PATH_UNCHANGED_AFTER_CLOSE')
+    return raw
+'''
+    observer_zero_after = once(observer_zero_before, observer_zero_read_before, observer_zero_read_after)
+    observer_zero_read_inverse_exact = (once(observer_zero_after, observer_zero_read_after, observer_zero_read_before) == observer_zero_before
+            and functions(observer_zero_after) == {**observer_zero_functions_before,
+                "t2z_read":observer_zero_read_after})
+    require(observer_zero_read_inverse_exact, "B_TASK2_ZERO_READ_WHOLE_MODULE_INVERSE_AND_ALL_NON_TARGET_BODIES")
+    after["candidate/verify-zero-ms4-fulfillment.py"] = observer_zero_after
+    observer_browser_manifest_before = {"bytes":1222,
+        "sha256":"a41865e51c03877db56f53b1255e42ce4b8c73944b2efd4bb940035978c4284d"}
+    require(pin(before["browser-v1/PINS.json"]) == observer_browser_manifest_before
+            and all(constant(after[key], "TASK2_BROWSER_MANIFEST_PIN") == observer_browser_manifest_before
+                for key in ("candidate/ms4-host.py", "candidate/verify-zero-ms4-fulfillment.py")),
+            "B_ORIGINAL_DONOR_AND_BOTH_FIXED_TASK2_BROWSER_MANIFEST_PINS")
+    observer_browser_manifest_after = pin(after["browser-v1/PINS.json"])
+    observer_browser_manifest_proofs = []
+    for key in ("candidate/ms4-host.py", "candidate/verify-zero-ms4-fulfillment.py"):
+        observer_manifest_before = after[key]
+        observer_manifest_after = replace_constant(observer_manifest_before, "TASK2_BROWSER_MANIFEST_PIN", observer_browser_manifest_after)
+        observer_manifest_inverse = (replace_constant(observer_manifest_after, "TASK2_BROWSER_MANIFEST_PIN", observer_browser_manifest_before)
+            == observer_manifest_before)
+        require(observer_manifest_inverse, "B_TASK2_BROWSER_MANIFEST_CONSTANT_WHOLE_MODULE_INVERSE")
+        observer_browser_manifest_proofs.append(observer_manifest_inverse)
+        after[key] = observer_manifest_after
+    observer_browser_manifest_inverse_exact = len(observer_browser_manifest_proofs) == 2 and all(observer_browser_manifest_proofs)
+    require(observer_browser_manifest_inverse_exact, "B_BOTH_TASK2_BROWSER_MANIFEST_WHOLE_MODULE_INVERSES")
     for name, symbol, target in (("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
         ("normal-close-ms4-fulfillment.py", "UI_HOST_SHA256", "ms4-host.py"),
@@ -4545,11 +4617,12 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "members":{name:pin(after["candidate/" + name]) for name in artifacts + ["DESIGN.md", "PUBLICATION.json"]}})
     checks = {"schema":1,"status":"CURRENT_B_SOURCE_CANDIDATE_NOT_APPROVED_NO_B_RUNTIME", "source_sha":head,
         "fixed_inputs":fixed_pointer,"original_A_five_proofs":a_qualification,"actual_materials":fixed["materials"]["producer_result"],
-        "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":True,
+        "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":(observer_read_inverse_exact
+            and observer_zero_read_inverse_exact and observer_browser_manifest_inverse_exact),
         "network_subnets":selected_subnets,
         "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
-        "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business"],
-            "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks","verify_aftersale_review_business"],
+        "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business","task2_observer_read"],
+            "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks","verify_aftersale_review_business","t2z_read"],
             "normal-close-ms4-fulfillment.py":[],
             "root-ui-materialize-freeze.py":["main","main_state","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials","frozen_resources"],
             "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
