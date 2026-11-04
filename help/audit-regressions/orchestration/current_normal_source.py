@@ -4364,6 +4364,28 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     authority, inventory = derived["authority"], derived["inventory"]
     main_state_before = functions(before["root-source/root-ui-materialize-freeze.py"])["main_state"]
     main_state_detached, main_state_contract = _b_detached_main_state(main_state_before)
+    frozen_sources_before = functions(before["root-source/root-ui-materialize-freeze.py"])["frozen_sources"]
+    frozen_role_before = b"""    for row in combined.values(): file_pin(REPO / row['path'],row)
+    for path, row in SOURCE_ROWS.items():
+        assert combined[path] == row
+        file_pin(MAIN / path,row); file_pin(REPO / path,row)"""
+    frozen_role_after = b"""    role_extra = {row['path'] for row in old_binding['driver_source_files']}
+    for prefix in normal_groups:
+        if prefix != 'driver': role_extra.update(old_binding[prefix + '_source_extra'])
+    role_extra.update(UI_PREPARE_FOUR); role_extra.update(UI_BACKEND_THREE)
+    assert len(role_extra) == 38
+    role_domain = set(actual_root_files) | role_extra
+    assert set(combined) == role_domain
+    required_source_roles = {path:row for path,row in SOURCE_ROWS.items()
+        if any(path.startswith(root + '/') for root in roots) or path in role_extra}
+    assert set(required_source_roles) <= role_domain
+    for path, row in required_source_roles.items(): assert combined[path] == row
+    for row in combined.values(): file_pin(REPO / row['path'],row)
+    for path, row in SOURCE_ROWS.items():
+        file_pin(MAIN / path,row); file_pin(REPO / path,row)"""
+    frozen_sources_after = once(frozen_sources_before, frozen_role_before, frozen_role_after)
+    frozen_role_source_inverse_exact = once(frozen_sources_after, frozen_role_after, frozen_role_before) == frozen_sources_before
+    require(frozen_role_source_inverse_exact, "B_MATERIALIZER_WHOLE_FROZEN_SOURCES_ONLY_EXPLICIT_ROLE_DOMAIN_INVERSE")
     head = authority["source_sha"]; normal_root = Path(fixed["normal"]["root"])
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
     data = decode(read_pointer(binding["source_data"]))
@@ -4389,6 +4411,12 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "输出仍独占 xb 创建，不覆盖、跳过或复用旧回执；历史失败保持，新的真实运行仍待执行。\n").encode()
     require(after["root-source/DESIGN-TASKS.md"].endswith(b"\n"), "B_MATERIALIZER_LABEL_CHANGE_DOCUMENTED_EXISTING_RECORD")
     after["root-source/DESIGN-TASKS.md"] += label_note
+    after["root-source/DESIGN-TASKS.md"] += (
+        "\n\n## 本派生来源的仓库与角色来源域\n\n"
+        "完整 SOURCE_ROWS 继续逐件执行 Git、MAIN/REPO 字节和前后保全；角色并集另按已绑定旧正常声明、"
+        "四固定源码根及原 UI4/3 推导完整域，严格要求全成员和对应 pin。"
+        "由这些原 producer 规则确定必入角色的 SOURCE_ROWS 子集，不按当前 combined 成员静默筛选，"
+        "也不把文档、前端或工具源码塞入角色依赖。原失败及冻结来源保持。\n").encode()
     selected_subnets = derived["network_subnets"]
     require(("        - subnet: " + selected_subnets["isolation"] + "\n").encode()
             in stable_read(normal_root / "validation/actual-profile/compose.yml"),
@@ -4618,13 +4646,14 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     checks = {"schema":1,"status":"CURRENT_B_SOURCE_CANDIDATE_NOT_APPROVED_NO_B_RUNTIME", "source_sha":head,
         "fixed_inputs":fixed_pointer,"original_A_five_proofs":a_qualification,"actual_materials":fixed["materials"]["producer_result"],
         "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":(observer_read_inverse_exact
-            and observer_zero_read_inverse_exact and observer_browser_manifest_inverse_exact),
+            and observer_zero_read_inverse_exact and observer_browser_manifest_inverse_exact
+            and frozen_role_source_inverse_exact),
         "network_subnets":selected_subnets,
         "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
         "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business","task2_observer_read"],
             "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks","verify_aftersale_review_business","t2z_read"],
             "normal-close-ms4-fulfillment.py":[],
-            "root-ui-materialize-freeze.py":["main","main_state","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials","frozen_resources"],
+            "root-ui-materialize-freeze.py":["main","main_state","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_sources","frozen_materials","frozen_resources"],
             "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
         "added_schema_consumer":"ms4-host.py:verify_schema_bootstrap",
         "added_finance_consumer":"ms4-host.py:verify_finance_bootstrap",
@@ -4674,6 +4703,12 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     root_m = after["root-source/root-ui-materialize-freeze.py"]
     for name,value in constants.items():root_m = _b_constant(root_m,name,value)
     root_m = once(root_m, main_state_before, main_state_detached)
+    root_before_role_sources = root_m
+    root_m = once(root_m, frozen_sources_before, frozen_sources_after)
+    require(once(root_m, frozen_sources_after, frozen_sources_before) == root_before_role_sources,
+            "B_MATERIALIZER_COMPLETE_SOURCE_ONLY_FROZEN_ROLE_DOMAIN_INVERSE")
+    require(functions(root_m)["frozen_sources"] == frozen_sources_after,
+            "B_MATERIALIZER_WHOLE_FROZEN_SOURCES_EXACT_ROLE_PROJECTION")
     main_before_labels = functions(root_m)["main"]
     old_label = b"native('committed-source-' + Path(path).name,[*git,'show',HEAD + ':' + path])"
     new_label = b"native('committed-source-' + sha(path.encode('utf-8')),[*git,'show',HEAD + ':' + path])"
@@ -4760,7 +4795,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         marker = b"if __name__ == '__main__':\n"
         after["root-source/"+name] = once(raw,marker,extra.encode()+"\n".encode()+marker)
     for name, changed in (("root-ui-materialize-freeze.py", {"main", "current_known_normal_root",
-            "main_state", "current_consume_materialization", "current_verify_sources", "frozen_materials", "frozen_resources"}),
+            "main_state", "current_consume_materialization", "current_verify_sources", "frozen_sources", "frozen_materials", "frozen_resources"}),
             ("root-ui-start-to-ready.py", {"main", "current_core_aux_authority"})):
         original = functions(before["root-source/" + name]); candidate = functions(after["root-source/" + name])
         if name == "root-ui-materialize-freeze.py":
