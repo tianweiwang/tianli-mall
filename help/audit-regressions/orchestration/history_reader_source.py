@@ -25,6 +25,39 @@ _ADOPTED_QUALIFY = b"""function nhecr_qualify(array $freezePin, bool $httpChild 
     // The real source review, publication and complete artifacts are joined after context qualification below.
 """
 
+# The original 64 MiB file bound remains; request only the checked size plus EOF probe.
+_PUBLIC_READ_SIZED_BEFORE = rb'''function nhecr_public_read(string $path): array
+{
+    nhecr_expect(str_starts_with($path, '/run/audit/') && !str_contains($path, '..') && !str_contains($path, "\0")
+        && (preg_match('~\A/run/audit/(?:actual-run-context|preparation-source-binding|manifest|history-source-review|history-source-publication)\.json\z|\A/run/audit/evidence/[A-Za-z0-9_.-]+\.json\z~D', $path) === 1
+            || in_array($path, [
+                '/run/audit/evidence/nonempty-history-phases/before-legacy-files/INDEX.json',
+                '/run/audit/evidence/nonempty-history-phases/before-legacy-files/evidence/initializer-created.json',
+                '/run/audit/evidence/nonempty-history-phases/before-legacy-files/evidence/initializer-terminal.json',
+                '/run/audit/evidence/nonempty-history-phases/before-legacy-files/evidence/initializer-result.json'], true)),
+        'NHECR_FIXED_PUBLIC_CONTROL_PATH');
+    clearstatcache(true, $path); $before = @lstat($path);
+    nhecr_expect(is_array($before) && is_file($path) && !is_link($path) && realpath($path) === $path
+        && ($before['mode'] & 0170000) === 0100000 && $before['nlink'] === 1
+        && $before['size'] > 0 && $before['size'] <= 67108864, 'NHECR_PUBLIC_REGULAR_BOUNDED_INPUT');
+    $handle = fopen($path, 'rb'); nhecr_expect(is_resource($handle), 'NHECR_PUBLIC_READ_HANDLE');
+    try {
+        $opened = fstat($handle); $raw = stream_get_contents($handle, 67108865); $afterHandle = fstat($handle);
+        nhecr_expect(is_array($opened) && is_array($afterHandle) && is_string($raw)
+            && strlen($raw) === $before['size'] && fgetc($handle) === false && feof($handle), 'NHECR_PUBLIC_COMPLETE_BYTES');
+    } finally { fclose($handle); }
+    clearstatcache(true, $path); $after = lstat($path); $stat = [];
+    foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'size', 'mtime', 'ctime'] as $key) {
+        nhecr_expect($before[$key] === $opened[$key] && $before[$key] === $afterHandle[$key]
+            && $before[$key] === $after[$key], 'NHECR_PUBLIC_OPEN_PATH_COMPLETE_STAT9'); $stat[$key] = $before[$key];
+    }
+    return ['raw' => $raw, 'stat9' => $stat, 'pin' => ['path' => $path, 'bytes' => strlen($raw), 'sha256' => hash('sha256', $raw)]];
+}
+'''
+_PUBLIC_READ_SIZED_AFTER = _PUBLIC_READ_SIZED_BEFORE.replace(
+    b"stream_get_contents($handle, 67108865)", b"stream_get_contents($handle, $before['size'] + 1)", 1)
+
+
 # Ordered, exact byte replacements; reverse_reader applies these in reverse.
 # All other bytes, including the producer's original eleven-control seal, stay
 # unchanged. These transformations do not establish a runtime verification result.
@@ -1571,3 +1604,9 @@ def _legacy_anchor_reader_apply(raw: bytes, *, reverse: bool = False) -> bytes:
     for name,old,new in reversed(pairs) if reverse else pairs:
         raw=_replace_once(raw,new if reverse else old,old if reverse else new,name)
     return raw
+
+
+# Retain the complete public-path adoption before changing only its read length.
+READER_SEAMS += (
+    ("public_control_exact_sized_read", _PUBLIC_READ_SIZED_BEFORE, _PUBLIC_READ_SIZED_AFTER),
+)
