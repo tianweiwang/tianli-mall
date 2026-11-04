@@ -30,9 +30,11 @@
 
 平台、商家、顾客的合成账号保存在该实例 `private/preview-accounts.json`，不在聊天或Git中公开。可从订单列表查看已保存结果，也可使用现有商品准备新的正常样本；不要重复执行初始化。
 
+平台资金入口：[资金设置](http://127.0.0.1:18212/admin/marketplace/finance-settings)、[测试交易](http://127.0.0.1:18212/admin/marketplace/finance-transactions)。本候选已实际核对根单1的订单金额40.30元、累计已确认退款40.30元、当前占用0元及唯一一次已应用付款。资金设置可记录收款方案、平台费和结算退款规则；本轮仅用未保存表单临时按商品实付40.30元、运费0、5%费率测算，页面结果2.02元，随后重新读取原保存草稿，保留初始草稿、14项未配置和0次修改。5%只用于合成测算，不是已决定的经营费率；通道费、商家实际到账和实际结算仍未确认，真实资金未启用。
+
 当前小程序导入目录为 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-build18212-r2/mp-weixin/dist`，已实际构建连接18212，使用原接口测试号，并包含同一订单摘要布局修复；H5/MP 的565文件输入摘要均为 `ed9e07537b51ae259d4e364a080f2df4ff3574349b9b920b5591078fb9d8fb87`。原小程序 r1 产物保留。开发者工具扫码由用户选择稍后恢复；当前不签新包原生业务或真机通过。真实资金、正式AppID/隐私选图、历史迁移及完整阶段/发布验收继续保留。
 
-实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`MOBILE375-DISCOVERY.json`、`ORDER-LAYOUT-VERIFICATION-r2.json`、`H5-LAYOUT-INSTALL-r2.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json` 和 `browser-ui-r1` 截图。原 `FRONTEND-REUSE.json` 保留首次三端装包的历史读回，不将它改签为本轮新顾客构建。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
+实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`MOBILE375-DISCOVERY.json`、`ORDER-LAYOUT-VERIFICATION-r2.json`、`H5-LAYOUT-INSTALL-r2.json`、`FINANCE-UI-r2.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json` 和 `browser-ui-r1` 截图。原 `FRONTEND-REUSE.json` 保留首次三端装包的历史读回，不将它改签为本轮新顾客构建。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
 
 ## 双店商品详情与店铺入口（18206，2026-11-03）
 
