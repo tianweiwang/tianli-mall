@@ -8,6 +8,8 @@
 - [商家后台](http://127.0.0.1:18212/merchant/)
 - [顾客商城](http://127.0.0.1:18212/)
 
+快速操作、已保存样例和小程序工程入口见 [统一本机交付使用说明](UNIFIED-LOCAL-DELIVERY.md)。
+
 新实例位于 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/preview18212-r1`，使用全新数据库、缓存、双网络和数据卷。后端仍为 `f8da54e7b5d2b7142993fdef1b1d1d6b8c2d58cf` 的完整快照；平台、商家前端继续复用输入逐件相同的 R100 f181 构建，顾客 H5 和小程序已采用本轮订单摘要布局修复的同一份565文件输入重新构建。原 source-full 流程已完成初始化、完整服务健康、常驻进程检查、接口及三角色页面登录，原18206/18208预览保留。
 
 2026-11-05 后端输入等价补证：原后端装包来源 `f8da54e7b5d2b7142993fdef1b1d1d6b8c2d58cf` 与正式候选 `46956e5231f9a0a3cd1981d0bc8e315be630be9c` 的 `crmeb/` 全部13,486个跟踪文件，路径、Git blob和mode逐项相同；`composer.lock` 与原镜像vendor记录的规范化锁定摘要也一致，因此继续复用本机18212。原装包、镜像vendor及前端构建来源保持各自记录。此补证覆盖跟踪源码和锁定输入；运行中容器字节、正式三端及发布验收仍按各自结果登记。补证位于 `artifacts/multi-merchant-final-normal-20261104-r101/preview18212-backend-input-equivalence-r1.json`。
