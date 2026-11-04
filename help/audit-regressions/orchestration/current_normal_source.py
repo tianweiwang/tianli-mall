@@ -4622,6 +4622,94 @@ def _b_normal_authority_contract(root: Path, source: bytes) -> tuple[dict[str, A
         "whole_root_inverse_exact": inverse, "normal_publication_contract": "SCHEMA2_FULL_CURRENT_SOURCE_AUTHORITY"}
 
 
+def _b_initializer_source_tree_topology(raw: bytes) -> tuple[bytes, dict[str, Any]]:
+    """Specialize only the original B initializer's four fixed topology consumers."""
+    expected = {
+        "m4i_ms5_manifest": (1562, "b3efa2e1fe841573223d5458ea8aa732d20042487d067189fd0bc074dc1baf30"),
+        "m4i_ui_web_mounts": (5574, "43919362a34d0630b659b17ae20fcf941c9656f088bed3cd3e10fae7d336bc37"),
+        "m4i_ui_web_registration_before": (7381, "a8783c235f1d0d91b3603a88d022ebf1fe8ff64145528a6ab37616c4e4879735"),
+        "m4i_ui_web_registration_after": (792, "86d962ba239718648c013668aa9b2d6739e255c2b9a901ac55c261e5c7f947c3"),
+    }
+    original = {}
+    for name, (size, digest) in expected.items():
+        matches = re.findall(rb"(?ms)^function " + name.encode() + rb"\([^\n]*\)(?::[^\n]*)?\n\{\n.*?^\}\n", raw)
+        require(len(matches) == 1 and pin(matches[0]) == {"bytes": size, "sha256": digest},
+                "B_FIXED_COMPLETE_INITIALIZER_TOPOLOGY_FUNCTION")
+        original[name] = matches[0]
+    terminal_pattern = rb"(?ms)^function m4i_ms5_terminal\([^\n]*\)(?::[^\n]*)?\n\{\n.*?^\}\n"
+    terminal = re.findall(terminal_pattern, raw)
+    require(len(terminal) == 1 and pin(terminal[0]) == {"bytes": 5821,
+        "sha256": "a0275e79b48a492ca19f0a66031f19784e143c985438c10d739a9116c5290251"},
+        "B_ORIGINAL_INITIALIZER_AND_DRIVER_BIND_TERMINAL")
+    changed = dict(original)
+    def change(name, before, after):
+        changed[name] = once(changed[name], before, after)
+    change("m4i_ms5_manifest",
+        b"count($names) === 8 && $actual === $names, 'CUSTOMER_CURRENT_EIGHT_VOLUMES'",
+        b"count($names) === 9 && $actual === $names, 'CUSTOMER_CURRENT_NINE_VOLUMES'")
+    change("m4i_ui_web_mounts",
+        b"""        $binds = ['/workspace' => [$context['repo_dir'], false], '/source' => [$context['repo_dir'], false],
+            '/run/ms4-prep' => [$context['prep_dir'], false], '/run/audit' => [$context['run_dir'], $register]];
+""",
+        b"""        $binds = ['/run/ms4-prep' => [$context['prep_dir'], false], '/run/audit' => [$context['run_dir'], $register]];
+        if ($register) $binds = ['/workspace' => [$context['repo_dir'], false], '/source' => [$context['repo_dir'], false]] + $binds;
+""")
+    change("m4i_ui_web_mounts",
+        b"            $volumes = ['/run/audit-app' => ['app-secrets', false], '/run/audit-fixtures' => ['fixture-secrets', false],\n",
+        b"""            m2f_assert($context['source_tree']['volume_name'] === $context['project'] . '_source-tree',
+                'WEB_BACKEND_EXACT_CONTEXT_SOURCE_TREE_VOLUME');
+            $volumes = ['/workspace' => ['source-tree', false], '/source' => ['source-tree', false],
+                '/run/audit-app' => ['app-secrets', false], '/run/audit-fixtures' => ['fixture-secrets', false],
+""")
+    change("m4i_ui_web_mounts",
+        b"    $actualTmp = array_keys($facts['tmpfs']); sort($actualTmp, SORT_STRING); $wantedTmp = $tmpfs; sort($wantedTmp, SORT_STRING);\n",
+        b"""    if ($role === 'audit-ms4-ui-backend') {
+        m2f_assert(is_string($actual['/workspace']['Source']) && $actual['/workspace']['Source'] !== ''
+            && $actual['/workspace']['Source'] === $actual['/source']['Source'], 'WEB_BACKEND_SAME_SOURCE_TREE_VOLUME');
+    }
+    $actualTmp = array_keys($facts['tmpfs']); sort($actualTmp, SORT_STRING); $wantedTmp = $tmpfs; sort($wantedTmp, SORT_STRING);
+""")
+    name = "m4i_ui_web_registration_before"
+    change(name, b"'redis-secrets', 'ui-comments'", b"'redis-secrets', 'source-tree', 'ui-comments'")
+    for before, after in (
+        (b"count($volumeLines) === 12", b"count($volumeLines) === 13"),
+        (b"count($context['initial_volumes']) === 8", b"count($context['initial_volumes']) === 9"),
+        (b"array_slice($names, 0, 8)", b"array_slice($names, 0, 9)"),
+        (b"count($proof['volumes']) === 12", b"count($proof['volumes']) === 13"),
+        (b"WEB_REAL_SORTED_TWELVE_VOLUME_INPUT_LIST", b"WEB_REAL_SORTED_THIRTEEN_VOLUME_INPUT_LIST"),
+        (b"WEB_TWELVE_COMPLETE_NATIVE_VOLUME_ROWS", b"WEB_THIRTEEN_COMPLETE_NATIVE_VOLUME_ROWS"),
+        (b"WEB_EXACT_TWELVE_NATIVE_VOLUME_NAMES", b"WEB_EXACT_THIRTEEN_NATIVE_VOLUME_NAMES"),
+        (b"WEB_ORIGINAL_CONTEXT_EIGHT_FULL_OBJECTS", b"WEB_ORIGINAL_CONTEXT_NINE_FULL_OBJECTS"),
+        (b"WEB_UNIQUE_ORIGINAL_EIGHT_VOLUME_OBJECT", b"WEB_UNIQUE_ORIGINAL_NINE_VOLUME_OBJECT"),
+        (b"WEB_EXACT_ORIGINAL_EIGHT_NAMES_UNCHANGED", b"WEB_EXACT_ORIGINAL_NINE_NAMES_UNCHANGED"),
+        (b"WEB_ORIGINAL_COPY_TWELVE_VOLUME_PROOF_PRESERVED", b"WEB_ORIGINAL_COPY_THIRTEEN_VOLUME_PROOF_PRESERVED"),
+    ):
+        change(name, before, after)
+    change("m4i_ui_web_registration_after",
+        b"count($actual['volumes']) === 12 && count($actual['volume_identities']) === 12, 'WEB_READBACK_TRUE_ORIGINAL_REGISTER_FINAL_FIVE_TWELVE'",
+        b"count($actual['volumes']) === 13 && count($actual['volume_identities']) === 13, 'WEB_READBACK_TRUE_ORIGINAL_REGISTER_FINAL_FIVE_THIRTEEN'")
+    candidate = raw
+    for name in expected:
+        candidate = once(candidate, original[name], changed[name])
+    inverse = candidate
+    for name in reversed(expected):
+        inverse = once(inverse, changed[name], original[name])
+    require(inverse == raw, "B_INITIALIZER_FOUR_TOPOLOGY_BODIES_WHOLE_FILE_INVERSE")
+    require(re.findall(terminal_pattern, candidate) == terminal,
+        "B_ORIGINAL_INITIALIZER_AND_DRIVER_BIND_TERMINAL_UNCHANGED")
+    require(re.findall(rb"(?m)^function ([A-Za-z_][A-Za-z0-9_]*)\(", candidate)
+            == re.findall(rb"(?m)^function ([A-Za-z_][A-Za-z0-9_]*)\(", raw),
+            "B_INITIALIZER_ORIGINAL_FUNCTION_NAMESPACE_UNCHANGED")
+    return candidate, {"scope": "B_ONLY_FIXED_SOURCE_TREE9_UI13_INITIALIZER_CONSUMERS",
+        "original": pin(raw), "candidate": pin(candidate), "whole_initializer_inverse_exact": True,
+        "functions": {name: {"before": pin(original[name]), "after": pin(changed[name])} for name in expected},
+        "initial_volumes": 9, "ui_web_volumes": 13,
+        "initializer_and_register_host_binds_retained": True,
+        "payment_driver_host_binds_retained": True, "original_terminal": pin(terminal[0]),
+        "backend_source_tree_aliases": "SAME_NAMED_VOLUME_BOTH_RO",
+        "normal_A_source_unchanged": True, "runtime_App_SQL": "NOT RUN"}
+
+
 def _b_joint_php_seal(after: dict[str, bytes], inventory: dict[str, Any]) -> dict[str, Any]:
     """Bind actual PHP entry metadata before the existing interface/Host/close/zero DAG."""
     names = ("ms4-initialize.php", "ms4-ui-copy.php", "ms4-host.py", "verify-zero-ms4-fulfillment.py")
@@ -4937,6 +5025,8 @@ def current_b_normal_stage(outcome, stage):
         and functions(freeze_host_after) == {**freeze_functions_before, "freeze":freeze_after})
     require(freeze_writer_inverse_exact, "B_COMPACT_FREEZE_ONLY_COMPLETE_HOST_INVERSE_AND_ALL_OTHER_BODIES")
     after["candidate/ms4-host.py"] = freeze_host_after
+    after["candidate/ms4-initialize.php"], initializer_topology = _b_initializer_source_tree_topology(
+        after["candidate/ms4-initialize.php"])
     joint_php_seal = _b_joint_php_seal(after, inventory)
     observer_host_before = after["candidate/ms4-host.py"]
     observer_functions_before = functions(observer_host_before)
@@ -5093,8 +5183,10 @@ def current_b_normal_stage(outcome, stage):
         "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":(observer_read_inverse_exact
             and observer_zero_read_inverse_exact and observer_browser_manifest_inverse_exact
             and frozen_role_source_inverse_exact and normal_authority_contract["whole_root_inverse_exact"]
-            and joint_php_seal["whole_file_metadata_inverse_exact"] and freeze_writer_inverse_exact),
+            and joint_php_seal["whole_file_metadata_inverse_exact"] and freeze_writer_inverse_exact
+            and initializer_topology["whole_initializer_inverse_exact"]),
         "joint_php_entry_and_dependency_seal":joint_php_seal,
+        "initializer_source_tree_topology":initializer_topology,
         "freeze_json_writer":{"encoding":"UTF8_COMPACT_LF","maximum_bytes":16777216,
             "original_function":pin(freeze_before),"candidate_function":pin(freeze_after),
             "whole_Host_and_function_inverse_exact":freeze_writer_inverse_exact,"generic_new_unchanged":True},
