@@ -12,6 +12,8 @@
 
 新商家正常入驻和上架也已在此候选完成：平台原页面建立商家3“预览合成新商家18212”、审核通过并启用接单；原正常接口完成专用合成员工首次设置，商家原页面登录后确认本店身份。商家从空图库上传自己的图片，用原商品表单创建商品7/SKU106，售价12.50元，并通过原库存调整入库20件；提交审核、平台批准、商家上架后，[顾客商品详情](http://127.0.0.1:18212/pages/goods_details/index?id=7)和[本店页面](http://127.0.0.1:18212/pages/store/index?mer_id=3)均实际可见。商品/真实SKU价格库存一致；商家3自己的列表仅商品7，原商家2仍只列商品5、6。新员工仅沿用原默认管理员12项权限，凭据在实例 `private/new-merchant-fixture.json`，不要重复建立账号或执行首次设置。
 
+新商品也已实际出现在商城首页“在售商品”；从“分类”搜索“新商家”能找到唯一对应结果。两个入口点击后均进入商品7，详情显示新商家3、12.50元和库存20，无需依赖直接商品链接。
+
 顾客还从商品7原购买页实际建立了待付款根单3（1件、12.50元），商家3本人可读取该单。顾客按原流程取消后，三角色接口均读回已取消，商品及SKU库存20→19→20；原完成订单1的金额、履约和售后汇总，以及商品5库存98读回保持。这张新单没有执行支付。
 
 原[购物车页面](http://127.0.0.1:18212/pages/order_addcart/order_addcart)已实际验证双店分组：商品5和7各加入1件，切换“选择本店”时金额分别为20.15、12.50元；每次只确认当前店铺。选择商家3后，原页面实际收到的服务端确认响应只含商品7、12.50元，另一店商品仍留在购物车。本轮停在确认页，未提交新订单或支付；验证后只删除了新增两行，购物车恢复空，原商品及SKU库存98/20、两店已有订单保持。
@@ -26,7 +28,7 @@
 
 新小程序导入目录为 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-build18212-r1/mp-weixin/dist`，已实际构建连接18212，使用原接口测试号。开发者工具扫码由用户选择稍后恢复；当前不签该包原生业务或真机通过。真实资金、正式AppID/隐私选图、历史迁移及完整阶段/发布验收继续保留。
 
-实际结果见同一交付根的 `CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json`、`FRONTEND-REUSE.json` 和 `browser-ui-r1` 截图。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
+实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json`、`FRONTEND-REUSE.json` 和 `browser-ui-r1` 截图。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
 
 ## 双店商品详情与店铺入口（18206，2026-11-03）
 
