@@ -4835,9 +4835,6 @@ def current_b_normal_stage(outcome, stage):
         "由这些原 producer 规则确定必入角色的 SOURCE_ROWS 子集，不按当前 combined 成员静默筛选，"
         "也不把文档、前端或工具源码塞入角色依赖。原失败及冻结来源保持。\n").encode()
     selected_subnets = derived["network_subnets"]
-    require(("        - subnet: " + selected_subnets["isolation"] + "\n").encode()
-            in stable_read(normal_root / "validation/actual-profile/compose.yml"),
-            "B_ISOLATION_REUSES_ONLY_THE_ACTUAL_SUCCESSFUL_A_SELECTED_SUBNET")
     runtime = Path(fixed["runtime_root"])
     require(runtime.is_absolute() and runtime.parent == BASELINE.parent and not runtime.exists()
             and not runtime.is_relative_to(out) and not out.is_relative_to(runtime), "B_ORIGINAL_EXCLUSIVE_RUNTIME_BOUNDARY")
@@ -5103,7 +5100,7 @@ def current_b_normal_stage(outcome, stage):
             "whole_Host_and_function_inverse_exact":freeze_writer_inverse_exact,"generic_new_unchanged":True},
         "normal_source_authority_contract":normal_authority_contract,
         "network_subnets":selected_subnets,
-        "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
+        "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_FRESH_B_PRIVATE_NETWORKS_ACTUAL_A_CLOSE_AND_ZERO_RETAINED",
         "changed_python_bodies":{"ms4-host.py":["freeze","verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business","task2_observer_read"],
             "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks","verify_aftersale_review_business","t2z_read"],
             "normal-close-ms4-fulfillment.py":[],
