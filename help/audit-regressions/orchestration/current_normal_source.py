@@ -4357,6 +4357,41 @@ def _b_interrupted_root(raw: bytes, name: str) -> bytes:
     return text.encode()
 
 
+def _b_normal_authority_contract(root: Path, source: bytes) -> tuple[dict[str, Any], bytes, dict[str, Any]]:
+    pointer = _pointer(root / "PINS.json")
+    document = decode(read_pointer(pointer))
+    require(type(document) is dict and set(document) == {"schema", "scope", "members"}
+        and type(document["schema"]) is int and document["schema"] == 1
+        and document["scope"] == "FULL_A_ASSET_NORMAL_DRIVER_SOURCE_PINS"
+        and type(document["members"]) is dict and set(document["members"]) == {"DESIGN-TASKS.md", "run.py"},
+        "B_CURRENT_NORMAL_ROOT_REAL_TWO_SOURCE_MEMBERS")
+    for name, row in document["members"].items():
+        require(type(row) is dict and set(row) == {"bytes", "sha256"}, "B_CURRENT_NORMAL_ROOT_MEMBER_PIN")
+        read_pointer({"path": (root / name).as_posix(), **row})
+    original = functions(source)
+    before = original["current_core_aux_authority"]
+    old = b"""    require(type(normal_pub['schema']) is int and normal_pub['schema'] == 1
+        and normal_pub['scope'] == 'FULL_A_ASSET_NORMAL_NINE_METADATA_SOURCE_ONLY' and normal_pub['source_sha'] == SOURCE
+        and normal_pub['parent'] == SOURCE_PARENT and normal_pub['target_execution'] == 'NOT RUN'
+        and type(normal_pub['repository_Source_requirements']) is list and normal_pub['repository_Source_requirements']
+        and normal_pub['repository_Source_requirements'] == pub['repository_Source_requirements'], 'SAME_CURRENT_NORMAL_SOURCE_TEN')"""
+    new = b"""    source_authority(normal_pub, lambda pointer: current_stream(pointer, True), require)
+    require(type(normal_pub['schema']) is int and normal_pub['schema'] == 2
+        and normal_pub['scope'] == 'CURRENT_COMPLETE_NORMAL9_SOURCE_PUBLICATION' and normal_pub['source_sha'] == SOURCE
+        and normal_pub['parent'] == SOURCE_PARENT and normal_pub['target_execution'] == 'NOT RUN'
+        and normal_pub['current_source_binding'] == CURRENT_SOURCE_BINDING
+        and type(normal_pub['repository_Source_requirements']) is list and normal_pub['repository_Source_requirements']
+        and normal_pub['repository_Source_requirements'] == pub['repository_Source_requirements'], 'SAME_CURRENT_NORMAL_SOURCE_TEN')"""
+    changed = once(before, old, new)
+    result = once(source, before, changed)
+    inverse = (once(result, changed, before) == source
+        and functions(result) == {**original, "current_core_aux_authority": changed})
+    require(inverse, "B_CURRENT_NORMAL_AUTHORITY_WHOLE_ROOT_AND_NON_TARGET_INVERSE")
+    descriptor = {"root": root.as_posix(), "PINS": pointer, "source_members": document["members"]}
+    return descriptor, result, {"normal_root_pins": pointer, "source_members": sorted(document["members"]),
+        "whole_root_inverse_exact": inverse, "normal_publication_contract": "SCHEMA2_FULL_CURRENT_SOURCE_AUTHORITY"}
+
+
 def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], derived: dict[str, Any],
                normal_consumer: str, setup: dict[str, Any], context: dict[str, Any],
                materials: dict[str, bytes], material_result: dict[str, Any]) -> dict[str, Any]:
@@ -4387,6 +4422,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     frozen_role_source_inverse_exact = once(frozen_sources_after, frozen_role_after, frozen_role_before) == frozen_sources_before
     require(frozen_role_source_inverse_exact, "B_MATERIALIZER_WHOLE_FROZEN_SOURCES_ONLY_EXPLICIT_ROLE_DOMAIN_INVERSE")
     head = authority["source_sha"]; normal_root = Path(fixed["normal"]["root"])
+    normal_authority, after["root-source/root-ui-start-to-ready.py"], normal_authority_contract = _b_normal_authority_contract(
+        normal_root / "validation", after["root-source/root-ui-start-to-ready.py"])
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
     data = decode(read_pointer(binding["source_data"]))
     parent = binding["parent"]; a = fixed["A"]
@@ -4648,7 +4685,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "fixed_inputs":fixed_pointer,"original_A_five_proofs":a_qualification,"actual_materials":fixed["materials"]["producer_result"],
         "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":(observer_read_inverse_exact
             and observer_zero_read_inverse_exact and observer_browser_manifest_inverse_exact
-            and frozen_role_source_inverse_exact),
+            and frozen_role_source_inverse_exact and normal_authority_contract["whole_root_inverse_exact"]),
+        "normal_source_authority_contract":normal_authority_contract,
         "network_subnets":selected_subnets,
         "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
         "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business","task2_observer_read"],
@@ -4675,7 +4713,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     after["SOURCE-CHECKS.json"] = encode(checks)
     inputs = decode(before["root-source/INPUTS.json"])
     inputs.update(sealed=True, head=head, parent=parent, root_baseline=BASELINE_PINS,
-        normal_root={"root":(normal_root / "validation").as_posix(),"PINS":_pointer(normal_root / "validation/PINS.json")},
+        normal_root=normal_authority,
         normal_profile_publication=normal_publication, ui_profile_publication={"root":(out / "candidate").as_posix(),
             "PINS":{"path":(out / "candidate/PINS.json").as_posix(),**pin(after["candidate/PINS.json"])},
             "PUBLICATION":{"path":(out / "candidate/PUBLICATION.json").as_posix(),**pin(after["candidate/PUBLICATION.json"])}},
