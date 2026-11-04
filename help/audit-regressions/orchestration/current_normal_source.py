@@ -4392,6 +4392,122 @@ def _b_normal_authority_contract(root: Path, source: bytes) -> tuple[dict[str, A
         "whole_root_inverse_exact": inverse, "normal_publication_contract": "SCHEMA2_FULL_CURRENT_SOURCE_AUTHORITY"}
 
 
+def _b_joint_php_seal(after: dict[str, bytes], inventory: dict[str, Any]) -> dict[str, Any]:
+    """Bind actual PHP entry metadata before the existing interface/Host/close/zero DAG."""
+    names = ("ms4-initialize.php", "ms4-ui-copy.php", "ms4-host.py", "verify-zero-ms4-fulfillment.py")
+    before = {name: after["candidate/" + name] for name in names}
+    stages = []
+    def seam(name, old, new):
+        require(old != new, "B_JOINT_PHP_SEAL_REAL_FINITE_METADATA_CHANGE")
+        key = "candidate/" + name
+        after[key] = once(after[key], old, new)
+        stages.append((name, old, new))
+    declarations = (
+        ("ms4-initialize.php", "M4I_SOURCE_TREE_ENTRY_PINS_STATUS", "UNBOUND_NEW_B_SOURCE_QUALIFICATION", "BOUND_FROZEN_PHP_SOURCE"),
+        ("ms4-initialize.php", "M4I_UI17_SOURCE_SEAL", "UNSEALED_PENDING_JOINT_FULL17_SOURCE_QUALIFICATION", "SEALED_BY_ROOT_AFTER_FULL17_SOURCE_QUALIFICATION"),
+        ("ms4-ui-copy.php", "M4UICG_SOURCE_TREE_ENTRY_PINS_STATUS", "UNBOUND_NEW_B_SOURCE_QUALIFICATION", "BOUND_FROZEN_PHP_SOURCE"))
+    for name, symbol, old, new in declarations:
+        seam(name, ("const " + symbol + " = '" + old + "';").encode(),
+             ("const " + symbol + " = '" + new + "';").encode())
+    helper_path = "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php"
+    helper = inventory[helper_path]
+    require(set(helper) == {"path", "bytes", "sha256"} and helper["path"] == helper_path
+        and type(helper["bytes"]) is int and helper["bytes"] > 0
+        and re.fullmatch(r"[a-f0-9]{64}", helper["sha256"]) is not None,
+        "B_ACTUAL_CANONICAL_BACKEND_HELPER_SOURCE_PIN")
+    core = decode(after["current-core-aux/CORE-AUX-AUTHORITY.json"])
+    require([row for row in core["core_sources"] if row["path"] == helper_path] == [helper],
+            "B_SAME_REVIEWED_CORE_AND_CANONICAL_HELPER_PIN")
+    raw = after["candidate/ms4-ui-copy.php"]
+    matches = re.findall(rb"\$file\['descriptor'\]\['bytes'\]===([0-9]+)\n            &&\$file\['descriptor'\]\['sha256'\]===('[a-f0-9]{64}')", raw)
+    require(len(matches) == 1, "B_ONE_ORIGINAL_COPIER_CANONICAL_HELPER_PIN")
+    old_helper = b"$file['descriptor']['bytes']===" + matches[0][0] + b"\n            &&$file['descriptor']['sha256']===" + matches[0][1]
+    new_helper = ("$file['descriptor']['bytes']===" + str(helper["bytes"])
+        + "\n            &&$file['descriptor']['sha256']==='" + helper["sha256"] + "'").encode()
+    seam("ms4-ui-copy.php", old_helper, new_helper)
+    library = pin(after["candidate/ms4-ui-public-copy.php"])
+    matches = re.findall(rb"\$pin\['bytes'\]===([0-9]+)&&\$pin\['sha256'\]===('[a-f0-9]{64}')", after["candidate/ms4-ui-copy.php"])
+    require(len(matches) == 1, "B_ONE_ORIGINAL_COPIER_LIBRARY_PIN")
+    old_library = b"$pin['bytes']===" + matches[0][0] + b"&&$pin['sha256']===" + matches[0][1]
+    new_library = ("$pin['bytes']===" + str(library["bytes"]) + "&&$pin['sha256']==='" + library["sha256"] + "'").encode()
+    seam("ms4-ui-copy.php", old_library, new_library)
+    dependencies = {name: pin(after["candidate/" + name]) for name in ("ms4-ui-copy.php", "ms4-ui-public-copy.php")}
+    for name, row in dependencies.items():
+        raw = after["candidate/ms4-initialize.php"]
+        matches = re.findall(rb"'" + re.escape(name.encode()) + rb"' => \[[0-9]+, '[a-f0-9]{64}'\]", raw)
+        require(len(matches) == 1, "B_ONE_ORIGINAL_INITIALIZER_COPIER_PIN")
+        literal = ("'" + name + "' => [" + str(row["bytes"]) + ", '" + row["sha256"] + "']").encode()
+        seam("ms4-initialize.php", matches[0], literal)
+        old_row = pin(before[name]) if name in before else library
+        old_literal = ("{'path': '" + name + "', 'bytes': " + str(old_row["bytes"])
+            + ",\n        'sha256': '" + old_row["sha256"] + "'}").encode()
+        new_literal = ("{'path': '" + name + "', 'bytes': " + str(row["bytes"])
+            + ",\n        'sha256': '" + row["sha256"] + "'}").encode()
+        for target in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+            if old_literal != new_literal:
+                seam(target, old_literal, new_literal)
+            else:
+                require(after["candidate/" + target].count(new_literal) == 1, "B_UNCHANGED_FINAL_COPIER_LIBRARY_PIN")
+    inverse = {name: after["candidate/" + name] for name in names}
+    for name, old, new in reversed(stages): inverse[name] = once(inverse[name], new, old)
+    inverse_exact = inverse == before
+    require(inverse_exact, "B_JOINT_PHP_SEAL_ALL_OTHER_BYTES_AND_GUARDS_EXACT")
+    return {"whole_file_metadata_inverse_exact": inverse_exact,
+        "php_entry_declarations": [{"file": name, "symbol": symbol, "value": value}
+                                   for name, symbol, _, value in declarations],
+        "canonical_backend_helper": helper, "copier_dependencies": dependencies,
+        "guards_and_all_nonmetadata_bytes_retained": inverse_exact,
+        "finite_metadata_changes": len(stages), "runtime_execution": "NOT RUN"}
+
+
+def _b_verify_joint_php_seal(after: dict[str, bytes], proof: dict[str, Any], artifacts: list[str]) -> dict[str, Any]:
+    """Read final complete bytes after the original DAG has been sealed; never change a guard."""
+    require(len(artifacts) == 17 and len(set(artifacts)) == 17
+        and all("candidate/" + name in after for name in artifacts), "B_JOINT_PHP_SEAL_COMPLETE17")
+    for row in proof["php_entry_declarations"]:
+        literal = ("const " + row["symbol"] + " = '" + row["value"] + "';").encode()
+        require(after["candidate/" + row["file"]].count(literal) == 1, "B_FINAL_PHP_ENTRY_DECLARATION")
+    helper = proof["canonical_backend_helper"]
+    helper_literal = ("$file['descriptor']['bytes']===" + str(helper["bytes"])
+        + "\n            &&$file['descriptor']['sha256']==='" + helper["sha256"] + "'").encode()
+    require(after["candidate/ms4-ui-copy.php"].count(helper_literal) == 1, "B_FINAL_COPIER_CANONICAL_HELPER_PIN")
+    helper_tuple = ("'" + helper["path"] + "' => [" + str(helper["bytes"]) + ", '" + helper["sha256"] + "']").encode()
+    require(after["candidate/ms4-initialize.php"].count(helper_tuple) == 1, "B_FINAL_INITIALIZER_CANONICAL_HELPER_PIN")
+    library = proof["copier_dependencies"]["ms4-ui-public-copy.php"]
+    library_literal = ("$pin['bytes']===" + str(library["bytes"]) + "&&$pin['sha256']==='" + library["sha256"] + "'").encode()
+    require(after["candidate/ms4-ui-copy.php"].count(library_literal) == 1, "B_FINAL_COPIER_LIBRARY_PIN")
+    for name, row in proof["copier_dependencies"].items():
+        require(pin(after["candidate/" + name]) == row, "B_FINAL_DEPENDENCY_FULL_BYTES")
+        literal = ("'" + name + "' => [" + str(row["bytes"]) + ", '" + row["sha256"] + "']").encode()
+        require(after["candidate/ms4-initialize.php"].count(literal) == 1, "B_FINAL_INITIALIZER_DEPENDENCY_PIN")
+        literal = ("{'path': '" + name + "', 'bytes': " + str(row["bytes"])
+            + ",\n        'sha256': '" + row["sha256"] + "'}").encode()
+        for target in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+            require(after["candidate/" + target].count(literal) == 1, "B_FINAL_HOST_ZERO_DEPENDENCY_PIN")
+            require(constant(after["candidate/" + target], "UI_CURRENT_SOURCE_PINS")[helper["path"]] == helper,
+                    "B_FINAL_HOST_ZERO_CANONICAL_HELPER_PIN")
+    for name, symbol, target in (("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
+        ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
+        ("normal-close-ms4-fulfillment.py", "UI_HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "UI_HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "CLOSE_SHA256", "normal-close-ms4-fulfillment.py"),
+        ("verify-zero-ms4-fulfillment.py", "UI_CLOSE_SHA256", "normal-close-ms4-fulfillment.py"),
+        ("verify-zero-ms4-fulfillment.py", "INTERFACE_SHA256", "interface-v1.json"),
+        ("verify-zero-ms4-fulfillment.py", "UI_INTERFACE_SHA256", "interface-v1.json")):
+        require(constant(after["candidate/" + name], symbol) == pin(after["candidate/" + target])["sha256"],
+                "B_FINAL_INTERFACE_HOST_CLOSE_ZERO_FULL_BYTE_DAG")
+    require(all(constant(after["candidate/verify-zero-ms4-fulfillment.py"], symbol) == len(after["candidate/interface-v1.json"])
+                for symbol in ("INTERFACE_BYTES", "UI_INTERFACE_BYTES"))
+        and all(constant(after["candidate/" + name], "B_SOURCE_TREE_SOURCE_SEAL") == "SEALED_BY_ROOT_AFTER_B_SOURCE_TREE_QUALIFICATION"
+                for name in ("ms4-host.py", "normal-close-ms4-fulfillment.py", "verify-zero-ms4-fulfillment.py"))
+        and all(constant(after["candidate/" + name], "SOURCE_TREE_ENTRY_PINS_STATUS") == "BOUND_FROZEN_PHP_SOURCE"
+                for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py")), "B_FINAL_SOURCE_ENTRY_SEALS_AND_INTERFACE_BYTES")
+    return {**proof, "complete": True, "initializer_host_zero_fixed_pins_verified": True,
+        "copier_own_library_pin_verified": True, "canonical_helper_inventory_pin_verified": True,
+        "final_interface_host_close_zero_dag_verified": True, "complete_source_artifacts": 17}
+
+
 def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], derived: dict[str, Any],
                normal_consumer: str, setup: dict[str, Any], context: dict[str, Any],
                materials: dict[str, bytes], material_result: dict[str, Any]) -> dict[str, Any]:
@@ -4535,6 +4651,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         after[key] = replace_constant(after[key], "B_SOURCE_TREE_SOURCE_SEAL", "SEALED_BY_ROOT_AFTER_B_SOURCE_TREE_QUALIFICATION")
         if name != "normal-close-ms4-fulfillment.py":
             after[key] = replace_constant(after[key], "SOURCE_TREE_ENTRY_PINS_STATUS", "BOUND_FROZEN_PHP_SOURCE")
+    joint_php_seal = _b_joint_php_seal(after, inventory)
     observer_host_before = after["candidate/ms4-host.py"]
     observer_functions_before = functions(observer_host_before)
     observer_read_before = observer_functions_before["task2_observer_read"]
@@ -4620,10 +4737,11 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     for symbol in ("INTERFACE_BYTES", "UI_INTERFACE_BYTES"):
         after["candidate/verify-zero-ms4-fulfillment.py"] = replace_constant(
             after["candidate/verify-zero-ms4-fulfillment.py"], symbol, len(after["candidate/interface-v1.json"]))
+    joint_php_seal = _b_verify_joint_php_seal(after, joint_php_seal, artifacts)
     derivation = decode(after["candidate/source-derivation.json"])
     derivation["current_nonself_artifacts"] = [{"path": name, **pin(after["candidate/" + name])}
                                                for name in artifacts if name != "source-derivation.json"]
-    derivation["runtime_full17_sealed"] = True
+    derivation["runtime_full17_sealed"] = joint_php_seal["complete"]
     derivation["finance_bootstrap_sources"] = list(derived["finance_sources"])
     derivation["finance_after_original_early_and_ms6_before_first_app"] = True
     if derived["refund_sources"] is not None:
@@ -4641,6 +4759,9 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     derivation["actual_clean_Source_Val_M_A_build_B_Run"] = {"source_sha":head,
         "normal_M":fixed["normal"]["result"], "A":a_qualification, "materials":fixed["materials"]["producer_result"], "B_Run":None}
     after["candidate/source-derivation.json"] = encode(derivation)
+    require(decode(after["candidate/source-derivation.json"])["current_nonself_artifacts"]
+        == [{"path": name, **pin(after["candidate/" + name])} for name in artifacts if name != "source-derivation.json"],
+        "B_FINAL_NONSELF_ARTIFACTS_FULL_BYTE_DAG")
     selected = [{"path": name, **pin(after["candidate/" + name])} for name in artifacts]
     browser = decode(after["browser-v1/PINS.json"])
     proof_names = artifacts + ["browser-v1/" + name for name in browser["members"]] + ["browser-v1/PINS.json"]
@@ -4685,7 +4806,9 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "fixed_inputs":fixed_pointer,"original_A_five_proofs":a_qualification,"actual_materials":fixed["materials"]["producer_result"],
         "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":(observer_read_inverse_exact
             and observer_zero_read_inverse_exact and observer_browser_manifest_inverse_exact
-            and frozen_role_source_inverse_exact and normal_authority_contract["whole_root_inverse_exact"]),
+            and frozen_role_source_inverse_exact and normal_authority_contract["whole_root_inverse_exact"]
+            and joint_php_seal["whole_file_metadata_inverse_exact"]),
+        "joint_php_entry_and_dependency_seal":joint_php_seal,
         "normal_source_authority_contract":normal_authority_contract,
         "network_subnets":selected_subnets,
         "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
