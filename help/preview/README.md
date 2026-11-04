@@ -14,6 +14,8 @@
 
 新商品也已实际出现在商城首页“在售商品”；从“分类”搜索“新商家”能找到唯一对应结果。两个入口点击后均进入商品7，详情显示新商家3、12.50元和库存20，无需依赖直接商品链接。
 
+顾客 H5 的375×812手机视口也已实际检查：首页、商品详情和店铺页均无横向溢出，商品图片、价格及底部购买按钮正常显示；从首页进入商品7、再进入商家3店铺并点击商品，仍回到同一商品详情。三页控制台错误/警告为0，截图和 `MOBILE375-DISCOVERY.json` 已保存；这是浏览器手机视口结果，小程序原生和真机仍待验证。
+
 顾客还从商品7原购买页实际建立了待付款根单3（1件、12.50元），商家3本人可读取该单。顾客按原流程取消后，三角色接口均读回已取消，商品及SKU库存20→19→20；原完成订单1的金额、履约和售后汇总，以及商品5库存98读回保持。这张新单没有执行支付。
 
 原[购物车页面](http://127.0.0.1:18212/pages/order_addcart/order_addcart)已实际验证双店分组：商品5和7各加入1件，切换“选择本店”时金额分别为20.15、12.50元；每次只确认当前店铺。选择商家3后，原页面实际收到的服务端确认响应只含商品7、12.50元，另一店商品仍留在购物车。本轮停在确认页，未提交新订单或支付；验证后只删除了新增两行，购物车恢复空，原商品及SKU库存98/20、两店已有订单保持。
@@ -28,7 +30,7 @@
 
 新小程序导入目录为 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-build18212-r1/mp-weixin/dist`，已实际构建连接18212，使用原接口测试号。开发者工具扫码由用户选择稍后恢复；当前不签该包原生业务或真机通过。真实资金、正式AppID/隐私选图、历史迁移及完整阶段/发布验收继续保留。
 
-实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json`、`FRONTEND-REUSE.json` 和 `browser-ui-r1` 截图。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
+实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`MOBILE375-DISCOVERY.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json`、`FRONTEND-REUSE.json` 和 `browser-ui-r1` 截图。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
 
 ## 双店商品详情与店铺入口（18206，2026-11-03）
 
