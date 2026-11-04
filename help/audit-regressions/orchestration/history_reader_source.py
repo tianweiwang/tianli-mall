@@ -1610,3 +1610,25 @@ def _legacy_anchor_reader_apply(raw: bytes, *, reverse: bool = False) -> bytes:
 READER_SEAMS += (
     ("public_control_exact_sized_read", _PUBLIC_READ_SIZED_BEFORE, _PUBLIC_READ_SIZED_AFTER),
 )
+
+
+_ROLE_MEMORY_BUDGET = rb'''function nhecr_role_memory_budget(): void
+{
+    nhecr_expect(ini_get('memory_limit') === '128M', 'NHECR_ORIGINAL_ROLE_MEMORY_BUDGET');
+    $previousMemoryLimit = ini_set('memory_limit', '512M');
+    nhecr_expect($previousMemoryLimit === '128M' && ini_get('memory_limit') === '512M',
+        'NHECR_ROLE_MEMORY_BUDGET_APPLIED');
+}
+'''
+
+READER_SEAMS += (
+    ("strict_role_memory_budget_definition",
+     b"function nhecr_main(array $argv): array\n",
+     _ROLE_MEMORY_BUDGET + b"\nfunction nhecr_main(array $argv): array\n"),
+    ("normal_cli_role_memory_budget",
+     b"        'NHECR_ONLY_REAL_FIXED_NORMAL_ENTRY');\n    $pin =",
+     b"        'NHECR_ONLY_REAL_FIXED_NORMAL_ENTRY');\n    nhecr_role_memory_budget();\n    $pin ="),
+    ("http_router_role_memory_budget",
+     b"            && is_string($sha) && preg_match('/\\A[a-f0-9]{64}\\z/D', $sha) === 1, 'NHECR_ORIGINAL_FRESH_EXEC_FREEZE_ENV');\n        $state =",
+     b"            && is_string($sha) && preg_match('/\\A[a-f0-9]{64}\\z/D', $sha) === 1, 'NHECR_ORIGINAL_FRESH_EXEC_FREEZE_ENV');\n        nhecr_role_memory_budget();\n        $state ="),
+)

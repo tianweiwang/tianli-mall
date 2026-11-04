@@ -974,6 +974,8 @@ def transform_initializer(raw: bytes, *, refund_readiness=False, legacy_refund_a
             candidate = _refund_once(candidate, previous, current)
     for previous, current in _driver_prestart_initializer_seams():
         candidate = _refund_once(candidate, previous, current)
+    for previous, current in _role_memory_budget_initializer_seams():
+        candidate = _refund_once(candidate, previous, current)
     if reverse_initializer(candidate, refund_readiness=refund_readiness, legacy_refund_anchors=legacy_refund_anchors) != raw:
         raise ValueError("INITIALIZER_COMPLETE_REVERSE_REQUIRED")
     return candidate
@@ -986,6 +988,8 @@ def reverse_initializer(candidate: bytes, *, refund_readiness=False, legacy_refu
     if not isinstance(candidate, bytes):
         raise ValueError("INITIALIZER_CANDIDATE_BYTES_REQUIRED")
     raw = candidate
+    for previous, current in reversed(_role_memory_budget_initializer_seams()):
+        raw = _refund_once(raw, current, previous)
     for previous, current in reversed(_driver_prestart_initializer_seams()):
         raw = _refund_once(raw, current, previous)
     if legacy_refund_anchors:
@@ -1000,6 +1004,25 @@ def reverse_initializer(candidate: bytes, *, refund_readiness=False, legacy_refu
         raw = raw.replace(after, before, 1)
     _source(raw)
     return raw
+
+
+def _role_memory_budget_initializer_seams():
+    upgrade = b"    require_once '/run/ms4-prep/legacy-current-reader.php';\n    $contextFile ="
+    registration = b"""    m4i_gate('register');
+    $context = m4i_read('/run/audit/actual-run-context.json'); $freeze = m4i_read('/run/audit/preparation-source-binding.json');
+    // Both files contain definitions only on this CLI filename. Do not invoke reader qualification here.
+    require_once '/run/ms4-prep/legacy-app.php';
+    require_once '/run/ms4-prep/legacy-current-reader.php';
+"""
+    registration_budget = b"""    m4i_gate('register');
+    // Both files contain definitions only on this CLI filename. Do not invoke reader qualification here.
+    require_once '/run/ms4-prep/legacy-app.php';
+    require_once '/run/ms4-prep/legacy-current-reader.php';
+    nhecr_role_memory_budget();
+    $context = m4i_read('/run/audit/actual-run-context.json'); $freeze = m4i_read('/run/audit/preparation-source-binding.json');
+"""
+    return ((upgrade, upgrade.replace(b"    $contextFile =", b"    nhecr_role_memory_budget();\n    $contextFile =")),
+            (registration, registration_budget))
 
 
 # A future Run may qualify only passive expiry across the producer/driver gap.
