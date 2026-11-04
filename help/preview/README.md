@@ -8,13 +8,15 @@
 - [商家后台](http://127.0.0.1:18212/merchant/)
 - [顾客商城](http://127.0.0.1:18212/)
 
-新实例位于 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/preview18212-r1`，使用全新数据库、缓存、双网络和数据卷。应用源码为 `f8da54e7b5d2b7142993fdef1b1d1d6b8c2d58cf` 的完整快照；三端复用 R100 的 f181 正式构建，当前输入逐件相同。原 source-full 流程已完成初始化、完整服务健康、常驻进程检查、接口及三角色页面登录，原18206/18208预览保留。
+新实例位于 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/preview18212-r1`，使用全新数据库、缓存、双网络和数据卷。后端仍为 `f8da54e7b5d2b7142993fdef1b1d1d6b8c2d58cf` 的完整快照；平台、商家前端继续复用输入逐件相同的 R100 f181 构建，顾客 H5 和小程序已采用本轮订单摘要布局修复的同一份565文件输入重新构建。原 source-full 流程已完成初始化、完整服务健康、常驻进程检查、接口及三角色页面登录，原18206/18208预览保留。
 
 新商家正常入驻和上架也已在此候选完成：平台原页面建立商家3“预览合成新商家18212”、审核通过并启用接单；原正常接口完成专用合成员工首次设置，商家原页面登录后确认本店身份。商家从空图库上传自己的图片，用原商品表单创建商品7/SKU106，售价12.50元，并通过原库存调整入库20件；提交审核、平台批准、商家上架后，[顾客商品详情](http://127.0.0.1:18212/pages/goods_details/index?id=7)和[本店页面](http://127.0.0.1:18212/pages/store/index?mer_id=3)均实际可见。商品/真实SKU价格库存一致；商家3自己的列表仅商品7，原商家2仍只列商品5、6。新员工仅沿用原默认管理员12项权限，凭据在实例 `private/new-merchant-fixture.json`，不要重复建立账号或执行首次设置。
 
 新商品也已实际出现在商城首页“在售商品”；从“分类”搜索“新商家”能找到唯一对应结果。两个入口点击后均进入商品7，详情显示新商家3、12.50元和库存20，无需依赖直接商品链接。
 
 顾客 H5 的375×812手机视口也已实际检查：首页、商品详情和店铺页均无横向溢出，商品图片、价格及底部购买按钮正常显示；从首页进入商品7、再进入商家3店铺并点击商品，仍回到同一商品详情。三页控制台错误/警告为0，截图和 `MOBILE375-DISCOVERY.json` 已保存；这是浏览器手机视口结果，小程序原生和真机仍待验证。
+
+订单列表的长履约摘要已修复：摘要按内容撑高，原“查看详情”按钮保留在右侧，列表末尾提示独立显示。按320、375和1280初始视口加载后，两类已保存订单的摘要、按钮边界与居中均已实际通过；点击新按钮仍打开订单1，发2/收2、测试支付40.30元及售后1的40.30元已确认结果保持，控制台错误/警告为0。H5 新构建在 `customer-layout-build-r2/h5/dist`，已安装到本实例；原 H5 完整保存在 `build/h5/dist-before-mobile-order-layout-r2`。安装只停启原 `preview-web`，容器ID、其它进程、平台/商家产物和原实例配置均核对保持；结果见 `H5-LAYOUT-INSTALL-r2.json`、`ORDER-LAYOUT-VERIFICATION-r2.json`。这次只改顾客订单卡片的结构和样式，订单脚本逐字相同。
 
 顾客还从商品7原购买页实际建立了待付款根单3（1件、12.50元），商家3本人可读取该单。顾客按原流程取消后，三角色接口均读回已取消，商品及SKU库存20→19→20；原完成订单1的金额、履约和售后汇总，以及商品5库存98读回保持。这张新单没有执行支付。
 
@@ -28,9 +30,9 @@
 
 平台、商家、顾客的合成账号保存在该实例 `private/preview-accounts.json`，不在聊天或Git中公开。可从订单列表查看已保存结果，也可使用现有商品准备新的正常样本；不要重复执行初始化。
 
-新小程序导入目录为 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-build18212-r1/mp-weixin/dist`，已实际构建连接18212，使用原接口测试号。开发者工具扫码由用户选择稍后恢复；当前不签该包原生业务或真机通过。真实资金、正式AppID/隐私选图、历史迁移及完整阶段/发布验收继续保留。
+当前小程序导入目录为 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-build18212-r2/mp-weixin/dist`，已实际构建连接18212，使用原接口测试号，并包含同一订单摘要布局修复；H5/MP 的565文件输入摘要均为 `ed9e07537b51ae259d4e364a080f2df4ff3574349b9b920b5591078fb9d8fb87`。原小程序 r1 产物保留。开发者工具扫码由用户选择稍后恢复；当前不签新包原生业务或真机通过。真实资金、正式AppID/隐私选图、历史迁移及完整阶段/发布验收继续保留。
 
-实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`MOBILE375-DISCOVERY.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json`、`FRONTEND-REUSE.json` 和 `browser-ui-r1` 截图。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
+实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`MOBILE375-DISCOVERY.json`、`ORDER-LAYOUT-VERIFICATION-r2.json`、`H5-LAYOUT-INSTALL-r2.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`CUSTOMER-SERVICE.json` 和 `browser-ui-r1` 截图。原 `FRONTEND-REUSE.json` 保留首次三端装包的历史读回，不将它改签为本轮新顾客构建。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；本轮完成后临时标签已全部关闭。
 
 ## 双店商品详情与店铺入口（18206，2026-11-03）
 

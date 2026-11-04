@@ -106,10 +106,12 @@
 							<text class="money">{{ $t(`￥`) }}{{ item.pay_price }}</text>
 						</view>
 					</view>
-					<view v-if="isSavedMarketplaceV1(item)" class="bottom acea-row row-between-wrapper">
-						<text v-if="item.fulfillment_summary" class="saved-list-note">已发 {{ item.fulfillment_summary.shipped }} / 已收 {{ item.fulfillment_summary.received }} 件 · {{ item.fulfillment_summary.child_count }} 个包裹</text>
-						<text v-else class="saved-list-note">{{$t(`已保存订单，仅供查看`)}}</text>
-						<text v-if="item.schema === 2" class="saved-list-note">未发取消 {{ item.fulfillment_summary.cancelled_unshipped }} 件 · 已退件 {{ item.fulfillment_summary.returned_accepted }} 件 · 暂停发货 {{ item.aftersale.pending_cancel_quantity }} 件 · 待处理退件 {{ item.aftersale.pending_return_quantity }} 件</text>
+					<view v-if="isSavedMarketplaceV1(item)" class="bottom acea-row row-between-wrapper saved-list-bottom">
+						<view class="saved-list-notes">
+							<text v-if="item.fulfillment_summary" class="saved-list-note">已发 {{ item.fulfillment_summary.shipped }} / 已收 {{ item.fulfillment_summary.received }} 件 · {{ item.fulfillment_summary.child_count }} 个包裹</text>
+							<text v-else class="saved-list-note">{{$t(`已保存订单，仅供查看`)}}</text>
+							<text v-if="item.schema === 2" class="saved-list-note">未发取消 {{ item.fulfillment_summary.cancelled_unshipped }} 件 · 已退件 {{ item.fulfillment_summary.returned_accepted }} 件 · 暂停发货 {{ item.aftersale.pending_cancel_quantity }} 件 · 待处理退件 {{ item.aftersale.pending_return_quantity }} 件</text>
+						</view>
 						<button class="bnt bg-color saved-list-details" @tap="goOrderDetails(item.order_id)">{{$t(`查看详情`)}}</button>
 					</view>
 					<view v-else class="bottom acea-row row-right row-middle">
@@ -668,9 +670,13 @@ export default {
 	margin-left: 17rpx;
 }
 
-.saved-list-note { color: #666; font-size: 24rpx; line-height: 1.5; }
+.my-order .list .item .bottom.saved-list-bottom {
+	height: auto; min-height: 107rpx; padding: 20rpx 30rpx; flex-wrap: nowrap;
+}
+.saved-list-notes { flex: 1; min-width: 0; }
+.saved-list-note { display: block; color: #666; font-size: 24rpx; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
 .my-order .list .item .bottom .saved-list-details {
-	box-sizing: border-box; padding: 0; margin: 0 0 0 16rpx; flex-shrink: 0;
+	box-sizing: border-box; padding: 0; margin: 0 0 0 16rpx; flex-shrink: 0; white-space: nowrap;
 	display: flex; align-items: center; justify-content: center;
 }
 .saved-list-details::after { border: 0; }
