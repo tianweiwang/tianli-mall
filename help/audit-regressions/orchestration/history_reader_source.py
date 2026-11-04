@@ -354,7 +354,7 @@ UPGRADE_CONTRACT_SOURCE_PIN = (37529, "baa947854c42afa6f192ea0f40a57840b74fb0ddb
 _UPGRADE_SHARED_CONTRACTS = rb'''function nhecu_sourceFiles(): array
 {
     return [
-        ['path' => 'help/audit-regressions/isolated/ms4-migration.php', 'bytes' => 24637, 'sha256' => '7a9e26fdad809649634a40f549fd5429ce10452b74a242444c48e160831401f4'],
+        ['path' => 'help/audit-regressions/isolated/ms4-migration.php', 'bytes' => 24718, 'sha256' => '82df4155f3a95b6a325fa4cae4807fff1f1af365e541d3d4c4e65cd339b17ac7'],
         ['path' => 'help/migrations/marketplace-ms1.php', 'bytes' => 38810, 'sha256' => '9d73229f911b5712ca9c7051a18468c98837ae44f48bf77d20b2c165ac02b17a'],
         ['path' => 'help/migrations/marketplace-ms4.php', 'bytes' => 37120, 'sha256' => '8954a47a9233b119a666267fc4a0f6b33b2ce8da41925b702e0f3a9ff77e95b4'],
         ['path' => 'help/migrations/marketplace-ms5-payment.php', 'bytes' => 27010, 'sha256' => '2e58f44b8d2140514d9b45a25d199820c80b90a635e10bd356cfda9a8eb0ccca'],

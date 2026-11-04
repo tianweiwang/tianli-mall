@@ -16,7 +16,7 @@ INITIALIZER_SOURCE_BYTES = 63165
 INITIALIZER_SOURCE_SHA256 = "95c0e205d3596e3701aeceb5dcce3cd046682a4843c924df2c12128bf17379a8"
 
 # Filled from the fixed current m4m source, without changing any function bytes.
-M4M_SOURCE_PIN = (24637, '7a9e26fdad809649634a40f549fd5429ce10452b74a242444c48e160831401f4')
+M4M_SOURCE_PIN = (24718, '82df4155f3a95b6a325fa4cae4807fff1f1af365e541d3d4c4e65cd339b17ac7')
 M4M_OBSERVER_FUNCTIONS = rb'''function m4m_expect(bool $condition, string $code): void { if (!$condition) throw new RuntimeException($code); }
 function m4m_quote(string $name): string { m4m_expect(preg_match('/\A[A-Za-z0-9_]{1,64}\z/D', $name) === 1, 'SQL_IDENTIFIER'); return '`' . $name . '`'; }
 function m4m_rows(PDO $db, string $sql, array $args = []): array { $s = $db->prepare($sql); m4m_expect($s->execute($args), 'SQL_READ'); return $s->fetchAll(PDO::FETCH_ASSOC); }
@@ -49,9 +49,11 @@ function m4m_snapshot(array $originalColumns = []): array
     foreach ($names as $name) {
         m4m_expect(preg_match('/\A(?:eb_[a-z0-9_]+|audit_sentinel)\z/D', $name) === 1, 'OWN_SCHEMA_TABLE');
         $metadata = m4m_metadata($db, $name); $columns = $originalColumns[$name] ?? array_keys($metadata['columns']);
+        $projection = m4m_projection($db, $name, $columns);
+        $metadata = m4m_metadata($db, $name);
         $ddl = $db->query('SHOW CREATE TABLE ' . m4m_quote($name))->fetch(PDO::FETCH_NUM);
         m4m_expect(is_array($ddl) && is_string($ddl[1] ?? null), 'ACTUAL_SHOW_CREATE');
-        $snapshot['tables'][$name] = ['metadata' => $metadata, 'ddl_sha256' => hash('sha256', $ddl[1]), 'projection' => m4m_projection($db, $name, $columns), 'projected_columns' => $columns];
+        $snapshot['tables'][$name] = ['metadata' => $metadata, 'ddl_sha256' => hash('sha256', $ddl[1]), 'projection' => $projection, 'projected_columns' => $columns];
     }
     $raw = audit_snapshot(['tables' => [], 'redis' => ['*']]); $redis = audit_redis();
     foreach ($raw['redis']['*'] as $key => $hash) {
@@ -108,7 +110,7 @@ function m4m_preserved(array $before, array $after, bool $additions): void
 UPGRADE_SOURCE_FILES = rb'''function m4iu_sourceFiles(): array
 {
     return [
-        ['path' => 'help/audit-regressions/isolated/ms4-migration.php', 'bytes' => 24637, 'sha256' => '7a9e26fdad809649634a40f549fd5429ce10452b74a242444c48e160831401f4'],
+        ['path' => 'help/audit-regressions/isolated/ms4-migration.php', 'bytes' => 24718, 'sha256' => '82df4155f3a95b6a325fa4cae4807fff1f1af365e541d3d4c4e65cd339b17ac7'],
         ['path' => 'help/migrations/marketplace-ms1.php', 'bytes' => 38810, 'sha256' => '9d73229f911b5712ca9c7051a18468c98837ae44f48bf77d20b2c165ac02b17a'],
         ['path' => 'help/migrations/marketplace-ms4.php', 'bytes' => 37120, 'sha256' => '8954a47a9233b119a666267fc4a0f6b33b2ce8da41925b702e0f3a9ff77e95b4'],
         ['path' => 'help/migrations/marketplace-ms5-payment.php', 'bytes' => 27010, 'sha256' => '2e58f44b8d2140514d9b45a25d199820c80b90a635e10bd356cfda9a8eb0ccca'],
