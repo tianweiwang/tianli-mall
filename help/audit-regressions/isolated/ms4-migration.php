@@ -158,9 +158,11 @@ function m4m_snapshot(array $originalColumns = []): array
     foreach ($names as $name) {
         m4m_expect(preg_match('/\A(?:eb_[a-z0-9_]+|audit_sentinel)\z/D', $name) === 1, 'OWN_SCHEMA_TABLE');
         $metadata = m4m_metadata($db, $name); $columns = $originalColumns[$name] ?? array_keys($metadata['columns']);
+        $projection = m4m_projection($db, $name, $columns);
+        $metadata = m4m_metadata($db, $name);
         $ddl = $db->query('SHOW CREATE TABLE ' . m4m_quote($name))->fetch(PDO::FETCH_NUM);
         m4m_expect(is_array($ddl) && is_string($ddl[1] ?? null), 'ACTUAL_SHOW_CREATE');
-        $snapshot['tables'][$name] = ['metadata' => $metadata, 'ddl_sha256' => hash('sha256', $ddl[1]), 'projection' => m4m_projection($db, $name, $columns), 'projected_columns' => $columns];
+        $snapshot['tables'][$name] = ['metadata' => $metadata, 'ddl_sha256' => hash('sha256', $ddl[1]), 'projection' => $projection, 'projected_columns' => $columns];
     }
     $raw = audit_snapshot(['tables' => [], 'redis' => ['*']]); $redis = audit_redis();
     foreach ($raw['redis']['*'] as $key => $hash) {
