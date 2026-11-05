@@ -8,7 +8,7 @@ declare(strict_types=1);
  * This entry does not migrate saved legacy orders to V1 or test old write paths.
  */
 const NHECO_SCOPE = 'POST_READER_SYNTHETIC_OWNERSHIP_NORMAL_V1';
-const NHECO_APP_SOURCE = '5580ebb04a78043dc09b1192501ace3699d2ae1a';
+const NHECO_APP_SOURCE = 'ae13dc8fa1e4e3dd259e5d917649715eec9f1567';
 const NHECO_IMAGE = 'sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
 const NHECO_ENTRY = '/run/post-reader/ms4-history-ownership-normal.php';
 const NHECO_ROOTS = ['store_product' => 'id', 'system_attachment' => 'att_id',

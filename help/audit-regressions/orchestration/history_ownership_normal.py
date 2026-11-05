@@ -22,7 +22,7 @@ import sys
 
 
 SCOPE = "POST_READER_SYNTHETIC_OWNERSHIP_NORMAL_V1"
-APP_SOURCE = "5580ebb04a78043dc09b1192501ace3699d2ae1a"
+APP_SOURCE = "ae13dc8fa1e4e3dd259e5d917649715eec9f1567"
 IMAGE = "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a"
 SERVICE = "audit-post-reader-ownership"
 PROOF = "post-reader-ownership"
