@@ -126,6 +126,6 @@ export function pageQuery(value, platform = false) {
   if (Object.keys(value).some(key => !allowed.includes(key))) fail(); const result = { page: integer(value.page, 1, INT_MAX), limit: integer(value.limit, 1, 100) };
   ['status', 'is_reply', 'product_id', 'mer_id'].forEach(key => { if (!Object.prototype.hasOwnProperty.call(value, key)) return; const range = key === 'status' ? [0, 2] : key === 'is_reply' ? [0, 1] : key === 'mer_id' ? [1, 4294967295] : [1, INT_MAX]; result[key] = integer(value[key], range[0], range[1]); }); return result;
 }
-export function errorText(error) { return error && typeof error.message === 'string' && error.message ? error.message : typeof error === 'string' && error ? error : '请求未完成，请重新读取评价资料'; }
+export function errorText(error) { return error && typeof error.message === 'string' && error.message ? error.message : error && typeof error.msg === 'string' && error.msg ? error.msg : typeof error === 'string' && error ? error : '请求未完成，请重新读取评价资料'; }
 export function statusText(value) { return ['待审核', '审核通过', '审核未通过'][integer(value, 0, 2)]; }
 export function timeText(value) { integer(value, 0, INT_MAX); if (!value) return '—'; const date = new Date(value * 1000); return date.toLocaleString(); }
