@@ -5591,6 +5591,29 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                     and namespace["reverse_history_http"](after["legacy-history-http.php"],
                         legacy_refund_anchors=history_legacy_refund_anchors) == before["legacy-history-http.php"],
                     "HISTORY_COMPLETE_HTTP_FAILURE_DIAGNOSTIC_INVERSE")
+            # The reader boots the same two cookie-producing middlewares as the legacy producer.
+            reader_name = "legacy-current-reader.php"
+            original_reader = after[reader_name]
+            reader_catch = br"""    catch (Throwable $ignored) { fwrite(STDERR, "NHECR_CURRENT_READER_FAILED_STATE_PRESERVED\n"); exit(1); }"""
+            reader_diagnostic = br"""    catch (Throwable $error) {
+        $line = $error->getFile() === __FILE__ ? $error->getLine() : 0;
+        foreach ($error->getTrace() as $frame) {
+            if (($frame['file'] ?? null) !== __FILE__) continue;
+            if ($line === 0 || in_array($frame['function'] ?? '', ['nhecr_expect', 'nhep_expect', 'nhe_expect', 'm4m_expect'], true)) {
+                $line = $frame['line'];
+            }
+            break;
+        }
+        fwrite(STDERR, "NHECR_CURRENT_READER_FAILED_STATE_PRESERVED line=" . $line . "\n");
+        exit(1);
+    }"""
+            reader_seams = (*namespace["_producer_cookie_seams"](), (reader_catch, reader_diagnostic))
+            for old_leaf, new_leaf in reader_seams:
+                after[reader_name] = once(after[reader_name], old_leaf, new_leaf)
+            restored_reader = after[reader_name]
+            for old_leaf, new_leaf in reversed(reader_seams):
+                restored_reader = once(restored_reader, new_leaf, old_leaf)
+            require(restored_reader == original_reader, "HISTORY_READER_COMPLETE_COOKIE_AND_DIAGNOSTIC_INVERSE")
             migration_relative = "help/audit-regressions/isolated/ms4-migration.php"
             migration_raw = read(Path(authority["candidate_root"]) / migration_relative)
             require((len(migration_raw), pin(migration_raw)["sha256"]) == namespace["M4M_SOURCE_PIN"],
