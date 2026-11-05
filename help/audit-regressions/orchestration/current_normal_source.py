@@ -3904,13 +3904,154 @@ def _reviewed_normal_stage(outcome, normal, stage, reader, check):
             "public_files": [public[name] for name in sorted(public)]}
 
 
+def _a_capture_failed(a):
+    return a.get("outer", {}).get("kind") == "REVIEWED_NORMAL_A_COORDINATOR_ZERO_AFTER_CAPTURE_FAILURE_V1"
+
+
+def _reviewed_normal_a_capture_failure(a, normal, reader, check):
+    """Read the one completed ae13 coordinator without attributing an OS exit to its launcher."""
+    base = Path("H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101")
+    root = base / "normal-source-ae13"
+    folder = base / "normal-a-ae13-capture"
+    source = "ae13dc8fa1e4e3dd259e5d917649715eec9f1567"
+    kind = "REVIEWED_NORMAL_A_COORDINATOR_ZERO_AFTER_CAPTURE_FAILURE_V1"
+    observation = {"path": (folder / "OUTER-CAPTURE-FAILURE-OBSERVATION.json").as_posix(), "bytes": 3431,
+                   "sha256": "f8efac783ab1b61665efa0d5573fc19d33aa8516f6a50854c909267a59d6f90f"}
+    review_pin = {"path": (base / "normal-source-independent-review-ae13.json").as_posix(), "bytes": 10516,
+                  "sha256": "5f19794876d366a12c6af29cf4625ee18aeca5016ca127fb81c68cab23359515"}
+    setup = {"path": (root / "validation/materialize-freeze-assets-r1/RESULT.json").as_posix(), "bytes": 5402903,
+             "sha256": "7a904fda4c9c75ee5d416b0fd00ebc904f42eb5cdcb8274919f0bf0d445ebb28"}
+    check(a["outer"] == {"kind": kind, "observation": observation} and type(a["session"]) is int
+          and a["session"] == 70710 and normal["root"] == root.as_posix() and normal["review"] == review_pin
+          and normal["result"] == setup, "A_CAPTURE_FAILURE_EXACT_REVIEWED_AE13_INPUTS")
+    public = {}
+    def read(pointer):
+        check(type(pointer) is dict and set(pointer) == {"path", "bytes", "sha256"}
+              and Path(pointer["path"]).is_absolute() and type(pointer["bytes"]) is int
+              and pointer["bytes"] >= 0, "A_CAPTURE_FAILURE_EXACT_PUBLIC_POINTER")
+        raw = reader(pointer)
+        check(type(raw) is bytes and len(raw) == pointer["bytes"]
+              and hashlib.sha256(raw).hexdigest() == pointer["sha256"], "A_CAPTURE_FAILURE_COMPLETE_PUBLIC_BYTES")
+        check(public.get(pointer["path"], pointer) == pointer, "A_CAPTURE_FAILURE_IDENTICAL_POINTER_OVERLAP")
+        public[pointer["path"]] = pointer
+        return raw
+    evidence = json.loads(read(observation))
+    check(set(evidence) == {"schema", "scope", "recorded_utc", "tool_observation", "actual_launcher",
+          "actual_original_coordinator", "actual_normal_result", "actual_worker_close", "actual_independent_zero",
+          "original_files_unchanged", "formal_B"}
+          and type(evidence["schema"]) is int and evidence["schema"] == 1
+          and evidence["scope"] == "OBSERVED_ORIGINAL_NORMAL_A_OUTER_CAPTURE_TOOL_FAILURE_ONLY"
+          and evidence["original_files_unchanged"] is True and evidence["formal_B"] == "PENDING"
+          and evidence["tool_observation"] == {"tool": "functions.write_stdin", "session_id": 70710,
+              "chunk_id": "e2c0b4", "terminal_exit": 1, "diagnostic": [
+                  "Traceback (most recent call last):", '  File "<stdin>", line 119, in <module>',
+                  "TypeError: 'str' object is not callable"]},
+          "A_CAPTURE_FAILURE_ACTUAL_TOOL_EXIT_ONE")
+    review = json.loads(read(review_pin))
+    check(review["schema"] == 1 and review["status"] == "PASS_CURRENT_NORMAL18_SOURCE_REVIEW"
+          and review["source_sha"] == source and len(review["members"]) == 18
+          and review["original_business_suffix_exact"] is True and review["source_graph_and_stream_contract_reviewed"] is True,
+          "A_CAPTURE_FAILURE_COMPLETE_NORMAL18_REVIEW")
+    for name in ("launcher/launch.py", "validation/run.py", "validation/PINS.json"):
+        read({"path": (root / name).as_posix(), **review["members"][name]})
+    launcher, child = evidence["actual_launcher"], evidence["actual_original_coordinator"]
+    terminal_path = folder / "terminal.json"
+    check(set(launcher) == {"pid", "os_exit_status", "created", "stdout", "stderr", "capture_terminal_present"}
+          and launcher["pid"] == 46268 and launcher["os_exit_status"] == "NOT_CAPTURED"
+          and launcher["capture_terminal_present"] is False and not terminal_path.exists()
+          and not terminal_path.is_symlink(), "A_CAPTURE_FAILURE_LAUNCHER_OS_EXIT_NOT_CAPTURED")
+    check(set(child) == {"pid", "native_exit", "wait_returncode", "created", "terminal", "stdout", "stderr"}
+          and child["pid"] == 19596 and child["native_exit"] == child["wait_returncode"] == 0,
+          "A_CAPTURE_FAILURE_REAL_COORDINATOR_EVIDENCE")
+    for key, name in (("created", "created.json"), ("stdout", "normal-a.stdout"), ("stderr", "normal-a.stderr")):
+        check(launcher[key]["path"] == (folder / name).as_posix(), "A_CAPTURE_FAILURE_FIXED_LAUNCHER_CAPTURE_PATH")
+    for key, suffix in (("created", "created.json"), ("terminal", "terminal.json"), ("stdout", "stdout"), ("stderr", "stderr")):
+        check(child[key]["path"] == (root / "launcher" / ("normal-start." + suffix)).as_posix(),
+              "A_CAPTURE_FAILURE_FIXED_COORDINATOR_CAPTURE_PATH")
+    launch = json.loads(read(launcher["created"]))
+    created, terminal = (json.loads(read(child[key])) for key in ("created", "terminal"))
+    review_args = ["--source-review-file", review_pin["path"], "--source-review-sha256", review_pin["sha256"]]
+    check(set(launch) == {"pid", "argv", "cwd", "started_ns"} and launch["pid"] == launcher["pid"]
+          and launch["cwd"] == root.as_posix() and Path(launch["argv"][0]).is_absolute()
+          and launch["argv"][1:] == ["-I", "-B", "-X", "utf8", (root / "launcher/launch.py").as_posix(),
+                                   "normal-start", *review_args], "A_CAPTURE_FAILURE_ACTUAL_LAUNCHER_ARGV")
+    check(set(created) == {"pid", "argv", "started_ns"}
+          and set(terminal) == {"pid", "native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+          and type(created["pid"]) is int and created["pid"] == terminal["pid"] == child["pid"]
+          and all(type(value) is int for value in (launch["started_ns"], created["started_ns"], terminal["finished_ns"],
+                                                   terminal["native_exit"], terminal["wait_returncode"]))
+          and 0 < launch["started_ns"] < created["started_ns"] < terminal["finished_ns"]
+          and terminal["native_exit"] == terminal["wait_returncode"] == 0
+          and all(terminal[key] == child[key] for key in ("stdout", "stderr")),
+          "A_CAPTURE_FAILURE_SAME_ORIGINAL_COORDINATOR_NATIVE_AND_WAIT_ZERO")
+    argv = created["argv"]
+    check(len(argv) == 13 and Path(argv[0]) == Path(launch["argv"][0]) and argv[1:4] == ["-B", "-X", "utf8"]
+          and Path(argv[4]) == root / "validation/run.py"
+          and argv[5:] == ["--root-source-pins-sha256", review["members"]["validation/PINS.json"]["sha256"],
+                          "--setup-sha256", setup["sha256"], *review_args],
+          "A_CAPTURE_FAILURE_EXACT_COORDINATOR_ARGV")
+    markers = [json.loads(line) for line in read(launcher["stdout"]).splitlines()]
+    check(markers == [
+          {"state": "SAME_NATIVE_PROCESS_LIVE", "stage": "normal-start", "pid": child["pid"]},
+          {"state": "ACTUAL_STAGE_TERMINAL", "stage": "normal-start", "pid": child["pid"],
+           "native_exit": 0, "wait_returncode": 0}]
+          and read(launcher["stderr"]) == read(child["stderr"]) == b"",
+          "A_CAPTURE_FAILURE_ORIGINAL_LAUNCHER_STREAMS_ONLY_REPORT_COORDINATOR")
+    stdout = read(child["stdout"]).splitlines()
+    run = base.parent / "ms4-aftersale-review-normal-runs/20261105124201e3f7e8"
+    check(a["context"] == {"path": (run / "actual-run-context.json").as_posix(), "bytes": 12742,
+          "sha256": "2f6673a96fe6d178818b37e5897aac9011f363a173f0c9955e8efd011ce153bd"},
+          "A_CAPTURE_FAILURE_EXACT_ORIGINAL_CONTEXT_POINTER")
+    context = json.loads(read(a["context"]))
+    check(context["run_id"] == run.name and context["source_sha"] == source
+          and context["freeze_sha256"] == "8ea59d086047822ade79827b609d4b596107d3ac71f90158213502d7ced7518d",
+          "A_CAPTURE_FAILURE_EXACT_ORIGINAL_RUN_SOURCE_FREEZE")
+    results = {}
+    for key, evidence_key in (("normal_root_result", "actual_normal_result"),
+                              ("worker_close", "actual_worker_close"), ("independent_zero", "actual_independent_zero")):
+        check(a[key] == evidence[evidence_key], "A_CAPTURE_FAILURE_EXACT_ORIGINAL_RESULT_POINTER")
+        results[key] = json.loads(read(a[key]))
+        check(all(results[key][field] == context[field] for field in ("run_id", "source_sha")),
+              "A_CAPTURE_FAILURE_ORIGINAL_RESULTS_JOIN_CONTEXT")
+    final, close, zero = (results[key] for key in ("normal_root_result", "worker_close", "independent_zero"))
+    check(bool(stdout) and json.loads(stdout[-1]) == final and final["context"] == a["context"]["path"]
+          and final["status"] == "ROOT_NORMAL_MIGRATIONS_BUSINESS_WORKER_CLOSE_AND_INDEPENDENT_ZERO_NATIVE_ZERO",
+          "A_CAPTURE_FAILURE_COORDINATOR_FINAL_STDOUT")
+    check(close["status"] == "VERIFIED_MS4_WORKER_NORMAL_CLOSE_ZERO_RESIDUAL"
+          and zero["status"] == "VERIFIED_MS4_WORKER_NORMAL_INDEPENDENT_SIX_QUERY_ZERO"
+          and all(value["freeze_sha256"] == context["freeze_sha256"]
+                  and value["context_sha256"] == a["context"]["sha256"] for value in (close, zero))
+          and zero["close_result_sha256"] == a["worker_close"]["sha256"]
+          and [(row["kind"], row["label"]) for row in zero["queries"]] ==
+              [(kind, label) for kind in ("container", "network", "volume") for label in ("project", "run")]
+          and all(type(row["native_exit"]) is int and row["native_exit"] == row["stdout_bytes"] == row["stderr_bytes"] == 0
+                  for row in zero["queries"]), "A_CAPTURE_FAILURE_ORIGINAL_CLOSE_AND_INDEPENDENT_SIX_ZERO")
+    admission = json.loads(read({"path": (base / "normal-a-ae13-admission/ADMISSION.json").as_posix(), "bytes": 534,
+        "sha256": "e321905e14276e7a6f69f55dbaf981a53a9044a46a1471175a08c020db7469db"}))
+    check(admission["scope"] == "FRESH_FORMAL_A_NORMAL_ISOLATION" and admission["status"] == "ADMITTED_NONOVERLAPPING_SUBNET"
+          and admission["source_sha"] == source and admission["normal_materialization_sha256"] == setup["sha256"],
+          "A_CAPTURE_FAILURE_ORIGINAL_ADMISSION_UNCHANGED")
+    return {"facts": {"kind": kind, "original_session": a["session"], "launcher_pid": launcher["pid"],
+                     "launcher_native_exit": None, "capture_tool_exit": 1, "coordinator_pid": child["pid"],
+                     "coordinator_native_exit": 0, "coordinator_wait_returncode": 0, "observation": observation},
+            "public_files": [public[name] for name in sorted(public)]}
+
+
+def _capture_failure_post_a_header(observed, context):
+    return {"schema": 1, "scope": "CURRENT_NORMAL_A_COORDINATOR_ZERO_AFTER_CAPTURE_FAILURE_PUBLIC_HISTORY",
+            **{key: context[key] for key in ("run_id", "source_sha", "freeze_sha256")},
+            "outer_capture_failure": observed["facts"], "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
+
+
 def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
                         authority_pointer: dict[str, Any], authority: dict[str, Any]) -> tuple:
     """Shared B/post-A gate; observe the real outer terminal before any Run read."""
     require(type(a["session"]) is int and a["session"] > 0, "B_REAL_SUCCESSFUL_A_OUTER_SESSION")
     a_stage = (_reviewed_normal_stage(a["outer"], normal, "normal-start", read_pointer, require)
                if a["outer"].get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1" else None)
-    if a_stage is None:
+    if _a_capture_failed(a):
+        _reviewed_normal_a_capture_failure(a, normal, read_pointer, require)
+    elif a_stage is None:
         a_created, _ = _b_outer(a["outer"])
     else:
         require(a["session"] == a_stage["tool_session_id"], "A_RECOVERED_ORIGINAL_TOOL_SESSION")
@@ -3939,7 +4080,7 @@ def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
                  "REPO": Path(authority["validation_root"])}
     exec(compile(consumer, "reviewed-current-normal-readonly-preflight", "exec"), namespace)
     setup = namespace["current_b_normal_materialization"]()
-    if a_stage is None:
+    if a_stage is None and not _a_capture_failed(a):
         actual_normal_argv(a_created, "normal-start")
     raw = {key: read_pointer(a[key]) for key in ("context", "normal_root_result", "worker_close", "independent_zero")}
     context, final, close, zero = (decode(raw[key]) for key in ("context", "normal_root_result", "worker_close", "independent_zero"))
@@ -4072,6 +4213,11 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
             and {key: post[key] for key in post_contract["header"]} == post_contract["header"],
             "B_FIXED_REAL_POST_A_INVENTORY_SCHEMA")
     for row in post[post_contract["files_key"]]: read_pointer(row)
+    if _a_capture_failed(a):
+        observed = _reviewed_normal_a_capture_failure(a, fixed["normal"], read_pointer, require)
+        require(post_contract["header"] == _capture_failure_post_a_header(observed, context)
+                and all(row in post[post_contract["files_key"]] for row in observed["public_files"]),
+                "B_COMPLETE_A_CAPTURE_FAILURE_EVIDENCE_IN_POST_A_PUBLIC_HISTORY")
     for stage, outcome in (("materialize", fixed["normal"]["outer"]), ("normal-start", a.get("outer", {}))):
         if outcome.get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1":
             observed = _reviewed_normal_stage(outcome, fixed["normal"], stage, read_pointer, require)
@@ -4265,10 +4411,14 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
         require(type(a) is dict and set(a) == {"session", "outer", "context", "normal_root_result", "worker_close", "independent_zero"},
                 "POST_A_COMPLETED_A_INPUTS_WITHOUT_FUTURE_HISTORY")
     stage_public = []
+    capture_failure = None
     # This must precede authority/M traversal, context access and every Run read.
     if _interrupted_a(a):
         created = _interruption_namespace()["current_completion_outer"](a)
         for row in a["completion"]["outer"].values(): reads.pointer(row)
+    elif _a_capture_failed(a):
+        capture_failure = _reviewed_normal_a_capture_failure(a, normal, reads.pointer, require)
+        stage_public += capture_failure["public_files"]
     else:
         if a["outer"].get("kind") == "REVIEWED_NORMAL_STAGE_TOOL_TERMINAL_V1":
             observed = _reviewed_normal_stage(a["outer"], normal, "normal-start", reads.pointer, require)
@@ -4327,6 +4477,8 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
                   "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
         extra = decode(actual_raw["_completion_public_rows"])
         require(all(row in contract["retained_public_files"] for row in extra), "POST_A_ALL_COMPLETION_PUBLIC_CLOSED_SETS_RETAINED")
+    elif capture_failure is not None:
+        header = _capture_failure_post_a_header(capture_failure, context)
     else:
         header = {"schema": 1, "scope": "CURRENT_NORMAL_A_POST_SUCCESS_PUBLIC_HISTORY", "run_id": context["run_id"],
                   "source_sha": authority["source_sha"], "freeze_sha256": setup["freeze_sha256"],
@@ -4391,6 +4543,9 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
         result["completion_public_closure_counts"] = decode(actual_raw["_completion_public_counts"])
         result.pop("original_close_zero_consumed_without_rerun")
         result["original_close_and_completion_consumed_without_business_replay"] = True
+    elif capture_failure is not None:
+        result.update(status="COLLECTED_COMPLETED_A_COORDINATOR_ZERO_AFTER_CAPTURE_FAILURE_PUBLIC_HISTORY",
+                      outer_capture_failure=capture_failure["facts"])
     write("RESULT.json", encode(result))
     return result
 
@@ -4621,6 +4776,24 @@ def _b_interrupted_root(raw: bytes, name: str) -> bytes:
         after = "    require(setup['prior_interrupted_A_completion'] == A_QUALIFICATION['completion']['result'] and setup['prior_original_A_status']=='UNKNOWN/INTERRUPTED'\n        and setup['outer_coordinator_precondition']==current_interrupted_precondition()\n        and type(setup['prior_completion_native_commands_verified']) is int and setup['prior_completion_native_commands_verified']==CURRENT_COMPLETION_NATIVE_COUNT\n        and setup['prior_native_commands_verified']==205\n        and setup['prior_public_history_inventory'] == {key:A_QUALIFICATION['post_a_history'][key] for key in ['path','bytes','sha256']}, 'SAME_QUALIFIED_INTERRUPTION_COMPLETION_PUBLIC_INPUTS')"
         text = once(text.encode(), before.encode(), after.encode()).decode()
     return text.encode()
+
+
+def _b_a_capture_failure_root(raw: bytes, name: str) -> bytes:
+    """Use the explicit reviewed coordinator outcome in only the newly derived Roots."""
+    if name == "root-ui-materialize-freeze.py":
+        old = b"    assert type(A_QUALIFICATION) is dict and set(A_QUALIFICATION) == {'outer_native_exit','normal_root_result','worker_close','independent_zero','post_a_history'}, 'INCOMPLETE_R40_A_QUALIFICATION_REQUIRED'\n    assert type(A_QUALIFICATION['outer_native_exit']) is int and A_QUALIFICATION['outer_native_exit'] == 0"
+        precondition = b"        'outer_coordinator_precondition':{'original_session':A_OUTER_SESSION,\n            'native_exit_zero':'MUST_HAVE_BEEN_VERIFIED_BY_ROOT_BEFORE_INVOCATION',\n            'materializer_observation':'NOT_OBSERVED_OR_INFERRED_FROM_INTERNAL_CHILD_RECEIPTS'},"
+        fixed = b"        'outer_coordinator_precondition':capture_failure,"
+    else:
+        require(name == "root-ui-start-to-ready.py", "B_CAPTURE_FAILURE_EXACT_TWO_ROOTS")
+        old = b"    require(type(A_QUALIFICATION) is dict and set(A_QUALIFICATION) == {'outer_native_exit','normal_root_result','worker_close','independent_zero','post_a_history'}, 'INCOMPLETE_R40_A_QUALIFICATION_REQUIRED')\n    require(type(A_QUALIFICATION['outer_native_exit']) is int and A_QUALIFICATION['outer_native_exit'] == 0, 'ACTUAL_R40_NORMAL_OUTER_ZERO_REQUIRED')"
+        precondition = b"        and setup['outer_coordinator_precondition']['original_session'] == A_OUTER_SESSION, 'SAME_ROOT_SOURCE_INPUTS_REVIEW_AND_REAL_A_SESSION')"
+        fixed = b"        and setup['outer_coordinator_precondition'] == capture_failure, 'SAME_ROOT_SOURCE_INPUTS_REVIEW_AND_A_COORDINATOR_EVIDENCE')"
+    guard = b"    capture_failure = current_b_a_capture_failure_precondition()"
+    changed = once(once(raw, old, guard), precondition, fixed)
+    require(once(once(changed, fixed, precondition), guard, old) == raw,
+            "B_CAPTURE_FAILURE_WHOLE_ROOT_TWO_SEAM_INVERSE")
+    return changed
 
 
 def _b_normal_authority_contract(root: Path, source: bytes) -> tuple[dict[str, Any], bytes, dict[str, Any]]:
@@ -4902,6 +5075,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     post_history = fixed["post_a"]["history"] if interrupted else a["post_a_history"]
     post_contract = fixed["post_a"]["contract"] if interrupted else a["post_a_contract"]
     stage_facts = {}
+    capture_failure = None
     normal_stage_review_runtime = None
     normal_stage_runtime = ""
     for stage, outcome in (("materialize", fixed["normal"]["outer"]), ("normal-start", a.get("outer", {}))):
@@ -4934,6 +5108,39 @@ def current_b_normal_stage(outcome, stage):
             "旧四件型解析器、完整M来源/原生回执、原A业务及close/zero断言保持；不重跑旧M/A。\n").encode()
         for name in ("root-source/DESIGN-TASKS.md", "candidate/DESIGN.md"):
             require(after[name].endswith(b"\n"), "B_TYPED_STAGE_EVIDENCE_DOCUMENTED_EXISTING_RECORD")
+            after[name] += note
+    if _a_capture_failed(a):
+        require(not interrupted and not stage_facts, "B_A_CAPTURE_FAILURE_ONLY_WITH_ORIGINAL_M_FOUR_FILES")
+        capture_failure = _reviewed_normal_a_capture_failure(a, fixed["normal"], read_pointer, require)
+        normal_stage_runtime = ("CURRENT_B_A_CAPTURE_FAILURE = " + repr(capture_failure["facts"]) + "\n"
+            + _source_function(stable_read(Path(__file__).resolve()), "_reviewed_normal_a_capture_failure") + '''
+
+def current_b_a_capture_failure_precondition():
+    current_assert(type(A_QUALIFICATION) is dict and set(A_QUALIFICATION) == {'outer_native_exit','outer_capture_failure',
+        'normal_root_result','worker_close','independent_zero','post_a_history'}
+        and A_QUALIFICATION['outer_native_exit'] is None
+        and A_QUALIFICATION['outer_capture_failure'] == CURRENT_B_A_CAPTURE_FAILURE
+        and CURRENT_B_A_CAPTURE_FAILURE['original_session'] == A_OUTER_SESSION,
+        'B_EXACT_A_COORDINATOR_ZERO_WITH_CAPTURE_FAILURE_QUALIFICATION')
+    return CURRENT_B_A_CAPTURE_FAILURE
+''')
+        old_stage_gate = "    current_b_outer(fixed['normal']['outer'],fixed['normal']['review']);current_b_outer(fixed['A']['outer'])\n"
+        new_stage_gate = """    current_b_outer(fixed['normal']['outer'],fixed['normal']['review'])
+    observed = _reviewed_normal_a_capture_failure(fixed['A'], fixed['normal'], lambda pointer: current_stream(pointer, True), current_assert)
+    current_assert(observed['facts'] == current_b_a_capture_failure_precondition(), 'B_REVIEW_REAL_A_COORDINATOR_AND_CAPTURE_FAILURE')
+"""
+        normal_stage_review_runtime = once(_B_SOURCE_REVIEW.encode(), old_stage_gate.encode(), new_stage_gate.encode()).decode()
+        require(once(normal_stage_review_runtime.encode(), new_stage_gate.encode(), old_stage_gate.encode()).decode() == _B_SOURCE_REVIEW,
+                "B_A_CAPTURE_FAILURE_REVIEW_ONLY_STAGE_GATE_INVERSE")
+        for name in ("root-ui-materialize-freeze.py", "root-ui-start-to-ready.py"):
+            key = "root-source/" + name
+            after[key] = _b_a_capture_failure_root(after[key], name)
+        note = ("\n\n## ae13 原协调器终态与外层捕获故障\n\n"
+                "原协调器19596原生退出及等待均为0，关闭和独立六项验零均保留。外层工具70710退出1，"
+                "launcher46268 OS退出值未捕获。原文件保持，单独来源类型只使用这些实际结果，"
+                "不重跑A，也不签B运行或完整验收。\n").encode()
+        for name in ("root-source/DESIGN-TASKS.md", "candidate/DESIGN.md"):
+            require(after[name].endswith(b"\n"), "B_CAPTURE_FAILURE_EVIDENCE_DOCUMENTED_EXISTING_RECORD")
             after[name] += note
     if interrupted:
         note = ("\n\n## 本派生来源的中断后独立完成准入\n\n"
@@ -5005,6 +5212,9 @@ def current_b_normal_stage(outcome, stage):
                   for name in ("h5", "merchant", "admin")}, "runtime_root":runtime.as_posix()}
     if interrupted:
         a_qualification = _interrupted_qualification(a, post_history)
+    elif capture_failure is not None:
+        a_qualification = {"outer_native_exit": None, "outer_capture_failure": capture_failure["facts"],
+            **{key:a[key] for key in ("normal_root_result", "worker_close", "independent_zero", "post_a_history")}}
     else:
         a_qualification = {"outer_native_exit":0, **{key:a[key] for key in (
             "normal_root_result", "worker_close", "independent_zero", "post_a_history")}}
@@ -5015,6 +5225,11 @@ def current_b_normal_stage(outcome, stage):
             A_outer_exit=None, A_original_status="UNKNOWN/INTERRUPTED", A_completion_outer_exit=0,
             A_worker_close=a["worker_close"], A_independent_zero=None, A_independent_completion=a["completion"],
             A_post_history=post_history, materials_equivalence_authority=fixed["materials"]["independent_review"])
+    elif capture_failure is not None:
+        current.update(source_sha=head, parent=parent, actual_adoption_authority=fixed["source_authority"],
+            A_outer_exit=None, A_outer_capture_failure=capture_failure["facts"], A_worker_close=a["worker_close"],
+            A_independent_zero=a["independent_zero"], A_post_history=post_history,
+            materials_equivalence_authority=fixed["materials"]["independent_review"])
     else:
         current.update(source_sha=head, parent=parent, actual_adoption_authority=fixed["source_authority"],
             A_outer_exit=0, A_worker_close=a["worker_close"], A_independent_zero=a["independent_zero"],
@@ -5253,6 +5468,9 @@ def current_b_normal_stage(outcome, stage):
         checks["reviewed_normal_stage_tool_terminal_evidence"] = stage_facts
         checks["typed_stage_review_dispatch_whole_inverse_exact"] = True
         checks["old_outer_four_file_parsers_unchanged"] = True
+    if capture_failure is not None:
+        checks["reviewed_a_coordinator_zero_after_capture_failure"] = capture_failure
+        checks["capture_failure_two_root_main_and_source_review_inverse_exact"] = True
     if interrupted:
         checks["interrupted_A_with_independent_completion"] = checks.pop("original_A_five_proofs")
         checks["original_A_status"] = "UNKNOWN/INTERRUPTED"
@@ -5364,7 +5582,7 @@ def current_b_normal_stage(outcome, stage):
     shared_constants = "\nCURRENT_B_FIXED_INPUT = "+repr(fixed_pointer)+"\nCURRENT_B_TECHNICAL_AUTHORITY = "+repr(fixed["source_authority"])+"\n"
     # SOURCE-PINS omits itself; its fixed digest is installed only after the two
     # callers are complete through an external reviewed publication descriptor.
-    review_runtime = (normal_stage_review_runtime if stage_facts else _B_SOURCE_REVIEW).replace("**CURRENT_B_SOURCE_PINS", "**review['source_pins']")
+    review_runtime = (normal_stage_review_runtime or _B_SOURCE_REVIEW).replace("**CURRENT_B_SOURCE_PINS", "**review['source_pins']")
     interruption_runtime = ""
     if interrupted:
         review_runtime = _b_interrupted_review_runtime(review_runtime)
