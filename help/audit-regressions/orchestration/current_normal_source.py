@@ -5035,6 +5035,68 @@ def _b_verify_joint_php_seal(after: dict[str, bytes], proof: dict[str, Any], art
         "final_interface_host_close_zero_dag_verified": True, "complete_source_artifacts": 17}
 
 
+def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, bytes]) -> dict[str, Any]:
+    """Bind only the original browser literals to the five already reviewed material bytes."""
+    names = {role: "manifests/ui-" + role + "-dist.json" for role in ("h5", "merchant", "admin")}
+    names.update(profile="manifests/ui-public-copy-profile.json", png="ms4-order.png")
+    require(set(materials) == set(names.values()), "B_BROWSER_EXACT_REVIEWED_FIVE_MATERIALS")
+    old = {
+        "h5": {"bytes": 49501, "sha256": "df48f2e9160e8fd3d9f0bde5b9cdf633f268cf8f43d24da8fd9701b933a0e876"},
+        "merchant": {"bytes": 4174, "sha256": "0f916caf675fde4ef5460030f21769b1a2357e98b8acbee625b56e2b444be8f3"},
+        "admin": {"bytes": 87054, "sha256": "0fa82aebab70161d16d48e9a7f6bed45d7e45232ef19dd153c46ecc0ced810e7"},
+        "profile": {"bytes": 534684, "sha256": "bdade907675b73a5be1fccceb4449306f33f2acbc3242bf449ce4dddd87970a2"},
+        "png": {"bytes": 234, "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"},
+    }
+    actual = {role: pin(materials[name]) for role, name in names.items()}
+    require(actual["png"] == old["png"], "B_BROWSER_ORIGINAL_FIXED_PNG_BYTES")
+    counts = {role: len(decode(materials[names[role]])["files"]) for role in ("h5", "merchant", "admin")}
+    counts["public"] = len(decode(materials[names["profile"]])["public_source_files"])
+    require(counts["h5"] == 337 and counts["merchant"] == 30, "B_BROWSER_ORIGINAL_H5_AND_MERCHANT_COUNTS")
+    require(counts["admin"] > 0 and counts["public"] > 0, "B_BROWSER_NONEMPTY_ACTUAL_ADMIN_AND_PUBLIC_COUNTS")
+
+    def literal(role, row):
+        return f" {role}:{{bytes:{row['bytes']},sha256:'{row['sha256']}'}}".encode()
+
+    producer_name = "ms4-ui-business-producer.mjs"
+    producer_key = "browser-v1/" + producer_name
+    manifest_key = "browser-v1/PINS.json"
+    zero_key = "candidate/verify-zero-ms4-fulfillment.py"
+    original = after[producer_key]
+    require(original.count(literal("png", old["png"])) == 1
+            and original.count(b"builds.h5.size===337&&builds.merchant.size===30&&builds.admin.size===603&&original.size===2536") == 1,
+            "B_BROWSER_ORIGINAL_PNG_LITERAL_AND_COMPLETE_COUNT_PREDICATE")
+    edits = [(literal(role, old[role]), literal(role, actual[role])) for role in ("h5", "merchant", "admin", "profile")]
+    edits += [(b"builds.admin.size===603", f"builds.admin.size==={counts['admin']}".encode()),
+              (b"original.size===2536", f"original.size==={counts['public']}".encode())]
+    updated = original
+    for previous, current in edits:
+        updated = once(updated, previous, current)
+    restored = updated
+    for previous, current in reversed(edits):
+        restored = once(restored, current, previous)
+    require(restored == original, "B_BROWSER_MATERIAL_FOUR_TUPLES_TWO_COUNTS_WHOLE_FILE_INVERSE")
+
+    manifest_before = after[manifest_key]
+    browser = decode(manifest_before)
+    require(set(browser) == {"members"} and len(browser["members"]) == 8 and producer_name in browser["members"]
+            and browser["members"] == {name: pin(after["browser-v1/" + name]) for name in browser["members"]},
+            "B_BROWSER_ACTUAL_COMPLETE_EIGHT_MEMBER_PRESEAL")
+    zero = after[zero_key]
+    old_manifest_pin = pin(manifest_before)
+    require(constant(zero, "UI_AUX_SOURCE_PIN") == old_manifest_pin, "B_BROWSER_ZERO_AUX_PIN_BEFORE_MATERIALS")
+    browser["members"][producer_name] = pin(updated)
+    manifest_after = encode(browser) if updated != original else manifest_before
+    new_manifest_pin = pin(manifest_after)
+    zero_after = replace_constant(zero, "UI_AUX_SOURCE_PIN", new_manifest_pin) if updated != original else zero
+    require(constant(zero_after, "UI_AUX_SOURCE_PIN") == new_manifest_pin
+            and (zero_after == zero if updated == original else replace_constant(zero_after, "UI_AUX_SOURCE_PIN", old_manifest_pin) == zero),
+            "B_BROWSER_ZERO_AUX_PIN_WHOLE_INVERSE")
+    after.update({producer_key: updated, manifest_key: manifest_after, zero_key: zero_after})
+    return {"materials": actual, "counts": counts, "producer_before": pin(original), "producer_after": pin(updated),
+            "manifest_before": old_manifest_pin, "manifest_after": new_manifest_pin,
+            "whole_producer_and_zero_inverse_exact": True}
+
+
 def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], derived: dict[str, Any],
                normal_consumer: str, setup: dict[str, Any], context: dict[str, Any],
                materials: dict[str, bytes], material_result: dict[str, Any]) -> dict[str, Any]:
@@ -5172,6 +5234,7 @@ def current_b_a_capture_failure_precondition():
     artifacts = constant(before["root-source/root-ui-materialize-freeze.py"], "ARTIFACTS")
     require(len(artifacts) == 17, "B_ORIGINAL_COMPLETE_SEVENTEEN")
     for name, raw in materials.items(): after["candidate/" + name] = raw
+    browser_materials = _b_bind_browser_materials(after, materials)
     base = fixed["base_source"]
     require(set(base) == {"root", "PINS", "FINAL"}, "B_ORIGINAL_OBSERVER59_SOURCE_AUTHORITY")
     base_root = Path(base["root"])
@@ -5437,6 +5500,7 @@ def current_b_a_capture_failure_precondition():
             and frozen_role_source_inverse_exact and normal_authority_contract["whole_root_inverse_exact"]
             and joint_php_seal["whole_file_metadata_inverse_exact"] and freeze_writer_inverse_exact
             and initializer_topology["whole_initializer_inverse_exact"]
+            and browser_materials["whole_producer_and_zero_inverse_exact"]
             and (oracle_proof is None or oracle_proof["browser_whole_file_inverse_exact"])),
         "joint_php_entry_and_dependency_seal":joint_php_seal,
         "initializer_source_tree_topology":initializer_topology,
@@ -5457,6 +5521,7 @@ def current_b_a_capture_failure_precondition():
         "added_order_menu_consumer":"ms4-host.py:verify_order_menu_bootstrap",
         "aftersale_review_image_consumer":derived["aftersale_review_image_consumer"],
         "browser_compatibility":derived["browser_compatibility"],
+        "browser_materials":browser_materials,
         "materializer_committed_source_labels":{"source_rows":len(rows),"unique_labels":len(set(committed_source_labels)),
             "suffix":"SHA256_UTF8_FULL_REPOSITORY_RELATIVE_PATH","only_added_main_change":"NATIVE_LABEL_EXPRESSION",
             "git_show_argv_order_and_file_assertions":"UNCHANGED","whole_main_single_seam_inverse":True},
