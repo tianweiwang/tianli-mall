@@ -278,7 +278,110 @@ function m4upo_file(array $entry,string $raw,int $mode=0600):void
   &&$entry['mode']===$mode&&$entry['uid']===posix_geteuid()&&$entry['gid']===posix_getegid()&&$entry['nlink']===1
   &&$entry['dev']>=0&&$entry['ino']>0,'UI_WINDOW_ACTUAL_EXACT_FILE_BYTES_MODE_OWNER');
 }
-function m4upo_files(array $before,array $after,array $source,array $writer,#[\SensitiveParameter] array $credentials,array $actors):void
+/** Bounded framework diagnostics accompany the two original native child streams. */
+function m4ul_timezone(array $source,?string $actual=null):DateTimeZone
+{
+ $name='crmeb/config/app.php';$rows=array_values(array_filter($source['source_files'],static fn(array $r):bool=>$r['path']===$name));
+ m4up_expect(count($rows)===1,'UI_DIAGNOSTIC_ONE_FROZEN_TIMEZONE_SOURCE');$row=$rows[0];
+ m4up_expect(is_int($row['bytes'])&&$row['bytes']>0&&$row['bytes']<=65536,'UI_DIAGNOSTIC_BOUNDED_TIMEZONE_SOURCE');
+ $raw=file_get_contents('/workspace/'.$name,false,null,0,$row['bytes']+1);
+ m4up_expect(is_string($raw)&&strlen($raw)===$row['bytes']&&hash('sha256',$raw)===$row['sha256']
+  &&preg_match_all("~(?m)^\\s*'default_timezone'\\s*=>\\s*'([^'\\r\\n]+)'\\s*,\\s*$~",$raw,$matches)===1
+  &&$matches[1][0]==='Asia/Shanghai'&&($actual===null||$actual===$matches[1][0]),'UI_DIAGNOSTIC_SOURCE_ACTUAL_APP_TIMEZONE');
+ return new DateTimeZone($matches[1][0]);
+}
+function m4ul_nodes(array $tree,int $mask):array
+{
+ m4up_expect(in_array($mask,[0077,0022],true)&&isset($tree[''])&&$tree['']['kind']==='directory','UI_DIAGNOSTIC_FIXED_RUNTIME_MODE');$nodes=[];
+ foreach($tree as$name=>$entry){if($name!=='log'&&!str_starts_with($name,'log/'))continue;
+  m4up_expect($name==='log'||preg_match('~\Alog/[0-9]{8}[.]log\z~D',$name)===1,'UI_DIAGNOSTIC_EXACT_DATE_FILE_NAMESPACE');
+  m4up_expect($entry['dev']===$tree['']['dev']&&is_int($entry['ino'])&&$entry['ino']>0&&$entry['ino']!==$tree['']['ino']
+   &&$entry['uid']===0&&$entry['gid']===0,'UI_DIAGNOSTIC_SAME_RUNTIME_DEVICE_ROOT_OWNER');
+  if($name==='log')m4up_expect($entry['kind']==='directory'&&$entry['mode']===(0755&~$mask)&&$entry['nlink']===2,'UI_DIAGNOSTIC_EXACT_LOG_DIRECTORY');
+  else m4up_expect($entry['kind']==='file'&&$entry['mode']===(0666&~$mask)&&$entry['nlink']===1
+   &&is_int($entry['bytes'])&&$entry['bytes']>0&&$entry['bytes']<=16777216&&m5pc_hex($entry['sha256']),'UI_DIAGNOSTIC_BOUNDED_DATE_LOG_FILE');
+  $nodes[$name]=$entry;
+ }
+ if($nodes!==[])m4up_expect(isset($nodes['log'])&&count($nodes)>=2&&count($nodes)<=62,'UI_DIAGNOSTIC_DIRECTORY_WITH_BOUNDED_LOG_FILES');
+ $identities=[];foreach($tree as$name=>$entry){$key=$entry['dev'].':'.$entry['ino'];
+  if(isset($nodes[$name]))m4up_expect(!isset($identities[$key]),'UI_DIAGNOSTIC_DISTINCT_NATIVE_NODES');$identities[$key]=$name;}
+ return $nodes;
+}
+function m4ul_read(array $tree,int $mask):array
+{
+ $out=[];$total=0;foreach(m4ul_nodes($tree,$mask)as$name=>$entry){if($name==='log')continue;$path='/workspace/crmeb/runtime/'.$name;
+  clearstatcache(true,$path);$initial=lstat($path);m4up_expect(is_array($initial)&&!is_link($path)&&realpath($path)===$path
+   &&($initial['mode']&0170000)===0100000,'UI_DIAGNOSTIC_REAL_REGULAR_PATH');
+  foreach(['dev','ino','uid','gid','nlink','mtime','ctime']as$k)m4up_expect($initial[$k]===$entry[$k],'UI_DIAGNOSTIC_SAME_SNAPSHOT_FILE');
+  m4up_expect(($initial['mode']&07777)===$entry['mode']&&$initial['size']===$entry['bytes'],'UI_DIAGNOSTIC_SAME_SNAPSHOT_MODE_SIZE');
+  $stream=fopen($path,'rb');try{m4up_expect(is_resource($stream),'UI_DIAGNOSTIC_REAL_READ_HANDLE');$opened=fstat($stream);
+   foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$k)m4up_expect($opened[$k]===$initial[$k],'UI_DIAGNOSTIC_SAME_OPEN_FILE');
+   $raw=stream_get_contents($stream,$initial['size']+1);m4up_expect(is_string($raw)&&strlen($raw)===$initial['size']&&feof($stream)
+    &&hash('sha256',$raw)===$entry['sha256'],'UI_DIAGNOSTIC_COMPLETE_RAW_EOF_PIN');$last=fstat($stream);
+   foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$k)m4up_expect($last[$k]===$opened[$k],'UI_DIAGNOSTIC_OPEN_FILE_STABLE');
+  }finally{if(is_resource($stream))fclose($stream);}
+  clearstatcache(true,$path);$last=lstat($path);foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$k)
+   m4up_expect($last[$k]===$initial[$k],'UI_DIAGNOSTIC_CLOSED_PATH_STABLE');
+  $total+=strlen($raw);m4up_expect($total<=16777216,'UI_DIAGNOSTIC_TOTAL_RAW_BOUND');$out[$name]=$raw;
+ }ksort($out,SORT_STRING);return $out;
+}
+function m4ul_records(array $raw,DateTimeZone $zone):array
+{
+ $records=[];$ids=[];ksort($raw,SORT_STRING);$total=0;
+ foreach($raw as$name=>$bytes){$total+=strlen($bytes);m4up_expect(preg_match('~\Alog/[0-9]{8}[.]log\z~D',$name)===1&&$total<=16777216
+  &&$bytes!==''&&str_ends_with($bytes,"\n"),'UI_DIAGNOSTIC_COMPLETE_BOUNDED_LINES');
+  foreach(explode("\n",substr($bytes,0,-1))as$line){$parts=explode('|',$line,3);
+   m4up_expect(count($parts)===3&&$parts[1]==='info','UI_DIAGNOSTIC_ORIGINAL_INFO_FORMAT');$r=json_decode($parts[2],true,32,JSON_THROW_ON_ERROR);
+   m4up_expect(is_array($r)&&json_encode($r,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)===$parts[2]
+    &&array_keys($r)===['request_id','surface','method','elapsed_ms','event','http_status','business_status']
+    &&is_string($r['request_id'])&&preg_match('/\A[a-f0-9]{32}\z/D',$r['request_id'])===1&&!isset($ids[$r['request_id']])
+    &&in_array($r['surface'],['api','merchantapi','adminapi'],true)&&in_array($r['method'],['GET','POST','PUT'],true)
+    &&is_int($r['elapsed_ms'])&&$r['elapsed_ms']>=0&&$r['elapsed_ms']<=2147483647&&$r['event']==='http.response'
+    &&$r['http_status']===200&&$r['business_status']===200,'UI_DIAGNOSTIC_EXACT_NORMAL_RESPONSE_SCHEMA');$ids[$r['request_id']]=true;
+   $clock=DateTimeImmutable::createFromFormat('!Y-m-d H:i:s',$parts[0],$zone);
+   m4up_expect($clock instanceof DateTimeImmutable&&$clock->format('Y-m-d H:i:s')===$parts[0]
+    &&'log/'.$clock->format('Ymd').'.log'===$name,'UI_DIAGNOSTIC_SOURCE_TIMEZONE_DATE_FILENAME');
+   $records[]=['record'=>$r,'time_ms'=>$clock->getTimestamp()*1000];
+  }
+ }return $records;
+}
+function m4ul_append(array $before,array $after,array $old,array $new,array $requests,array $interval,DateTimeZone $zone,string $phase):array
+{
+ m4up_expect(in_array($phase,['prepare','gui'],true)&&is_array($interval)&&array_is_list($interval)&&count($interval)===2
+  &&is_int($interval[0])&&is_int($interval[1])&&$interval[0]>0&&$interval[1]>=$interval[0],'UI_DIAGNOSTIC_INDEPENDENT_PHASE_WINDOW');
+ $mask=$phase==='prepare'?0077:0022;$a=m4ul_nodes($before,$mask);$z=m4ul_nodes($after,$mask);$expectedNames=[];$actualNames=[];
+ foreach($a as$name=>$entry)if($name!=='log')$expectedNames[]=$name;foreach($z as$name=>$entry)if($name!=='log')$actualNames[]=$name;
+ m4up_expect(array_keys($old)===$expectedNames&&array_keys($new)===$actualNames,'UI_DIAGNOSTIC_COMPLETE_SNAPSHOT_RAW_NAMESPACE');
+ foreach([[$a,$old],[$z,$new]]as[$nodes,$raw])foreach($raw as$name=>$bytes)m4up_expect(is_string($bytes)
+  &&strlen($bytes)===$nodes[$name]['bytes']&&hash('sha256',$bytes)===$nodes[$name]['sha256'],'UI_DIAGNOSTIC_SNAPSHOT_RAW_PIN');
+ m4ul_records($new,$zone);m4ul_records($old,$zone);$extra=[];
+ foreach($old as$name=>$raw){m4up_expect(isset($new[$name])&&str_starts_with($new[$name],$raw),'UI_DIAGNOSTIC_FULL_OLD_BYTE_PREFIX');
+  foreach(['kind','dev','ino','mode','uid','gid','nlink']as$k)m4up_expect($a[$name][$k]===$z[$name][$k],'UI_DIAGNOSTIC_OLD_FILE_IDENTITY_PRESERVED');
+  if($new[$name]===$raw)m4up_expect($z[$name]===$a[$name],'UI_DIAGNOSTIC_UNCHANGED_OLD_FILE_STAT');}
+ foreach($new as$name=>$raw){$tail=substr($raw,strlen($old[$name]??''));if($tail!=='')$extra[$name]=$tail;}
+ $added=m4ul_records($extra,$zone);$expected=[];$actual=[];$unique=[];
+ foreach($requests as$r){m4up_expect(is_array($r)&&isset($r['path'],$r['method'],$r['http_status'],$r['app_status'],$r['started_at_ms'],$r['finished_at_ms'])
+  &&preg_match('~\A/(api|merchantapi|adminapi)(?:/|$)~',$r['path'],$match)===1&&in_array($r['method'],['GET','POST','PUT'],true)
+  &&$r['http_status']===200&&$r['app_status']===200&&is_int($r['started_at_ms'])&&is_int($r['finished_at_ms'])
+  &&$r['started_at_ms']>=$interval[0]&&$r['finished_at_ms']>=$r['started_at_ms']&&$r['finished_at_ms']<=$interval[1],
+  'UI_DIAGNOSTIC_REAL_NORMAL_REQUEST_PLAN');$key=$match[1].':'.$r['method'];$expected[$key]=($expected[$key]??0)+1;$unique[$key]=$r;}
+ foreach($added as$item){$r=$item['record'];$at=$item['time_ms'];$key=$r['surface'].':'.$r['method'];
+  m4up_expect($at+1000>$interval[0]&&$at<=$interval[1]&&$r['elapsed_ms']<=$interval[1]-$interval[0]+1000,'UI_DIAGNOSTIC_NORMAL_PHASE_TIME_ELAPSED');
+  if($phase==='prepare'){m4up_expect(($expected[$key]??null)===1,'UI_DIAGNOSTIC_UNIQUE_PREPARE_SURFACE');$request=$unique[$key];
+   m4up_expect($at+1000>$request['started_at_ms']&&$at<=$request['finished_at_ms']
+    &&$r['elapsed_ms']<=$request['finished_at_ms']-$request['started_at_ms']+1000,'UI_DIAGNOSTIC_UNIQUE_PREPARE_REQUEST_WINDOW');}
+  $actual[$key]=($actual[$key]??0)+1;
+ }
+ // GUI diagnostics join actual phase/group counts, not asynchronous request ordering or per-request-ID identity.
+ ksort($expected,SORT_STRING);ksort($actual,SORT_STRING);m4up_expect($actual===$expected,'UI_DIAGNOSTIC_EXACT_NORMAL_PHASE_GROUP_COUNTS');
+ foreach($z as$name=>$entry)if(!isset($a[$name]))foreach($before as$oldEntry)m4up_expect($entry['dev']!==$oldEntry['dev']||$entry['ino']!==$oldEntry['ino'],'UI_DIAGNOSTIC_NEW_NODE_DISTINCT_FROM_BASELINE');
+ if(isset($a['log']))m4up_expect(isset($z['log'])&&$a['log']===$z['log'],'UI_DIAGNOSTIC_OLD_LOG_DIRECTORY_PRESERVED');
+ else if(isset($z['log']))m4up_expect($added!==[],'UI_DIAGNOSTIC_NEW_LOG_DIRECTORY_FOR_REAL_RESPONSES');
+ $left=$before;$right=$after;foreach($a as$name=>$entry)unset($left[$name]);foreach($z as$name=>$entry)unset($right[$name]);
+ if(!isset($a['log'])&&isset($z['log'])){m4up_expect($right['']['nlink']===$left['']['nlink']+1,'UI_DIAGNOSTIC_ONLY_ONE_NEW_DIRECTORY_LINK');$right['']['nlink']=$left['']['nlink'];}
+ return ['before'=>$left,'after'=>$right];
+}
+function m4upo_files(array $before,array $after,array $source,array $writer,#[\SensitiveParameter] array $credentials,array $actors,array $interval,string $timezone):void
 {
  $root='/run/audit-fixtures';$a=$before['files'][$root];$z=$after['files'][$root];
  m4up_expect(is_array($a)&&is_array($z)&&!isset($a['ms4-ui'])&&!isset($a['ms4-ui/credentials.json']),'UI_WINDOW_FRESH_PRIVATE_HANDOFF_PATH');
@@ -317,6 +420,10 @@ function m4upo_files(array $before,array $after,array $source,array $writer,#[\S
  foreach(['index.php','router.php','install.lock']as$n)m4up_expect($uploadsDirectory['dev']!==$y[$n]['dev']
   ||$uploadsDirectory['ino']!==$y[$n]['ino'],'UI_WINDOW_UPLOADS_DISTINCT_FROM_NEW_PUBLIC_FILES');
  $p='/workspace/crmeb/runtime';$x=$before['files'][$p];$y=$after['files'][$p];
+ $ranges=m4upo_calls($credentials);$requests=[];foreach([['merchant','merchantapi'],['platform','adminapi'],['customer','api']]as[$kind,$surface])
+  $requests[]=['path'=>'/'.$surface.'/login','method'=>'POST','http_status'=>200,'app_status'=>200,'started_at_ms'=>$ranges[$kind][0]*1000,'finished_at_ms'=>($ranges[$kind][1]+1)*1000-1];
+ $logs=m4ul_read($y,0077);$delta=m4ul_append($x,$y,[],$logs,$requests,[$interval[0]*1000,($interval[1]+1)*1000-1],m4ul_timezone($source,$timezone),'prepare');
+ $x=$delta['before'];$y=$delta['after'];
  m4up_expect(is_array($x)&&array_keys($x)===['']&&array_keys($y)===['','ms4-aftersale-review-http.stderr','ms4-aftersale-review-http.stdout'],
   'UI_WINDOW_ONLY_TWO_OWN_CHILD_LOG_FILES');m4upo_root($x[''],$y[''],['mode'=>0700]);
  $secrets=[];foreach($credentials as$c)$secrets[]=$c['password'];foreach(['customer','merchant','platform']as$k)$secrets[]=$actors[$k]['token'];
@@ -344,7 +451,7 @@ function m4upo_verify(PDO $db,\think\App $app,array $source,array $owner,array $
  $expected=m4upo_actor_rows($before,$after,$owner,$actors,$credentials,$interval);
  $expected['eb_system_menus']=m4upo_menu_rows($before,$after,$menus);
  m4upo_database($before,$after,$expected);m4upo_redis($app,$before,$after,$actors,$credentials);
- m4upo_files($before,$after,$source,$writer,$credentials,$actors);m4fn_inputs_unchanged($owner['inputs']);
+ m4upo_files($before,$after,$source,$writer,$credentials,$actors,$interval,$app->config->get('app.default_timezone'));m4fn_inputs_unchanged($owner['inputs']);
  // A second full independent read prevents the oracle's own direct service/Redis/file reads from masking mutations.
  $again=m4upo_snapshot($db);
  m4up_expect($again['database']===$after['database']&&$again['rows']===$after['rows']
@@ -426,6 +533,7 @@ function m4uwo_snapshot(PDO $db):array
     $s['log_raw']=[];foreach(M4UIB_LOGS as$p){$f=m4uib_file($p,16777216,true);$relative=basename($p);$r=$s['files']['/workspace/crmeb/runtime'][$relative]??null;
         m4uib_assert(is_array($r)&&$r['dev']===$f['stat']['dev']&&$r['ino']===$f['stat']['ino']&&$r['bytes']===$f['descriptor']['bytes']
             &&$r['sha256']===$f['descriptor']['sha256']&&$r['mode']===0600&&$r['uid']===0&&$r['nlink']===1,'OBS_SAME_COMPLETE_PRIVATE_LOG');$s['log_raw'][$p]=$f['raw'];}
+    foreach(m4ul_read($s['files']['/workspace/crmeb/runtime'],0022)as$relative=>$raw)$s['log_raw']['/workspace/crmeb/runtime/'.$relative]=$raw;
     return $s;
 }
 function m4uwo_same(array $a,array $b):void
@@ -525,7 +633,11 @@ function m4uwo_logs(array $before,array $after,array $event,array $s):void
                 m4uib_assert(count($match)===1,'OBS_LOG_EXACT_ASSOCIATED_NORMAL_REQUEST');$seen[$match[0]]=true;$connections[$connection]=1;}
         }
     }m4uib_assert($connections===[]&&count($seen)===count($requests),'OBS_EVERY_NORMAL_REQUEST_EXACT_COMPLETE_LOG_CYCLE');
-    $a=$before['files']['/workspace/crmeb/runtime'];$z=$after['files']['/workspace/crmeb/runtime'];
+    $old=[];$new=[];$prefix='/workspace/crmeb/runtime/';
+    foreach($before['log_raw']as$path=>$raw)if(str_starts_with($path,$prefix.'log/'))$old[substr($path,strlen($prefix))]=$raw;
+    foreach($after['log_raw']as$path=>$raw)if(str_starts_with($path,$prefix.'log/'))$new[substr($path,strlen($prefix))]=$raw;
+    $delta=m4ul_append($before['files']['/workspace/crmeb/runtime'],$after['files']['/workspace/crmeb/runtime'],$old,$new,$requests,
+        [$event['started_at_ms'],$event['finished_at_ms']],m4ul_timezone($s),'gui');$a=$delta['before'];$z=$delta['after'];
     foreach(M4UIB_LOGS as$p){$leaf=basename($p);unset($a[$leaf],$z[$leaf]);}
     m4uib_assert($a===$z,'OBS_EVERY_OTHER_RUNTIME_TREE_PRESERVED');
 }
