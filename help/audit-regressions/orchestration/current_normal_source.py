@@ -5658,6 +5658,28 @@ HISTORY_OVERLAY_PIN = {"bytes": 8013, "sha256": "503c0d3d4554a18dbbc114150172c12
 HISTORY_ORIGINAL_ROOT = "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/"
 
 
+def _history_refund_reader_columns(raw: bytes) -> bytes:
+    context = b"function nhecr_refund_context(#[SensitiveParameter] array $beforeDB2, array $intent,\n"
+    identity = b"function nhecr_identities(#[SensitiveParameter] array $expectedDB2,"
+    start = raw.index(b"    $defaults = ['id' => null, 'store_order_id' => 0,", raw.index(context))
+    end = raw.index(b"    foreach ($defaults as $column => $default) {\n", start)
+    contract = raw[start:end]
+    stale_start = raw.index(b"    nhep_expect(array_keys($refund['metadata']['columns'])", raw.index(identity))
+    stale_end = raw.index(b"    $rid = nhepcd_id(", stale_start)
+    stale = raw[stale_start:stale_end]
+    require(pin(contract) == {"bytes": 2438, "sha256": "f6f33aba57a15eb219afdc9cb872cf74dfaa9b3d275af9492adb2d5b730d0dd3"}
+            and pin(stale) == {"bytes": 557, "sha256": "90234605424e53759e063dcd4ef7922d894efd955cc1f1f18e78c642725b392e"}
+            and b"nhecr_legacy_refund_columns(" not in raw, "HISTORY_EXACT_ORIGINAL_REFUND_COLUMN_BLOCKS")
+    helper = (b"function nhecr_legacy_refund_columns(array $metadata, #[SensitiveParameter] array $row): array\n{\n"
+              + contract + b"    return $defaults;\n}\n\n")
+    context_call = b"    $defaults = nhecr_legacy_refund_columns($metadata, $row);\n"
+    identity_call = b"    nhecr_legacy_refund_columns($refund['metadata'], $refundRow);\n"
+    changed = once(once(once(raw, contract, context_call), stale, identity_call), context, helper + context)
+    restored = once(once(once(changed, helper + context, context), identity_call, stale), context_call, contract)
+    require(restored == raw, "HISTORY_REFUND_COLUMN_CONTRACT_COMPLETE_READER_INVERSE")
+    return changed
+
+
 def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                          isolation_subnet: str | None = None, *,
                          disable_mysql_native_aio: bool = False) -> dict[str, Any]:
@@ -5767,6 +5789,8 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                 "HISTORY_COMPLETE_MODULE_INVERSE")
         modules[path.name] = {"path": path.as_posix(), **pin(raw)}
         author_sources[path.name] = raw
+        if kind == "reader" and history_refund_readiness:
+            after[name] = _history_refund_reader_columns(after[name])
         if kind == "host":
             # Docker mount order is incidental. Normalize only the shared public snapshot.
             # The native inspect evidence and every runtime assertion remain exact.
