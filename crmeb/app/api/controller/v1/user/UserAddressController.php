@@ -120,7 +120,6 @@ class UserAddressController
         $uid = (int)$request->uid();
         $res = $this->services->editAddress($uid, $addressInfo);
         if ($res) {
-            app()->make(WechatUserServices::class)->update(['uid' => $uid], ['province' => $addressInfo['address']['province']]);
             return app('json')->success($res['type'] == 'edit' ? '修改成功' : $res['data']);
         } else {
             return app('json')->fail('修改失败');

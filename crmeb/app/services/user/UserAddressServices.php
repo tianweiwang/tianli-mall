@@ -135,14 +135,19 @@ class UserAddressServices extends BaseServices
      */
     public function setDefault(int $uid, int $id)
     {
-        if (!$this->getAddress($id)) {
-            throw new ApiException('地址不存在');
-        }
-        if (!$this->dao->update($uid, ['is_default' => 0], 'uid'))
-            throw new ApiException('取消原来默认地址失败');
-        if (!$this->dao->update($id, ['is_default' => 1]))
-            throw new ApiException('设置默认地址失败');
-        return true;
+        return $this->transaction(function () use ($uid, $id) {
+            $where = ['id' => $id, 'uid' => $uid, 'is_del' => 0];
+            if (!$this->dao->selectModel($where, 'id')->lock(true)->find()) {
+                throw new ApiException('地址不存在');
+            }
+            if (!$this->dao->update(['uid' => $uid, 'is_del' => 0, 'is_default' => 1], ['is_default' => 0])) {
+                throw new ApiException('取消原来默认地址失败');
+            }
+            if (!$this->dao->update($where, ['is_default' => 1])) {
+                throw new ApiException('设置默认地址失败');
+            }
+            return true;
+        });
     }
 
     /**
@@ -206,38 +211,37 @@ class UserAddressServices extends BaseServices
         unset($addressInfo['address'], $addressInfo['type']);
         //数据验证
         validate(AddressValidate::class)->check($addressInfo);
-        $address_check = [];
-        if ($addressInfo['id']) {
-            $address_check = $this->getAddress((int)$addressInfo['id']);
-        }
-        if ($addressInfo['is_default']) {
-            app()->make(WechatUserServices::class)->update(['uid' => $uid], ['province' => $addressInfo['province']]);
-        }
-        if ($address_check && $address_check['is_del'] == 0 && $address_check['uid'] = $uid) {
-            $id = (int)$addressInfo['id'];
-            unset($addressInfo['id']);
-            if (!$this->dao->update($id, $addressInfo, 'id')) {
-                throw new ApiException('修改失败');
+        $id = (int)$addressInfo['id'];
+        // id=0 is an input marker; the ORM must populate the new primary key.
+        unset($addressInfo['id']);
+        return $this->transaction(function () use ($uid, $id, $addressInfo) {
+            if ($id !== 0) {
+                $where = ['id' => $id, 'uid' => $uid, 'is_del' => 0];
+                if (!$this->dao->selectModel($where, 'id')->lock(true)->find()) {
+                    throw new ApiException('地址不存在');
+                }
+                if (!$this->dao->update($where, $addressInfo)) {
+                    throw new ApiException('修改失败');
+                }
+                $result = ['type' => 'edit', 'msg' => '编辑地址成功', 'data' => []];
+            } else {
+                $addressInfo['add_time'] = time();
+                if (!$this->getAddresCount(['uid' => $uid, 'is_del' => 0])) {
+                    $addressInfo['is_default'] = 1;
+                }
+                $address = $this->dao->save($addressInfo);
+                $id = (int)($address->id ?? 0);
+                if ($id <= 0) {
+                    throw new ApiException('添加失败');
+                }
+                $result = ['type' => 'add', 'msg' => '添加地址成功', 'data' => ['id' => $id]];
             }
             if ($addressInfo['is_default']) {
                 $this->setDefault($uid, $id);
             }
-            return ['type' => 'edit', 'msg' => '编辑地址成功', 'data' => []];
-        } else {
-            $addressInfo['add_time'] = time();
-
-            //首次添加地址，自动设置为默认地址
-            $addrCount = $this->getAddresCount(['uid' => $uid]);
-            if (!$addrCount) $addressInfo['is_default'] = 1;
-
-            if (!$address = $this->dao->save($addressInfo)) {
-                throw new ApiException('添加失败');
-            }
-            if ($addressInfo['is_default']) {
-                $this->setDefault($uid, (int)$address->id);
-            }
-            return ['type' => 'add', 'msg' => '添加地址成功', 'data' => ['id' => $address->id]];
-        }
+            app()->make(WechatUserServices::class)->update(['uid' => $uid], ['province' => $addressInfo['province']]);
+            return $result;
+        });
     }
 
     /**
