@@ -2934,11 +2934,34 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     source_review = decode(read_pointer(authority["independent_review"]))
     require(source_review.get("customer_form_helper_update") == helper_update,
             "B_EXACT_INDEPENDENT_FORM_HELPER_UPDATE")
+    oracle_path = "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php"
+    oracle_before = {"path": oracle_path, "bytes": 243930,
+                     "sha256": "e61184d208d9f6f0dfbfad9eb5eb32635ed8fd103e62f7abe5852712f5ee9be3"}
+    oracle_current = inventory[oracle_path]
+    oracle_update = None
+    if oracle_current != oracle_before:
+        require(oracle_current == {"path": oracle_path, "bytes": 254827,
+            "sha256": "ed6b7d24f195c096218126c9ae604012c169cb5f7084b4c16c2fac7dc66b06c4"},
+            "B_FIXED_CURRENT_UI_PREPARE_ORACLE_BYTES")
+        oracle_update = {"before": oracle_before, "after": oracle_current}
+        delta = source_review.get("semantic_delta")
+        require(type(delta) is list, "B_INDEPENDENT_UI_PREPARE_ORACLE_DELTA_REQUIRED")
+        rows = [row for row in delta if type(row) is dict and row.get("path") == oracle_path]
+        require(len(rows) == 1 and rows[0].get("kind") == "MODIFY"
+                and all(type(rows[0].get(side)) is dict
+                        and all(rows[0][side].get(key) == value for key, value in expected.items())
+                        for side, expected in oracle_update.items()),
+                "B_EXACT_INDEPENDENT_UI_PREPARE_ORACLE_DELTA")
+        for root in ("candidate_root", "validation_root"):
+            read_pointer({**oracle_current, "path": (Path(authority[root]) / oracle_path).as_posix()})
     active_paths = {AR_PATH, CUSTOMER_PATH, FULFILLMENT_PATH, LEGACY_PATH,
                     "help/audit-regressions/isolated/ms4-ui-prepare.php",
                     "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php"}
     def current_row(row):
         wanted = inventory[row["path"]]
+        if row["path"] == oracle_path and wanted != row:
+            require(oracle_update == {"before": row, "after": wanted}, "B_ONLY_REVIEWED_UI_PREPARE_ORACLE_PIN_UPDATE")
+            return wanted
         if row["path"] == PAID_PATH:
             require(row == PAID_BEFORE and wanted == PAID_CURRENT, "B_EXACT_REVIEWED_PAID_HELPER_UPDATE")
             return wanted
@@ -3039,13 +3062,24 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     core = decode(before["current-core-aux/CORE-AUX-AUTHORITY.json"])
     old_core = copy.deepcopy(core["core_sources"])
     core["core_sources"] = [current_row(row) for row in old_core]
+    oracle_browser_proofs = {}
     for row in old_core:
         changed = inventory[row["path"]]
         if changed != row:
             for name in ("ms4-ui-business-producer.mjs", "ms4-ui-window-native-bridge.mjs"):
                 key = "browser-v1/" + name
-                after[key] = once(after[key], row["sha256"].encode(), changed["sha256"].encode())
-                require(row["bytes"] == changed["bytes"], "B_BROWSER_ONLY_FIXED_SAME_SIZE_BACKEND_LITERAL")
+                if row["path"] != oracle_path:
+                    after[key] = once(after[key], row["sha256"].encode(), changed["sha256"].encode())
+                    require(row["bytes"] == changed["bytes"], "B_BROWSER_ONLY_FIXED_SAME_SIZE_BACKEND_LITERAL")
+                    continue
+                old_literal = f"bytes:{row['bytes']},sha256:'{row['sha256']}'".encode()
+                new_literal = f"bytes:{changed['bytes']},sha256:'{changed['sha256']}'".encode()
+                original_browser = after[key]
+                after[key] = once(original_browser, old_literal, new_literal)
+                require(once(after[key], new_literal, old_literal) == original_browser,
+                        "B_UI_PREPARE_ORACLE_BROWSER_LITERAL_WHOLE_FILE_INVERSE")
+                oracle_browser_proofs[name] = {"before": pin(original_browser), "after": pin(after[key])}
+    require(oracle_update is None or len(oracle_browser_proofs) == 2, "B_BOTH_UI_PREPARE_ORACLE_BROWSER_LITERALS")
     contract = decode(after["browser-v1/ui-business-consumer-contract.json"])
     contract["php_sources"] = {row["path"]: {k:row[k] for k in ("bytes", "sha256")} for row in core["core_sources"]}
     after["browser-v1/ui-business-consumer-contract.json"] = encode(contract)
@@ -3119,6 +3153,8 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             "order_menu_sources": order_rows, "order_menu_profile_mode": order_mode,
             "aftersale_review_image_consumer": review_image_proof,
             "browser_compatibility": browser_compatibility,
+            **({"ui_prepare_oracle_update": {**oracle_update, "browser_whole_file_inverse_exact": True,
+                "browser_files": oracle_browser_proofs}} if oracle_update is not None else {}),
             "forward": forward, "reverse": reverse,
             "network_subnets": network_subnets,
             "status": "PURE_B_PROFILE_DERIVED_NOT_APPROVED_NO_A_OR_RUNTIME"}
@@ -5178,13 +5214,15 @@ def current_b_normal_stage(outcome, stage):
     after["candidate/PUBLICATION.json"] = encode(publication)
     after["candidate/PINS.json"] = encode({"schema":1,"scope":"INTEGRATED_B_UI_SOURCE_TREE_METADATA_SOURCE_PINS_NOT_RUNTIME_SEAL",
         "members":{name:pin(after["candidate/" + name]) for name in artifacts + ["DESIGN.md", "PUBLICATION.json"]}})
+    oracle_proof = derived.get("ui_prepare_oracle_update")
     checks = {"schema":1,"status":"CURRENT_B_SOURCE_CANDIDATE_NOT_APPROVED_NO_B_RUNTIME", "source_sha":head,
         "fixed_inputs":fixed_pointer,"original_A_five_proofs":a_qualification,"actual_materials":fixed["materials"]["producer_result"],
         "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":(observer_read_inverse_exact
             and observer_zero_read_inverse_exact and observer_browser_manifest_inverse_exact
             and frozen_role_source_inverse_exact and normal_authority_contract["whole_root_inverse_exact"]
             and joint_php_seal["whole_file_metadata_inverse_exact"] and freeze_writer_inverse_exact
-            and initializer_topology["whole_initializer_inverse_exact"]),
+            and initializer_topology["whole_initializer_inverse_exact"]
+            and (oracle_proof is None or oracle_proof["browser_whole_file_inverse_exact"])),
         "joint_php_entry_and_dependency_seal":joint_php_seal,
         "initializer_source_tree_topology":initializer_topology,
         "freeze_json_writer":{"encoding":"UTF8_COMPACT_LF","maximum_bytes":16777216,
@@ -5209,6 +5247,8 @@ def current_b_normal_stage(outcome, stage):
             "git_show_argv_order_and_file_assertions":"UNCHANGED","whole_main_single_seam_inverse":True},
         "materializer_detached_main_state":main_state_contract,
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
+    if oracle_proof is not None:
+        checks["ui_prepare_oracle_update"] = oracle_proof
     if stage_facts:
         checks["reviewed_normal_stage_tool_terminal_evidence"] = stage_facts
         checks["typed_stage_review_dispatch_whole_inverse_exact"] = True
