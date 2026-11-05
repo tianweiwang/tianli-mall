@@ -13,7 +13,7 @@
 
 使用已有的本机合成账号，按相应身份登录。已有商家3员工已完成首次设置，可直接登录。
 
-小程序开发工程为 [project.config.json](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-devtools18212-r2/project.config.json) 所在目录，导入微信开发者工具使用。这个可写工程副本指向本机18212，采用已选定的接口测试号；原冻结构建另行保留。已使用官方wechatide后台完成合成顾客登录、商品、已有订单和两种退款详情的核对，并实际提交售后订单的文字评价，刷新看到审核与商家回复。新增原生下单、支付、履约操作及真机仍待验证。
+小程序开发工程为 [project.config.json](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-devtools18212-r2/project.config.json) 所在目录，导入微信开发者工具使用。这个可写工程副本指向本机18212，采用已选定的接口测试号；原冻结构建另行保留。已使用官方wechatide后台完成合成顾客登录、商品、已有订单和两种退款详情的核对，并实际提交售后订单的文字评价，刷新看到审核与商家回复。新合成订单6已在 r2 完成结算、测试付款与包裹读回。评价提示改进已构建为可导入的 [r3 小程序工程](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-devtools18212-r3/project.config.json)，r3 模拟器业务回归和真机待验。
 
 ## 按这个顺序体验正常流程
 
@@ -31,7 +31,8 @@
 | 商家3、商品7、SKU106 | 新商家正常入驻、上传、审核上架及顾客发现已验；售价12.50元、库存20。其12.50元待付款订单已正常取消，商品及SKU库存20→19→20 |
 | 根单1：cp640843381601206272 | 商品5两件，测试实付40.30元、运费0，已发2/已收2；评价已审核并回复。售后1仅退款40.30元已完成，无实物退件 |
 | 根单4：cp641016661800910848 | 商品5两件，测试实付40.30元、已发2/已收2；售后2仅退序号1的一件20.15元，商家已验收，测试退款成功、处理中0元；另一件尚余20.15元可申请权益；评价4已由小程序实际提交，平台审核、商家回复及顾客读回一致 |
-| 商品5、SKU104 | 最近一次已验库存97、销量3；根单4成交及单件退货过程的库存为98→96→97、销量2→4→3 |
+| 根单6：cp641268881758879744 | 商家2商品5一件，测试实付20.15元，包裹cf641269908646133760已发1、已收1，三端读回一致。商家3购物车商品在该单提交后仍在，库存保持20 |
+| 商品5、SKU104 | 根单4退件后库存97、销量3；根单6成交后商品与SKU库存同为96，销量4 |
 | 平台客服 | 合成顾客UID3与原平台客服UID4/客服2已完成双向文字、咨询订单卡片及刷新读取历史 |
 
 直接查看：[商品7](http://127.0.0.1:18212/pages/goods_details/index?id=7)、[商家3店铺](http://127.0.0.1:18212/pages/store/index?mer_id=3)、[顾客售后2](http://127.0.0.1:18212/pages/goods/marketplace_aftersale/index?refund_no=641017855445303296)、[商家售后2](http://127.0.0.1:18212/merchant/#/aftersales/2)、[平台售后2](http://127.0.0.1:18212/admin/marketplace/aftersales/2)。
@@ -40,13 +41,14 @@
 
 ## 当前版本和验收边界
 
-本机后端现为5580ebb04a78043dc09b1192501ace3699d2ae1a，已按原完整源码与运行卷校验完成两次有限更新：评价内部安全诊断和售后记录的读取修复。初始f8da与正式验收候选469的源等价记录保留；新本机修复仍需纳入后续正式候选。平台、商家继续使用原构建，顾客H5与MP r2来自同一份原构建输入（ed9e07537b51…）；H5订单摘要实际检查了320、375和1280宽度。三端评价错误提示的源码改进已检查，尚未纳入本机前端构建。
+本机后端现为5580ebb04a78043dc09b1192501ace3699d2ae1a，已按原完整源码与运行卷校验完成两次有限更新：评价内部安全诊断和售后记录的读取修复。初始f8da与正式验收候选469的源等价记录保留；新本机修复仍需纳入后续正式候选。平台、商家与 H5 已切到包含评价提示改进的同批新网页构建，入口和引用资源逐项返回 HTTP 200 并与安装包相同。H5 与可导入的 MP r3 共享顾客端构建输入（71f4b964282e…）。本轮小程序交易实证来自 r2，原 H5 布局验证对应此前的构建。[网页安装记录](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/review-message-web-install-r1/RESULT.json)
 
 - 已验：本机平台/商家/H5的入驻上架、店铺发现、双店购物车选择、下单及测试支付、发收货、仅退款、单件退货退款、评价和原平台客服上述正常流程。三端订单金额/状态及对应商品、SKU库存已核对。
 - 小程序已验：原账号登录、商品7售价12.50元/库存20、三条已有订单列表、根单4已收货及一件退件、根单3已取消且无重复取消按钮、仅退款40.30元及退货退款20.15元详情。该售后订单的评价4已实际保存、刷新读回；平台和商家经正常接口审核、回复，顾客小程序再次刷新显示相同内容。原订单40.30元、退款20.15元和库存97保持。
-- 待验：新增小程序购物车、下单、支付、履约及售后申请，评价/客服选图、真机、正式AppID与隐私选图声明；加购与规格确认的自定义组件超出当前CLI页面选择器能力，先保留待验，不自动切回前台操作。完整正式正常验收、非空历史迁移及上线签收按原执行清单继续。
+- 新交易已验：合成顾客通过正常接口加入两个店铺的商品，原生购物车显示分组，原生表单提交事件进入商家2结算页。结算与测试支付使用官方运行时工具调用原按钮绑定处理函数，商家发货和顾客收货使用正常接口。原生包裹显示已收货，平台、商家和顾客读回金额与件数一致。另用原生商品页处理函数打开规格并确认商品7的默认 SKU106，小程序购物车读回1件、12.50元。
+- 待验：小程序的加购、规格、店铺切换、结算付款按钮和收货弹窗手势，以及原生售后申请、评价和客服选图、真机、正式AppID与隐私声明。完整正式正常验收、非空历史迁移及上线签收按原执行清单继续。
 - 待接通：真实支付退款、实际通道账单对账、费用与结算。平台[资金设置](http://127.0.0.1:18212/admin/marketplace/finance-settings)可保存方案草稿，[测试交易](http://127.0.0.1:18212/admin/marketplace/finance-transactions)可查看测试交易事实；当前14项仍未配置，未选定经营费率。此前5%仅为未保存的试算，实际到账和结算尚未确认。
 
 最近一次本机入口HTTP检查：平台登录、商家入口、顾客首页路由及客服入口均返回200/HTML；该检查只说明入口可达，业务页面结论来自已有实际页面和接口记录。
 
-详细操作与运行来源见 [原本机预览说明](H:/天俪商城/worktrees/mall-history-reader-count/help/preview/README.md)。验证记录包括 [正常交易](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NORMAL-TRADE.json)、[单件退货退款](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/RETURN-ONE-RESULT-r2.json)、[订单布局](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/ORDER-LAYOUT-VERIFICATION-r2.json)、[原平台客服](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/CUSTOMER-SERVICE.json)、[小程序后台验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-BACKGROUND-VERIFICATION.json)及[退款订单评价验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-REVIEW-VERIFICATION.json)。最新进度统一看原 [PROGRESS.md](H:/天俪商城/artifacts/project-organization-20261023/current20261025-business-progress-r1/PROGRESS.md)。
+详细操作与运行来源见 [原本机预览说明](H:/天俪商城/worktrees/mall-history-reader-count/help/preview/README.md)。验证记录包括 [正常交易](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NORMAL-TRADE.json)、[单件退货退款](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/RETURN-ONE-RESULT-r2.json)、[订单布局](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/ORDER-LAYOUT-VERIFICATION-r2.json)、[原平台客服](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/CUSTOMER-SERVICE.json)、[小程序后台验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-BACKGROUND-VERIFICATION.json)、[退款订单评价验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-REVIEW-VERIFICATION.json)及[小程序测试订单验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-ORDER-VERIFICATION.json)。最新进度统一看原 [PROGRESS.md](H:/天俪商城/artifacts/project-organization-20261023/current20261025-business-progress-r1/PROGRESS.md)。
