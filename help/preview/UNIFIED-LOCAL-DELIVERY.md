@@ -55,6 +55,8 @@
 
 商家 2 登录现行后台后打开订单 6，页面显示测试已付 ¥20.15、已收货、发收各 1 件。点击「查看包裹」，详情读回同一付款单、测试支付和已收货状态。[商家订单及包裹实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order6-merchant-ui-20261106-r2.json)
 
+合成订单 9 可用于核对多规格订单取消后的保存明细。商家 3 打开[订单 9](http://127.0.0.1:18212/merchant/#/orders/9)，平台在[订单管理](http://127.0.0.1:18212/admin/order/list)按订单号 cp641330815669633024 查询，再进入详情的「商品信息」。两端实际显示已取消、未支付，标准装 2 件、单价 ¥13.40，订单金额 ¥26.80。[商家实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order9-merchant-sku-ui-20261106-r1.json) · [平台实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order9-platform-sku-ui-20261106-r3.json)
+
 平台测试交易接口读回同一订单 6，唯一一笔 ¥20.15 的测试付款已应用，已确认退款及占用金额均为 ¥0.00。该单未选择费率版本，费用估算、渠道费、商家应收及结算金额均为空。[同一订单的平台测试流水](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order6-platform-test-ledger-20261105-r2.json)
 
 - 已验：本机平台/商家/H5的入驻上架、店铺发现、双店购物车选择、下单及测试支付、发收货、仅退款、单件退货退款、评价和原平台客服上述正常流程。三端订单金额/状态及对应商品、SKU库存已核对。
