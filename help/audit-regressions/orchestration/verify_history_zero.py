@@ -21,7 +21,10 @@ import sys
 
 PROFILE = "current-history-reader-v1"
 HELPERS_PIN = {"bytes": 32130, "sha256": "6bb62892cdab1947dce13ab0f2567cab52e1fa079ebb6ebd7c7edb1dbeea4591"}
-HOST_PIN = {"bytes": 212260, "sha256": "bd7801d51d1121de7bcca983110051c3936e432da12d79519e995f7330b04fdf"}
+HOST_PINS = (
+    {"bytes": 212260, "sha256": "bd7801d51d1121de7bcca983110051c3936e432da12d79519e995f7330b04fdf"},
+    {"bytes": 219230, "sha256": "764f9357013fe0c8372d58433310ac33de002f6cad30b47b223f14cf20202bb4"},
+)
 DOCKER = "C:/Users/Vwang/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe"
 LEGACY_SHA = "477732e3e03ed4ba1dbb6b44a94dbba75f7e1978"
 VOLUMES = ("app-secrets", "bootstrap-secrets", "fixture-secrets", "mysql-data", "redis-data", "redis-secrets")
@@ -523,8 +526,9 @@ def execute(args):
     frozen = decode(frozen_raw)
     identities(context, frozen)
     host = Path(context["prep_dir"]) / "ms4-host.py"
-    require(inputs.seal(host) == {"path": host.as_posix(), **HOST_PIN}
-            and sha(args.close_source_sha256) == HOST_PIN["sha256"], "EXACT_REVIEWED_FROZEN_HOST_SOURCE")
+    host_pin = inputs.seal(host)
+    require(any(host_pin == {"path": host.as_posix(), **allowed} for allowed in HOST_PINS)
+            and sha(args.close_source_sha256) == host_pin["sha256"], "EXACT_REVIEWED_FROZEN_HOST_SOURCE")
     own = Path(__file__).resolve()
     own_pin = inputs.seal(own)
     require(own_pin["sha256"] == sha(args.source_sha256), "EXPLICIT_REVIEWED_ZERO_SOURCE")
