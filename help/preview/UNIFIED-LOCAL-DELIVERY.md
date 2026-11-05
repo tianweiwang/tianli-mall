@@ -41,7 +41,9 @@
 
 ## 当前版本和验收边界
 
-本机后端为 5580ebb04a78043dc09b1192501ace3699d2ae1a，平台和商家使用包含评价提示改进的网页构建。18212 当前 H5 和小程序 r5 对应同一顾客端源码 2a8771。已在 H5 实测默认规格、页面切换和弹窗切换，售价、原价、库存和选中样式与同一 SKU 的接口结果一致。单规格商品7在375和1280宽度均显示售价12.50元、库存20。小程序原生交易实证对应 r2，r5 的原生交互待验。[当前 H5 安装](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/SKU-H5-INSTALL-2a8771.json) · [多规格页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-multi-sku-positive-20261105-090619/RESULT.json) · [单规格复验](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/product-sku-web-wsl-r1/adjacent-single-sku-RESULT.json)
+本机后端为 ae13dc8fa1e4e3dd259e5d917649715eec9f1567，平台和商家使用包含评价提示改进的网页构建。18212 当前 H5 和小程序 r5 对应同一顾客端源码 2a8771。已在 H5 实测默认规格、页面切换和弹窗切换，售价、原价、库存和选中样式与同一 SKU 的接口结果一致。单规格商品7在375和1280宽度均显示售价12.50元、库存20。小程序原生交易实证对应 r2，r5 的原生交互待验。[当前 H5 安装](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/SKU-H5-INSTALL-2a8771.json) · [多规格页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-multi-sku-positive-20261105-090619/RESULT.json) · [单规格复验](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/product-sku-web-wsl-r1/adjacent-single-sku-RESULT.json)
+
+新合成顾客首次保存收货地址已在 18212 用原 HTTP 入口通过，返回的正 ID 与地址列表及默认地址一致，测试地址已清理。商城、平台、商家、客服入口均为 HTTP 200。[地址保存实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/first-address-http-fixed-20261105-095535.json) · [后端安装及生效读回](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/first-address-runtime-install-r1/LIVE.json)
 
 - 已验：本机平台/商家/H5的入驻上架、店铺发现、双店购物车选择、下单及测试支付、发收货、仅退款、单件退货退款、评价和原平台客服上述正常流程。三端订单金额/状态及对应商品、SKU库存已核对。
 - 小程序已验：原账号登录、商品7售价12.50元/库存20、三条已有订单列表、根单4已收货及一件退件、根单3已取消且无重复取消按钮、仅退款40.30元及退货退款20.15元详情。该售后订单的评价4已实际保存、刷新读回；平台和商家经正常接口审核、回复，顾客小程序再次刷新显示相同内容。原订单40.30元、退款20.15元和库存97保持。
