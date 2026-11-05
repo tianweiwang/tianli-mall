@@ -117,7 +117,14 @@ export async function launchHeadlessBrowser(chromium, { executablePath } = {}) {
         evaluate: (fn, arg) => page.evaluate(fn, arg),
         waitForLoadState: ({ state, ...options }) => page.waitForLoadState(state, options),
         getByLabel: (text, options) => page.getByLabel(text, options),
-        getByPlaceholder: (text, options) => page.getByPlaceholder(text, options),
+        getByPlaceholder(text, options) {
+          const native = page.getByPlaceholder(text, options);
+          if (options?.exact !== true || !['输入账号', '填写登录密码'].includes(text)) return native;
+          const uniInput = page.locator('uni-input > .uni-input-wrapper > .uni-input-placeholder')
+            .and(page.getByText(text, { exact: true }))
+            .locator('..').locator(':scope > input.uni-input-input:visible:not([placeholder])');
+          return native.or(uniInput);
+        },
         getByRole: (role, options) => page.getByRole(role, options),
         getByText: (text, options) => page.getByText(text, options),
         locator: (selector, options) => page.locator(selector, options),

@@ -5177,8 +5177,9 @@ def _b_verify_joint_php_seal(after: dict[str, bytes], proof: dict[str, Any], art
         "final_interface_host_close_zero_dag_verified": True, "complete_source_artifacts": 17}
 
 
-def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, bytes]) -> dict[str, Any]:
-    """Bind only the original browser literals to the five already reviewed material bytes."""
+def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, bytes], *,
+                              task2_login_projection: bool = False) -> dict[str, Any]:
+    """Bind the five reviewed materials and the authorized Task2 request projection."""
     names = {role: "manifests/ui-" + role + "-dist.json" for role in ("h5", "merchant", "admin")}
     names.update(profile="manifests/ui-public-copy-profile.json", png="ms4-order.png")
     require(set(materials) == set(names.values()), "B_BROWSER_EXACT_REVIEWED_FIVE_MATERIALS")
@@ -5210,6 +5211,24 @@ def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, byte
     edits = [(literal(role, old[role]), literal(role, actual[role])) for role in ("h5", "merchant", "admin", "profile")]
     edits += [(b"builds.admin.size===603", f"builds.admin.size==={counts['admin']}".encode()),
               (b"original.size===2536", f"original.size==={counts['public']}".encode())]
+    if task2_login_projection:
+        edits += [
+            (b"function task2API(method,route){return (method==='GET'&&(startupPaths.has(route)",
+             b"function task2API(method,route,path){return (method==='GET'&&(path==='/adminapi/login/info'||startupPaths.has(route)"),
+            (b"function task2Request(record,q,index){",
+             b"function task2Request(record,q,index,language){"),
+            (b"'TASK2_GET_HAS_NO_BODY');return{};}",
+             b"'TASK2_GET_HAS_NO_BODY');\n"
+             b"  if(q.path==='/api/get_lang_json')return{headers:{cb_lang:language['cb-lang'],"
+             b"accept_language:language['accept-language']}};\n"
+             b"  return{};}"),
+            (b"    need(task2API(q.method,q.pathname),'TASK2_FINITE_API_REQUIRED');fresh(record);",
+             b"    need(task2API(q.method,q.pathname,q.path),'TASK2_FINITE_API_REQUIRED');fresh(record);"),
+            (b"    const request=task2Request(record,q,i),query=task2Query(q,this.#binding.origin);",
+             b"    const language=task2Language(record),request=task2Request(record,q,i,language),query=task2Query(q,this.#binding.origin);"),
+            (b"authentication,language_headers:task2Language(record)});",
+             b"authentication,language_headers:language});"),
+        ]
     updated = original
     for previous, current in edits:
         updated = once(updated, previous, current)
@@ -5234,9 +5253,15 @@ def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, byte
             and (zero_after == zero if updated == original else replace_constant(zero_after, "UI_AUX_SOURCE_PIN", old_manifest_pin) == zero),
             "B_BROWSER_ZERO_AUX_PIN_WHOLE_INVERSE")
     after.update({producer_key: updated, manifest_key: manifest_after, zero_key: zero_after})
-    return {"materials": actual, "counts": counts, "producer_before": pin(original), "producer_after": pin(updated),
-            "manifest_before": old_manifest_pin, "manifest_after": new_manifest_pin,
-            "whole_producer_and_zero_inverse_exact": True}
+    proof = {"materials": actual, "counts": counts, "producer_before": pin(original), "producer_after": pin(updated),
+             "manifest_before": old_manifest_pin, "manifest_after": new_manifest_pin,
+             "whole_producer_and_zero_inverse_exact": True}
+    if task2_login_projection:
+        proof["task2_login_request_projection"] = {"public_empty_body_no_query_GET": "/adminapi/login/info",
+            "language_empty_body_GET": "/api/get_lang_json",
+            "shared_language_source": "ONE_REAL_NETWORK_REQUEST_WILL_BE_SENT_EXTRA_INFO_WITH_EXPLICIT_NULLS",
+            "native_oracle_and_response_body_pin": "UNCHANGED"}
+    return proof
 
 
 def _b_qa_root_sources(root_m: bytes, root_s: bytes, normal_consumer: bytes) -> tuple[bytes, bytes, bytes]:
@@ -5452,7 +5477,7 @@ def current_b_a_capture_failure_precondition():
     artifacts = constant(before["root-source/root-ui-materialize-freeze.py"], "ARTIFACTS")
     require(len(artifacts) == 17, "B_ORIGINAL_COMPLETE_SEVENTEEN")
     for name, raw in materials.items(): after["candidate/" + name] = raw
-    browser_materials = _b_bind_browser_materials(after, materials)
+    browser_materials = _b_bind_browser_materials(after, materials, task2_login_projection=qa_equivalence is not None)
     base = fixed["base_source"]
     require(set(base) == {"root", "PINS", "FINAL"}, "B_ORIGINAL_OBSERVER59_SOURCE_AUTHORITY")
     base_root = Path(base["root"])
