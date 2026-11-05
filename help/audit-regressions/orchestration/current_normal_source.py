@@ -2913,6 +2913,136 @@ def _b_browser_compatibility(after: dict[str, bytes]) -> dict[str, Any]:
             "runtime_GUI": "NOT RUN", "approval": "NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
 
 
+B_QA_ORACLE_SOURCE = "16895f1e1be0eb0cd3e6c32af156cd74c56d57af"
+B_QA_ORACLE_PATH = "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php"
+B_QA_ORACLE_ORIGINAL = {"bytes": 254827, "sha256": "ed6b7d24f195c096218126c9ae604012c169cb5f7084b4c16c2fac7dc66b06c4"}
+B_QA_ORACLE_CURRENT = {"bytes": 256327, "sha256": "965091fda39308f73e43f51fb6b913ff3fe467840405974ede28b868dfe3ae0c"}
+B_QA_ORACLE_A_AUTHORITY = {
+    "path": "H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101/current-source-ae13/CURRENT-SOURCE-TECHNICAL-AUTHORITY.json",
+    "bytes": 1120, "sha256": "69aa34946326af7c27167d63de92d4c649180336218748b2de07eb1b85c3462f"}
+B_QA_ORACLE_PHP_COMPONENT = {
+    "path": "H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101/b-session-log-component-20261106-r2.json",
+    "bytes": 2165, "sha256": "2d4e73b164cbfc17459b1ee43401f13681114863d9d1fea6028d81813779f709"}
+B_QA_ROOT_BODIES = {
+    "root-ui-materialize-freeze.py": ("prior_native_history", "b_source_tree_binding",
+        "current_tracked_source_trees", "current_verify_sources", "current_original_retirement"),
+    "root-ui-start-to-ready.py": ("current_core_aux_authority",),
+    "injected_normal_consumer": ("current_b_normal_materialization",),
+}
+
+
+def _b_qa_oracle_equivalence(fixed, reader, check):
+    """Read the one reviewed old-A/new-B QA equivalence in the author and both Roots."""
+    original_pin = B_QA_ORACLE_A_AUTHORITY
+    current_pin = fixed["source_authority"]
+    original = json.loads(reader(original_pin))
+    current = json.loads(reader(current_pin))
+    oracle = B_QA_ORACLE_PATH
+    check(original["source_sha"] == "ae13dc8fa1e4e3dd259e5d917649715eec9f1567"
+          and current["source_sha"] == B_QA_ORACLE_SOURCE
+          and len({a[k] for a in (original, current) for k in ("candidate_root", "validation_root")}) == 4,
+          "B_QA_EXACT_DISTINCT_PRODUCT_AND_TEST_SOURCE_TREES")
+    roles = ["driver", "customer", "paid", "fulfillment", "aftersale_review", "worker"]
+    frontends = ["h5", "merchant", "admin"]
+    captures, reviews, inventories = [], [], []
+    fields = ("path", "git_mode", "git_blob", "bytes", "sha256")
+    for authority in (original, current):
+        capture = json.loads(reader(authority["capture"]))
+        review = json.loads(reader(authority["independent_review"]))
+        check(capture["source_sha"] == review["source_sha"] == authority["source_sha"]
+              and authority["status"] == "INDEPENDENTLY_REVIEWED_SOURCE_ONLY"
+              and review["capture"] == authority["capture"]
+              and capture["status"] == "CAPTURED_NOT_APPROVED"
+              and review["status"] == "PASS_CURRENT_SOURCE_TECHNICAL_REVIEW"
+              and review["all_tracked_and_delta_reviewed"] is True
+              and review["active_normal_sources_reviewed"] is True
+              and all(capture[role] == review[role + "_root"] == authority[role + "_root"]
+                      for role in ("candidate", "validation")),
+              "B_QA_PINNED_REVIEWED_COMPLETE_CAPTURES")
+        inventory = {}
+        for line in reader(capture["files"]["SOURCE-INVENTORY.jsonl"]).splitlines():
+            row = json.loads(line)
+            relative = row["path"]
+            check(relative not in inventory and row["git_mode"] in ("100644", "100755")
+                  and re.fullmatch(r"[0-9a-f]{40}", row["git_blob"]) is not None
+                  and re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) is not None
+                  and type(row["bytes"]) is int and row["bytes"] >= 0
+                  and set(row) == set(fields) | {"checkouts"}
+                  and set(row["checkouts"]) == {"candidate", "validation"},
+                  "B_QA_EXACT_COMPLETE_GIT_AND_DUAL_CHECKOUT_ROW")
+            entry_pin = {key: row[key] for key in ("bytes", "sha256")}
+            for role in ("candidate", "validation"):
+                root = authority[role + "_root"]
+                evidence = row["checkouts"][role]
+                check(evidence == {"path": (Path(root) / relative).as_posix(),
+                                       **entry_pin, "stat9": evidence["stat9"]}
+                      and type(evidence["stat9"]) is list and len(evidence["stat9"]) == 9,
+                      "B_QA_BOTH_COMPLETE_WORKTREES_JOIN_GIT_BYTES")
+            inventory[relative] = {key: row[key] for key in fields}
+        check(list(inventory) == sorted(inventory) and len(inventory) == capture["tracked_file_count"],
+              "B_QA_COMPLETE_ORDERED_CAPTURE_NAMESPACE")
+        inventories.append(inventory)
+        captures.append(capture)
+        reviews.append(review)
+    before, after = inventories
+    check(captures[1]["source_parents"] == [original["source_sha"]]
+          and list(before) == list(after)
+          and [relative for relative in before if before[relative] != after[relative]] == [oracle],
+          "B_QA_DIRECT_PARENT_AND_ONLY_ONE_TRACKED_ORACLE_DELTA")
+    change = {"before": before[oracle], "after": after[oracle]}
+    for side, authority, wanted in (("before", original, B_QA_ORACLE_ORIGINAL),
+                                    ("after", current, B_QA_ORACLE_CURRENT)):
+        row = change[side]
+        check(row["git_mode"] == "100644" and {k: row[k] for k in ("bytes", "sha256")} == wanted,
+              "B_QA_ONLY_FIXED_ORACLE_BYTES_AND_GIT_MODE")
+        for role in ("candidate_root", "validation_root"):
+            raw = reader({"path": (Path(authority[role]) / oracle).as_posix(), **wanted})
+            blob = hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+            check(blob == row["git_blob"], "B_QA_ACTUAL_FOUR_ORACLE_FILES_JOIN_GIT_BLOBS")
+    independent = {"scope": "AE13_B_ORACLE_ONLY_FULL_INPUT_EQUIVALENCE", "original_authority": original_pin,
+        "php_component": B_QA_ORACLE_PHP_COMPONENT, "change": change, "normal_roles": roles,
+        "frontend_inputs": frontends}
+    check(reviews[1].get("qa_oracle_equivalence") == independent, "B_QA_EXACT_INDEPENDENT_EQUIVALENCE_REVIEW")
+    component = json.loads(reader(B_QA_ORACLE_PHP_COMPONENT))
+    check(component["status"] == "VERIFIED_RUNTIME_SESSION_LOG_ORACLE_COMPONENT_ONLY"
+          and component["source_path"] == oracle and component["runtime_source"] == original["source_sha"]
+          and component["baseline"]["sha256"] == change["before"]["sha256"]
+          and component["candidate"]["sha256"] == change["after"]["sha256"]
+          and component["candidate"]["native_exit"] == component["syntax"]["native_exit"] == 0
+          and [(r["phase"], r["oracle"], r["session_empty"], r["session_existing_unchanged"])
+               for r in component["candidate"]["cases"]] == [("prepare", "PASS", True, True), ("gui", "PASS", True, True)]
+          and component["full_formal_b"] == "INCOMPLETE", "B_QA_ACTUAL_PHP_COMPONENT_NOT_RUNTIME_ACCEPTANCE")
+    normal = json.loads(reader(fixed["normal"]["result"]))
+    freeze_pin = {"path": normal["freeze"], "bytes": normal["freeze_bytes"], "sha256": normal["freeze_sha256"]}
+    freeze = json.loads(reader(freeze_pin))
+    tree = freeze["source_tree"]
+    check(normal["source_sha"] == freeze["source_sha"] == tree["source_sha"] == original["source_sha"]
+          and normal["repo"] == freeze["requested_repo_source"] == original["validation_root"]
+          and tree["files"] == [{k: row[k] for k in ("path", "bytes", "sha256")} for row in before.values()],
+          "B_QA_ORIGINAL_A_COMPLETE_TREE_STILL_ITS_OWN_IDENTITY")
+    for role in roles:
+        members = freeze[role + "_source_files"]
+        check(type(members) is list and members and len({row["path"] for row in members}) == len(members)
+              and all(row["path"] != oracle and {k: before[row["path"]][k] for k in row} == row for row in members),
+              "B_QA_COMPLETE_ORIGINAL_A_ROLE_INPUTS_IDENTICAL")
+    build_prefixes = ("template/uni-app/", "template/merchant/", "template/admin/")
+    check(not oracle.startswith(("crmeb/", *build_prefixes))
+          and oracle != "help/audit-regressions/frontend-source-check.cjs"
+          and all(any(path.startswith(prefix) for path in before) for prefix in build_prefixes),
+          "B_QA_COMPLETE_APPLICATION_AND_THREE_BUILD_INPUTS_IDENTICAL")
+    return {**independent, "current_authority": current_pin, "original_source": original["source_sha"],
+        "original_validation": original["validation_root"], "normal_freeze": freeze_pin}
+
+
+def _b_qa_project_requirements(rows, proof, check):
+    """Project only the reviewed oracle when old normal requirements join new B Core3."""
+    before, after = ({key: proof["change"][side][key] for key in ("path", "bytes", "sha256")}
+                     for side in ("before", "after"))
+    check([row for row in rows if row["path"] == B_QA_ORACLE_PATH] == [before]
+          and before["path"] == after["path"] == B_QA_ORACLE_PATH, "B_QA_ONE_EXACT_OLD_NORMAL_ORACLE_ROW")
+    return [after if row["path"] == B_QA_ORACLE_PATH else row for row in rows]
+
+
 def derive_b_profile(authority_pointer: dict[str, Any],
                      network_subnets: dict[str, str] | None = None) -> dict[str, Any]:
     """Pure finite B Source transformation; no A claim, output, import or runtime."""
@@ -2934,15 +3064,14 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     source_review = decode(read_pointer(authority["independent_review"]))
     require(source_review.get("customer_form_helper_update") == helper_update,
             "B_EXACT_INDEPENDENT_FORM_HELPER_UPDATE")
-    oracle_path = "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php"
+    oracle_path = B_QA_ORACLE_PATH
     oracle_before = {"path": oracle_path, "bytes": 243930,
                      "sha256": "e61184d208d9f6f0dfbfad9eb5eb32635ed8fd103e62f7abe5852712f5ee9be3"}
     oracle_current = inventory[oracle_path]
     oracle_update = None
     if oracle_current != oracle_before:
-        require(oracle_current == {"path": oracle_path, "bytes": 254827,
-            "sha256": "ed6b7d24f195c096218126c9ae604012c169cb5f7084b4c16c2fac7dc66b06c4"},
-            "B_FIXED_CURRENT_UI_PREPARE_ORACLE_BYTES")
+        allowed_oracle = B_QA_ORACLE_CURRENT if authority["source_sha"] == B_QA_ORACLE_SOURCE else B_QA_ORACLE_ORIGINAL
+        require(oracle_current == {"path": oracle_path, **allowed_oracle}, "B_FIXED_CURRENT_UI_PREPARE_ORACLE_BYTES")
         oracle_update = {"before": oracle_before, "after": oracle_current}
         delta = source_review.get("semantic_delta")
         require(type(delta) is list, "B_INDEPENDENT_UI_PREPARE_ORACLE_DELTA_REQUIRED")
@@ -4205,7 +4334,19 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
         require(type(a) is dict and set(a) == {"session", "outer", "normal_root_result", "worker_close",
             "independent_zero", "post_a_history", "context", "post_a_contract"}, "B_ALL_FIVE_ACTUAL_A_PROOFS_REQUIRED")
         post_pointer, post_contract = a["post_a_history"], a["post_a_contract"]
-    consumer, setup, context, _ = _completed_a(fixed["normal"], a, authority_pointer, authority)
+    qa_equivalence = None
+    normal_authority_pointer, normal_authority, material_inventory = authority_pointer, authority, inventory
+    if authority["source_sha"] == B_QA_ORACLE_SOURCE:
+        require(_a_capture_failed(a), "B_QA_ONLY_ORIGINAL_AE13_CAPTURE_FAILURE_EVIDENCE")
+        qa_equivalence = _b_qa_oracle_equivalence(fixed, read_pointer, require)
+        before_oracle, after_oracle = (qa_equivalence["change"][side] for side in ("before", "after"))
+        require(_raw_delta(Path(authority["candidate_root"]), qa_equivalence["original_source"], B_QA_ORACLE_SOURCE)
+            == [{"path": B_QA_ORACLE_PATH, "before_git_mode": before_oracle["git_mode"],
+                 "after_git_mode": after_oracle["git_mode"], "before_git_blob": before_oracle["git_blob"],
+                 "after_git_blob": after_oracle["git_blob"]}], "B_QA_ACTUAL_DIRECT_GIT_DELTA")
+        normal_authority_pointer = B_QA_ORACLE_A_AUTHORITY
+        normal_authority, material_inventory = reviewed_authority(normal_authority_pointer)
+    consumer, setup, context, _ = _completed_a(fixed["normal"], a, normal_authority_pointer, normal_authority)
     post = decode(read_pointer(post_pointer))
     require(set(post_contract) == {"header", "files_key", "retained_public_files", "prior_public_inventory",
                                    "public_roots", "public_root_files"}
@@ -4223,11 +4364,12 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
             observed = _reviewed_normal_stage(outcome, fixed["normal"], stage, read_pointer, require)
             require(all(row in post[post_contract["files_key"]] for row in observed["public_files"]),
                     "B_COMPLETE_TYPED_STAGE_EVIDENCE_IN_POST_A_PUBLIC_HISTORY")
-    materials, material_result = _b_materials(fixed["materials"], authority_pointer, inventory, fixed["build_proofs"])
+    materials, material_result = _b_materials(fixed["materials"], normal_authority_pointer,
+        material_inventory, fixed["build_proofs"])
     # Construction below has no runtime side effects; all emitted scripts retain
     # the original guards and require a separate fixed independent Source review.
     return _b_publish(out, fixed_inputs_pointer, fixed, derived, consumer, setup, context,
-                      materials, material_result)
+                      materials, material_result, qa_equivalence=qa_equivalence)
 
 
 class _PostAReads:
@@ -5097,9 +5239,84 @@ def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, byte
             "whole_producer_and_zero_inverse_exact": True}
 
 
+def _b_qa_root_sources(root_m: bytes, root_s: bytes, normal_consumer: bytes) -> tuple[bytes, bytes, bytes]:
+    materializer = (
+        (b"def current_original_retirement(args):\n",
+         b"def current_original_retirement(args):\n"
+         b"    PREVIOUS = CURRENT_B_QA_ORACLE_EQUIVALENCE['original_source']\n"
+         b"    REPO = Path(CURRENT_B_QA_ORACLE_EQUIVALENCE['original_validation'])\n"),
+        (b"def b_source_tree_binding(binding, source, repo, context=None):",
+         b"def b_source_tree_binding(binding, source, repo, context=None, qualification=None):"),
+        (b"    q = B_SOURCE_TREE_QUALIFICATION\n    members = q['source_tree_members']",
+         b"    q = B_SOURCE_TREE_QUALIFICATION if qualification is None else qualification\n"
+         b"    members = q['source_tree_members']"),
+        (b"    b_source_tree_binding(old_binding,PREVIOUS,REPO,context)",
+         b"    prior_tree = current_json(CURRENT_B_QA_ORACLE_EQUIVALENCE['normal_freeze'])['source_tree']\n"
+         b"    b_source_tree_binding(old_binding,PREVIOUS,REPO,context,\n"
+         b"        qualification={'source_sha':PREVIOUS,'source_tree_members':prior_tree})"),
+        (b"    assert actual_context == {'context':(OLD_ROOT / 'actual-run-context.json').as_posix(),\n"
+         b"        'run_id':OLD_RUN,'source_sha':PREVIOUS,'freeze_sha256':OLD_FREEZE}",
+         b"    assert actual_context == {'context':(OLD_ROOT / 'actual-run-context.json').as_posix(),\n"
+         b"        'run_id':OLD_RUN,'source_sha':CURRENT_B_QA_ORACLE_EQUIVALENCE['original_source'],'freeze_sha256':OLD_FREEZE}"),
+        (b"    members=B_SOURCE_TREE_QUALIFICATION['source_tree_members']; count=members['file_count']",
+         b"    proof = CURRENT_B_QA_ORACLE_EQUIVALENCE\n"
+         b"    original = current_json(proof['original_authority'])\n"
+         b"    main, repo = Path(original['candidate_root']), Path(proof['original_validation'])\n"
+         b"    members = current_json(proof['normal_freeze'])['source_tree']; count=members['file_count']"),
+        (b"for label,base in [('main',MAIN),('validation',REPO)] if path.is_relative_to(base)",
+         b"for label,base in [('main',main),('validation',repo)] if path.is_relative_to(base)"),
+        (b"    expected = [row['path'] for row in B_SOURCE_TREE_QUALIFICATION['source_tree_members']['files']]",
+         b"    expected = [row['path'] for row in members['files']]"),
+        (b"    assert trees['main'] == trees['validation']\n",
+         b"    assert trees['main'] == trees['validation'] == {row['path']:row for row in members['files']}\n"),
+        (b"    joined={r['path']:r for r in pub['repository_Source_requirements']}",
+         b"    original_rows = {row['path']:row for row in normal_pub['repository_Source_requirements']}\n"
+         b"    current_rows = _b_qa_project_requirements(pub['repository_Source_requirements'],\n"
+         b"        CURRENT_B_QA_ORACLE_EQUIVALENCE,current_assert)\n"
+         b"    joined={r['path']:r for r in current_rows}"),
+        (b"    for path,row in joined.items():assert tracked['main'][path]==tracked['validation'][path]==row",
+         b"    for path,row in joined.items():\n"
+         b"        prior_row = original_rows[path] if path == B_QA_ORACLE_PATH else row\n"
+         b"        assert tracked['main'][path]==tracked['validation'][path]==prior_row"),
+    )
+    startup = (
+        (b"and normal_pub['source_sha'] == SOURCE\n        and normal_pub['parent'] == SOURCE_PARENT",
+         b"and normal_pub['source_sha'] == CURRENT_SOURCE_SHA\n        and normal_pub['parent'] == CURRENT_B_PARENT"),
+        (b"    for row in normal_pub['repository_Source_requirements'] + core:\n",
+         b"    current_rows = _b_qa_project_requirements(normal_pub['repository_Source_requirements'],\n"
+         b"        CURRENT_B_QA_ORACLE_EQUIVALENCE,require)\n"
+         b"    for row in current_rows + core:\n"),
+    )
+    normal = (
+        (b"def current_b_normal_materialization():\n",
+         b"def current_b_normal_materialization():\n"
+         b"    REPO = Path(CURRENT_B_QA_ORACLE_EQUIVALENCE['original_validation'])\n"),
+    )
+    result = []
+    for name, original, seams in (
+        ("root-ui-materialize-freeze.py", root_m, materializer),
+        ("root-ui-start-to-ready.py", root_s, startup),
+        ("injected_normal_consumer", normal_consumer, normal),
+    ):
+        changed = original
+        for before, after in seams:
+            changed = once(changed, before, after)
+        restored = changed
+        for before, after in reversed(seams):
+            restored = once(restored, after, before)
+        require(restored == original, "B_QA_WHOLE_ORIGINAL_ROOT_AND_NORMAL_CONSUMER_INVERSE")
+        original_functions, changed_functions = functions(original), functions(changed)
+        require(original_functions.keys() == changed_functions.keys()
+                and {symbol for symbol, raw in original_functions.items() if changed_functions[symbol] != raw}
+                == set(B_QA_ROOT_BODIES[name]), "B_QA_EXACT_CHANGED_ROOT_AND_NORMAL_CONSUMER_BODIES")
+        result.append(changed)
+    return result[0], result[1], result[2]
+
+
 def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], derived: dict[str, Any],
                normal_consumer: str, setup: dict[str, Any], context: dict[str, Any],
-               materials: dict[str, bytes], material_result: dict[str, Any]) -> dict[str, Any]:
+               materials: dict[str, bytes], material_result: dict[str, Any], *,
+               qa_equivalence: dict[str, Any] | None = None) -> dict[str, Any]:
     before, after = derived["before"], dict(derived["after"])
     authority, inventory = derived["authority"], derived["inventory"]
     main_state_before = functions(before["root-source/root-ui-materialize-freeze.py"])["main_state"]
@@ -5131,7 +5348,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         normal_root / "validation", after["root-source/root-ui-start-to-ready.py"])
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
     data = decode(read_pointer(binding["source_data"]))
-    parent = binding["parent"]; a = fixed["A"]
+    parent = binding["parent"] if qa_equivalence is None else qa_equivalence["original_source"]
+    a = fixed["A"]
     interrupted = _interrupted_a(a)
     a_session = a["original_session"] if interrupted else a["session"]
     post_history = fixed["post_a"]["history"] if interrupted else a["post_a_history"]
@@ -5252,14 +5470,23 @@ def current_b_a_capture_failure_precondition():
     after["current-core-aux/CORE-AUX-AUTHORITY.json"] = encode(core)
     core_pointer = {"path": (out / "current-core-aux/CORE-AUX-AUTHORITY.json").as_posix(),
                     **pin(after["current-core-aux/CORE-AUX-AUTHORITY.json"])}
-    rows = {row["path"]: row for row in data["requirements"]}
+    current_requirements = data["requirements"]
+    if qa_equivalence is not None:
+        current_requirements = _b_qa_project_requirements(current_requirements, qa_equivalence, require)
+        require(head == B_QA_ORACLE_SOURCE and data["source_sha"] == parent
+            and all(inventory[row["path"]] == row for row in current_requirements),
+            "B_QA_ALL_ORIGINAL_NORMAL_REQUIREMENTS_WITH_ONE_REVIEWED_ORACLE_PROJECTION")
+    rows = {row["path"]: row for row in current_requirements}
     for row in core["core_sources"]:
         require(row["path"] not in rows or rows[row["path"]] == row, "B_CONSISTENT_CORE_AND_NORMAL_SOURCE_OVERLAP")
         rows[row["path"]] = row
     committed_source_labels = ["committed-source-" + hashlib.sha256(path.encode("utf-8")).hexdigest() for path in rows]
     require(len(committed_source_labels) == len(set(committed_source_labels)), "B_COMPLETE_SOURCE_ROWS_FULL_PATH_NATIVE_LABELS_UNIQUE")
-    latest = [inventory[row["path"]] for row in data["commit_chain"][-1]["files"]]
-    require(latest and data["commit_chain"][-1]["source_sha"] == head, "B_ACTUAL_LAST_PARENT_COMMIT_FILES")
+    if qa_equivalence is None:
+        latest = [inventory[row["path"]] for row in data["commit_chain"][-1]["files"]]
+        require(latest and data["commit_chain"][-1]["source_sha"] == head, "B_ACTUAL_LAST_PARENT_COMMIT_FILES")
+    else:
+        latest = [inventory[B_QA_ORACLE_PATH]]
     members = {"files": list(inventory.values())}
     directories = set()
     for path in inventory:
@@ -5448,6 +5675,8 @@ def current_b_a_capture_failure_precondition():
     derivation["browser_compatibility"] = derived["browser_compatibility"]
     derivation["actual_clean_Source_Val_M_A_build_B_Run"] = {"source_sha":head,
         "normal_M":fixed["normal"]["result"], "A":a_qualification, "materials":fixed["materials"]["producer_result"], "B_Run":None}
+    if qa_equivalence is not None:
+        derivation["qa_oracle_equivalence"] = qa_equivalence
     after["candidate/source-derivation.json"] = encode(derivation)
     require(decode(after["candidate/source-derivation.json"])["current_nonself_artifacts"]
         == [{"path": name, **pin(after["candidate/" + name])} for name in artifacts if name != "source-derivation.json"],
@@ -5529,6 +5758,12 @@ def current_b_a_capture_failure_precondition():
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     if oracle_proof is not None:
         checks["ui_prepare_oracle_update"] = oracle_proof
+    if qa_equivalence is not None:
+        checks["qa_oracle_equivalence"] = qa_equivalence
+        checks["qa_changed_python_bodies"] = B_QA_ROOT_BODIES
+        for name in ("root-ui-materialize-freeze.py", "root-ui-start-to-ready.py"):
+            declared = checks["changed_python_bodies"][name]
+            declared += [symbol for symbol in B_QA_ROOT_BODIES[name] if symbol not in declared]
     if stage_facts:
         checks["reviewed_normal_stage_tool_terminal_evidence"] = stage_facts
         checks["typed_stage_review_dispatch_whole_inverse_exact"] = True
@@ -5655,6 +5890,34 @@ def current_b_a_capture_failure_precondition():
             + "\nCURRENT_COMPLETION_NORMAL_ROOT = " + repr(normal_root.as_posix())
             + "\nCURRENT_COMPLETION_FREEZE = " + repr(setup["freeze_sha256"]) + "\n"
             + _INTERRUPTED_A_CONSUMER + "\n" + _INTERRUPTED_B_QUALIFICATION + "\n")
+    if qa_equivalence is not None:
+        root_m, root_s, normal_bytes = _b_qa_root_sources(root_m, root_s, normal_consumer.encode())
+        normal_consumer = normal_bytes.decode()
+        original_review_runtime = review_runtime.encode()
+        qa_seams = (
+            (b"review['source_sha']==CURRENT_SOURCE_SHA", b"review['source_sha']==B_QA_ORACLE_SOURCE"),
+            (b"publication['source_sha']==CURRENT_SOURCE_SHA", b"publication['source_sha']==B_QA_ORACLE_SOURCE"),
+            (b"    fixed=current_json(CURRENT_B_FIXED_INPUT)\n",
+             b"    fixed=current_json(CURRENT_B_FIXED_INPUT)\n"
+             b"    observed_qa = _b_qa_oracle_equivalence(fixed, lambda pointer: current_stream(pointer, True), current_assert)\n"
+             b"    current_assert(observed_qa == CURRENT_B_QA_ORACLE_EQUIVALENCE, 'B_FIXED_ORIGINAL_A_AND_QA_INPUT_EQUIVALENCE')\n"),
+        )
+        qa_review_runtime = original_review_runtime
+        for original, changed in qa_seams:
+            qa_review_runtime = once(qa_review_runtime, original, changed)
+        restored = qa_review_runtime
+        for original, changed in reversed(qa_seams):
+            restored = once(restored, changed, original)
+        require(restored == original_review_runtime, "B_QA_WHOLE_ORIGINAL_SOURCE_REVIEW_INVERSE")
+        review_runtime = qa_review_runtime.decode()
+        qa_constants = {"B_QA_ORACLE_SOURCE": B_QA_ORACLE_SOURCE, "B_QA_ORACLE_PATH": B_QA_ORACLE_PATH,
+            "B_QA_ORACLE_ORIGINAL": B_QA_ORACLE_ORIGINAL, "B_QA_ORACLE_CURRENT": B_QA_ORACLE_CURRENT,
+            "B_QA_ORACLE_A_AUTHORITY": B_QA_ORACLE_A_AUTHORITY, "B_QA_ORACLE_PHP_COMPONENT": B_QA_ORACLE_PHP_COMPONENT,
+            "CURRENT_B_QA_ORACLE_EQUIVALENCE": qa_equivalence}
+        shared_constants += "".join(name + " = " + repr(value) + "\n" for name, value in qa_constants.items())
+        author = stable_read(Path(__file__).resolve())
+        shared_constants += "\n".join(_source_function(author, name) for name in (
+            "_b_qa_oracle_equivalence", "_b_qa_project_requirements")) + "\n"
     for name,raw,shared in (("root-ui-materialize-freeze.py",root_m,normal_consumer),
                             ("root-ui-start-to-ready.py",root_s,normal_consumer)):
         if interrupted:
@@ -5677,6 +5940,8 @@ def current_b_a_capture_failure_precondition():
             "main_state", "current_consume_materialization", "current_verify_sources", "frozen_sources", "frozen_materials", "frozen_resources"}),
             ("root-ui-start-to-ready.py", {"main", "current_core_aux_authority"})):
         original = functions(before["root-source/" + name]); candidate = functions(after["root-source/" + name])
+        if qa_equivalence is not None:
+            changed.update(B_QA_ROOT_BODIES[name])
         if name == "root-ui-materialize-freeze.py":
             require(original["main_state"] == main_state_before and candidate["main_state"] == main_state_detached,
                     "B_ACTUAL_MAIN_STATE_EQUALS_ONLY_THE_WHOLE_FUNCTION_LITERAL_PROJECTION")
