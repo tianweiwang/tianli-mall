@@ -5401,7 +5401,8 @@ HISTORY_ORIGINAL_ROOT = "H:/天俪商城/artifacts/ms4-worker-normal-source-prep
 
 
 def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
-                         isolation_subnet: str | None = None) -> dict[str, Any]:
+                         isolation_subnet: str | None = None, *,
+                         disable_mysql_native_aio: bool = False) -> dict[str, Any]:
     """Compose fixed historical components; source-only output grants no runtime admission."""
     if isolation_subnet is not None:
         isolation_subnet = validate_isolation_subnet(isolation_subnet)
@@ -5522,6 +5523,13 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                 after["compose.yml"] = once(composed, original_network, selected_network)
                 require(once(after["compose.yml"], selected_network, original_network) == composed,
                         "HISTORY_ONLY_EXPLICIT_ISOLATION_IPAM_BLOCK_CHANGED")
+            if disable_mysql_native_aio:
+                original_mysql = b'"--information_schema_stats_expiry=0"]'
+                selected_mysql = b'"--information_schema_stats_expiry=0", "--innodb-use-native-aio=OFF"]'
+                composed = after["compose.yml"]
+                after["compose.yml"] = once(composed, original_mysql, selected_mysql)
+                require(once(after["compose.yml"], selected_mysql, original_mysql) == composed,
+                        "HISTORY_ONLY_EXPLICIT_MYSQL_NATIVE_AIO_CHANGED")
         if kind == "upgrade":
             after["legacy-app.php"] = namespace["transform_legacy_app"](before["legacy-app.php"])
             require(type(after["legacy-app.php"]) is bytes
@@ -5680,6 +5688,8 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
               "seed_source_rebinding": seed_source_rebinding,
               "isolation_subnet": isolation_subnet,
               "isolation_subnet_availability": "NOT_CHECKED_BY_AUTHOR"}
+    if disable_mysql_native_aio:
+        inputs["mysql_native_aio"] = False
     files = {"before/" + name: before[name] for name in HISTORY_NAMES}
     files.update({"candidate/" + name: after[name] for name in HISTORY_NAMES})
     files.update({"author-source/" + name: raw for name, raw in author_sources.items()})
@@ -5707,12 +5717,16 @@ def main() -> None:
     parser.add_argument("--post-a-inputs-file", help="Explicit completed A, prior inventory, retained and six-key public contract; only with --post-a-history.")
     parser.add_argument("--post-a-inputs-sha256", help="Fixed SHA256 of the complete public post-A input descriptor.")
     parser.add_argument("--isolation-subnet", help="Optional canonical RFC1918 IPv4 CIDR; only with --output or --history-source.")
+    parser.add_argument("--disable-history-mysql-native-aio", action="store_true",
+                        help="Use synchronous I/O for the isolated history MySQL only.")
     parser.add_argument("--initializer-syntax-result", help="Actual successful current initializer syntax receipt, for normal18.")
     parser.add_argument("--authority-file", required=True)
     parser.add_argument("--authority-sha256", required=True)
     args = parser.parse_args()
     require(args.output is not None or args.history_source is not None or args.isolation_subnet is None,
             "ISOLATION_SUBNET_ONLY_FOR_PROFILE_OR_HISTORY_OUTPUT")
+    require(not args.disable_history_mysql_native_aio or args.history_source is not None,
+            "MYSQL_NATIVE_AIO_OPTION_ONLY_FOR_HISTORY_SOURCE")
     require(args.post_a_history is not None or args.post_a_inputs_file is None and args.post_a_inputs_sha256 is None,
             "POST_A_INPUTS_ONLY_FOR_POST_A_HISTORY")
     require(re.fullmatch(r"[a-f0-9]{64}", args.authority_sha256) is not None, "FIXED_AUTHORITY_SHA256")
@@ -5723,7 +5737,8 @@ def main() -> None:
     if args.history_source:
         require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None,
                 "HISTORY_SOURCE_HAS_NO_B_OR_INITIALIZER_INPUTS")
-        result = build_history_source(args.history_source, pointer, isolation_subnet=args.isolation_subnet)
+        result = build_history_source(args.history_source, pointer, isolation_subnet=args.isolation_subnet,
+                                      disable_mysql_native_aio=args.disable_history_mysql_native_aio)
     elif args.post_a_history:
         require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None
                 and args.post_a_inputs_file is not None and type(args.post_a_inputs_sha256) is str
