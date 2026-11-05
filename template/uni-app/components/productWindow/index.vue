@@ -27,7 +27,7 @@
           </view>
           <view class="money font-color">
             <view class="acea-row row-middle">
-              {{ $t(`到手价`) }}
+              {{ salePriceOnly ? $t(`售价`) : $t(`到手价`) }}
               <baseMoney
                 class="mr-12"
                 :money="attr.productSelect.price"
@@ -204,6 +204,7 @@ import colors from "@/mixins/color";
 export default {
   mixins: [colors],
   props: {
+    salePriceOnly: Boolean,
     attr: {
       type: Object,
       default: () => {},

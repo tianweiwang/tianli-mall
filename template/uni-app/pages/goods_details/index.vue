@@ -114,6 +114,7 @@
         :limitNum="storeInfo.limit_num"
         :minQty="storeInfo.min_qty"
         :unitName="storeInfo.unit_name"
+        :sale-price-only="realPriceData.real_price == null"
         @myevent="onMyEvent"
         @goCat="confirmProductWindow"
         @ChangeAttr="ChangeAttr"
@@ -411,11 +412,8 @@ export default {
       svip_price_open: 1,
       is_gift: 0, // 是否支持送礼
       isGiftOrder: 0,
-      realPriceData: {
-        is_vip: 0,
-        price: 0,
-        real_price: 0,
-      },
+      realPriceData: {},
+      realPriceRequest: 0,
     };
   },
   computed: {
@@ -794,6 +792,9 @@ export default {
     ChangeAttr: function (res) {
       let productSelect = this.productValue[res];
       if (!productSelect) {
+        this.$set(this.attr.productSelect, "unique", "");
+        this.$set(this, "attrValue", "");
+        this.setRealPrice(this.storeInfo.id, "");
         this.$util.Tips({
           title: this.$t(`重新选择`),
           success: () => {
@@ -803,11 +804,11 @@ export default {
             this.attr.productSelect.cart_num = 0;
           },
         });
-      } else {
-        this.noGoods = false;
+        return;
       }
+      this.noGoods = false;
       this.$set(this, "selectSku", productSelect);
-      if (productSelect && productSelect.stock > 0) {
+      if (productSelect.stock > 0) {
         this.$set(this.attr.productSelect, "image", productSelect.image);
         // this.$set(this.attr.productSelect, 'price', productSelect.price);
         this.$set(this.attr.productSelect, "stock", productSelect.stock);
@@ -816,10 +817,9 @@ export default {
         // this.$set(this.attr.productSelect, 'vip_price', productSelect.vip_price);
         this.$set(this, "attrValue", res);
         this.$set(this, "attrTxt", this.$t(`已选择`));
-        this.setRealPrice(this.storeInfo.id, productSelect.unique);
+        this.setRealPrice(this.storeInfo.id, productSelect.unique, productSelect);
       } else {
         this.$set(this.attr.productSelect, "image", productSelect.image);
-        this.$set(this.attr.productSelect, "price", productSelect.price);
         this.$set(this.attr.productSelect, "stock", 0);
         this.$set(this.attr.productSelect, "unique", "");
         this.$set(this.attr.productSelect, "cart_num", 0);
@@ -830,15 +830,27 @@ export default {
         );
         this.$set(this, "attrValue", "");
         this.$set(this, "attrTxt", this.$t(`请选择`));
+        this.setRealPrice(this.storeInfo.id, "", productSelect);
       }
     },
-    setRealPrice(id, unique) {
+    setRealPrice(id, unique, product = this.storeInfo) {
+      const request = ++this.realPriceRequest;
+      const price = product.price ?? this.storeInfo.price;
+      this.realPriceData = {
+        price,
+        ot_price: product.ot_price ?? this.storeInfo.ot_price,
+      };
+      this.$set(this.attr.productSelect, "price", price);
       if (!/^[A-Za-z0-9]{8}$/.test(unique || '')) return false;
-      realPrice(id, unique).then((res) => {
+      return realPrice(id, unique).then((res) => {
+        if (request !== this.realPriceRequest || id !== this.storeInfo.id ||
+            unique !== this.attr.productSelect.unique) return;
         this.realPriceData = res.data;
         this.$set(this.attr.productSelect, "price", res.data.real_price);
         this.$set(this.attr.productSelect, "vip_price", res.data.member_price);
         this.ot_price = res.data.ot_price;
+      }, () => {
+        // 报价未返回时继续显示公开售价。
       });
     },
     /**
@@ -1028,7 +1040,7 @@ export default {
         this.$set(this, "attrValue", value.join(","));
         // this.$set(this.attr.productSelect, 'vip_price', productSelect.vip_price);
         this.$set(this, "attrTxt", this.$t(`已选择`));
-        this.setRealPrice(this.storeInfo.id, productSelect.unique);
+        this.setRealPrice(this.storeInfo.id, productSelect.unique, productSelect);
       } else if (!productSelect && productAttr.length) {
         this.$set(
           this.attr.productSelect,
@@ -1519,6 +1531,7 @@ export default {
     changeSwitch(e) {
       const productSelect = this.skuArr[e];
       if (!productSelect) return;
+      const previousUnique = this.attr.productSelect.unique;
 
       this.$set(this, "selectSku", productSelect);
 
@@ -1532,13 +1545,16 @@ export default {
       });
 
       // 批量更新productSelect属性
-      const selectProps = ["image", "price", "stock", "unique", "vipPrice"];
+      const selectProps = ["image", "stock", "unique", "vipPrice"];
       selectProps.forEach((prop) => {
         this.$set(this.attr.productSelect, prop, productSelect[prop]);
       });
 
       this.$set(this, "attrTxt", this.$t(`已选择`));
       this.$set(this, "attrValue", productSelect.suk);
+      if (previousUnique !== productSelect.unique) {
+        this.setRealPrice(this.storeInfo.id, productSelect.unique, productSelect);
+      }
     },
     bindSortId(data) {
       if (data.dataType.tabVal == 1) {

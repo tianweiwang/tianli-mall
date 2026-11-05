@@ -242,7 +242,7 @@
                   :style="{ color: finalPriceColor }"
                 >
                   <view class="label">到手价</view>
-                  <view class="symbol">¥</view>
+                  <view v-if="displayInfo.real_price !== '—'" class="symbol">¥</view>
                   <view
                     class="price"
                     :style="{
@@ -424,9 +424,10 @@ export default {
   },
   computed: {
     displayInfo() {
-      const price = this.priceData.price || "0.00";
-      let real_price = this.priceData.real_price || "0.00";
-      let ot_price = this.priceData.ot_price || "0.00";
+      const price = this.priceData.price ?? this.productData.price ?? "—";
+      const quote = this.priceData.real_price;
+      const real_price = quote === 0 ? "0.00" : quote ?? "—";
+      let ot_price = this.priceData.ot_price ?? this.productData.ot_price ?? "—";
       let vip_price = this.priceData.vip_price;
       let stock = this.productData.stock || 0;
       let fsales = this.productData.fsales || 0;
