@@ -366,7 +366,27 @@ final class MarketplaceOrderReviewServices
             });
             $phase='post_commit_boundary';$this->outside($connection,$pdo);$this->sameIdentity($request,$identity,$kind,$merchant,$scope);
         }catch(Throwable $error){
-            try{Log::error('MARKETPLACE_REVIEW_OUTCOME_UNPROVED',['phase'=>$phase,'root_order_id'=>$candidate['root_order_id'],'review_id'=>$reviewId]);}catch(Throwable $ignored){}
+            try{
+                $symbol=static fn(mixed $value):string=>is_string($value)&&$value!==''&&strlen($value)<=160
+                    &&strspn($value,'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_\\{}')===strlen($value)?$value:'unknown';
+                $site=static function(mixed $file,mixed $line):array{
+                    $name=is_string($file)?basename(str_replace('\\','/',$file)):'';
+                    return ['file'=>preg_match('~\A[A-Za-z0-9_.-]{1,156}\.php\z~D',$name)===1?$name:'unknown',
+                        'line'=>is_int($line)&&$line>0&&$line<=2147483647?$line:0];
+                };
+                $callers=[];
+                foreach(array_slice($error->getTrace(),0,3)as$frame){
+                    if(!is_array($frame))continue;
+                    $callers[]=$site($frame['file']??null,$frame['line']??null)
+                        +['class'=>$symbol($frame['class']??null),'function'=>$symbol($frame['function']??null)];
+                }
+                Log::error(json_encode(['event'=>'MARKETPLACE_REVIEW_OUTCOME_UNPROVED',
+                    'kind'=>in_array($kind,['create','reply','moderate'],true)?$kind:'unknown',
+                    'phase'=>in_array($phase,['before_transaction','payment','complete_prefix','new_write','final_payment',
+                        'commit_outcome_unknown','post_commit_boundary'],true)?$phase:'unknown',
+                    'exception_class'=>$symbol(get_class($error)),'throw_site'=>$site($error->getFile(),$error->getLine()),
+                    'callers'=>$callers],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
+            }catch(Throwable $ignored){}
             self::fail();
         }
         $data=self::present($data,'review');$this->sameIdentity($request,$identity,$kind,$merchant,$scope);return $data;
