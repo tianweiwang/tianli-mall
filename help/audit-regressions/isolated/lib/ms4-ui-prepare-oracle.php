@@ -393,7 +393,7 @@ function m4ul_append(array $before,array $after,array $old,array $new,array $req
  $left=$before;$right=$after;foreach($a as$name=>$entry)unset($left[$name]);foreach($z as$name=>$entry)unset($right[$name]);
  // SessionInit uses the file driver even when these JWT requests do not store session data.
  $oldSession=m4ul_session_directory($before,$mask);$newSession=m4ul_session_directory($after,$mask);
- if($oldSession!==null)m4up_expect($newSession===$oldSession,'UI_DIAGNOSTIC_OLD_FRAMEWORK_SESSION_DIRECTORY_PRESERVED');
+ if($oldSession!==null)m4up_expect($phase==='gui'&&$newSession===$oldSession,'UI_DIAGNOSTIC_OLD_FRAMEWORK_SESSION_DIRECTORY_PRESERVED');
  else if($newSession!==null){
   m4up_expect($added!==[],'UI_DIAGNOSTIC_NEW_FRAMEWORK_SESSION_DIRECTORY_FOR_REAL_RESPONSES');
   foreach($before as$entry)m4up_expect($newSession['dev']!==$entry['dev']||$newSession['ino']!==$entry['ino'],
