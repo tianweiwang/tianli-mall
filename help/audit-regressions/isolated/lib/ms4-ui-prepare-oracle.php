@@ -345,6 +345,19 @@ function m4ul_records(array $raw,DateTimeZone $zone):array
   }
  }return $records;
 }
+function m4ul_session_directory(array $tree,int $mask):?array
+{
+ $session=$tree['session']??null;
+ foreach($tree as$name=>$entry)m4up_expect(!str_starts_with($name,'session/'),'UI_DIAGNOSTIC_EMPTY_FRAMEWORK_SESSION_DIRECTORY');
+ if($session===null)return null;
+ $root=$tree[''];
+ m4up_expect($session['kind']==='directory'&&$session['mode']===(0755&~$mask)&&$session['nlink']===2
+  &&$session['dev']===$root['dev']&&$session['uid']===$root['uid']&&$session['gid']===$root['gid']
+  &&is_int($session['ino'])&&$session['ino']>0,'UI_DIAGNOSTIC_EXACT_FRAMEWORK_SESSION_DIRECTORY');
+ foreach($tree as$name=>$entry)if($name!=='session')m4up_expect($session['dev']!==$entry['dev']
+  ||$session['ino']!==$entry['ino'],'UI_DIAGNOSTIC_DISTINCT_FRAMEWORK_SESSION_DIRECTORY');
+ return $session;
+}
 function m4ul_append(array $before,array $after,array $old,array $new,array $requests,array $interval,DateTimeZone $zone,string $phase):array
 {
  m4up_expect(in_array($phase,['prepare','gui'],true)&&is_array($interval)&&array_is_list($interval)&&count($interval)===2
@@ -378,6 +391,16 @@ function m4ul_append(array $before,array $after,array $old,array $new,array $req
  if(isset($a['log']))m4up_expect(isset($z['log'])&&$a['log']===$z['log'],'UI_DIAGNOSTIC_OLD_LOG_DIRECTORY_PRESERVED');
  else if(isset($z['log']))m4up_expect($added!==[],'UI_DIAGNOSTIC_NEW_LOG_DIRECTORY_FOR_REAL_RESPONSES');
  $left=$before;$right=$after;foreach($a as$name=>$entry)unset($left[$name]);foreach($z as$name=>$entry)unset($right[$name]);
+ // SessionInit uses the file driver even when these JWT requests do not store session data.
+ $oldSession=m4ul_session_directory($before,$mask);$newSession=m4ul_session_directory($after,$mask);
+ if($oldSession!==null)m4up_expect($newSession===$oldSession,'UI_DIAGNOSTIC_OLD_FRAMEWORK_SESSION_DIRECTORY_PRESERVED');
+ else if($newSession!==null){
+  m4up_expect($added!==[],'UI_DIAGNOSTIC_NEW_FRAMEWORK_SESSION_DIRECTORY_FOR_REAL_RESPONSES');
+  foreach($before as$entry)m4up_expect($newSession['dev']!==$entry['dev']||$newSession['ino']!==$entry['ino'],
+   'UI_DIAGNOSTIC_NEW_FRAMEWORK_SESSION_DIRECTORY_DISTINCT_FROM_BASELINE');
+  $right['']['nlink']--;
+ }
+ unset($left['session'],$right['session']);
  if(!isset($a['log'])&&isset($z['log'])){m4up_expect($right['']['nlink']===$left['']['nlink']+1,'UI_DIAGNOSTIC_ONLY_ONE_NEW_DIRECTORY_LINK');$right['']['nlink']=$left['']['nlink'];}
  return ['before'=>$left,'after'=>$right];
 }
