@@ -5550,6 +5550,16 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
         modules[path.name] = {"path": path.as_posix(), **pin(raw)}
         author_sources[path.name] = raw
         if kind == "host":
+            # Docker mount order is incidental. Normalize only the shared public snapshot.
+            # The native inspect evidence and every runtime assertion remain exact.
+            host = after[name]
+            publication = b"    # These four files are the original collector's current observation inputs.\n"
+            canonical = (b"    for row in rows:\n"
+                         b"        row['mounts'] = sorted(row['mounts'], key=lambda mount: mount['Destination'])\n"
+                         + publication)
+            after[name] = once(host, publication, canonical)
+            require(once(after[name], canonical, publication) == host,
+                    "HISTORY_HOST_COMPLETE_PUBLIC_MOUNT_ORDER_INVERSE")
             after["compose.yml"] = namespace["transform_compose"](before["compose.yml"])
             require(type(after["compose.yml"]) is bytes
                     and namespace["reverse_compose"](after["compose.yml"]) == before["compose.yml"],

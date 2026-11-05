@@ -24,6 +24,7 @@ HELPERS_PIN = {"bytes": 32130, "sha256": "6bb62892cdab1947dce13ab0f2567cab52e1fa
 HOST_PINS = (
     {"bytes": 212260, "sha256": "bd7801d51d1121de7bcca983110051c3936e432da12d79519e995f7330b04fdf"},
     {"bytes": 219230, "sha256": "764f9357013fe0c8372d58433310ac33de002f6cad30b47b223f14cf20202bb4"},
+    {"bytes": 219337, "sha256": "afb400003cb260227da37a8dc0f8ba8ca7121c82dd0731cb955391239a91dba1"},
 )
 DOCKER = "C:/Users/Vwang/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe"
 LEGACY_SHA = "477732e3e03ed4ba1dbb6b44a94dbba75f7e1978"
