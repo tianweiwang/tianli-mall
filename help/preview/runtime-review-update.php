@@ -2,7 +2,10 @@
 declare(strict_types=1);
 
 /** One planned local full-runtime service update. The caller stops FPM; this tool never claims to observe it. */
-const PRU_SERVICE = 'app/services/marketplace/order/MarketplaceOrderReviewServices.php';
+const PRU_SERVICE_PATHS = [
+    'app/services/marketplace/order/MarketplaceOrderReviewServices.php',
+    'app/services/marketplace/order/MarketplaceOrderRefundFacts.php',
+];
 function pru_require(bool $ok, string $code): void
 {
     if (!$ok) throw new RuntimeException('RUNTIME_REVIEW_UPDATE_' . $code);
@@ -68,21 +71,22 @@ function pru_file_mode(string $path, int $mode): void
 function pru_precheck(array $plan): array
 {
     $GLOBALS['pru_phase'] = 'complete_old_and_new_deployment_source';
+    $relativePath = $plan['relative_path'];
     $old = pru_manifest('/baseline/crmeb'); $new = pru_manifest('/source/crmeb');
     pru_require(array_keys($old) === array_keys($new), 'SAME_COMPLETE_SOURCE_NAMESPACE'); $changes = [];
     foreach ($old as $path => $row) if ($row !== $new[$path]) $changes[] = $path;
-    pru_require($changes === [PRU_SERVICE], 'ONLY_APPROVED_SOURCE_PATH_CHANGED');
+    pru_require($changes === [$relativePath], 'ONLY_APPROVED_SOURCE_PATH_CHANGED');
     foreach (['before' => $old, 'after' => $new] as $key => $manifest)
-        pru_require($manifest[PRU_SERVICE] === ['type' => 'file', 'size' => $plan[$key]['bytes'],
+        pru_require($manifest[$relativePath] === ['type' => 'file', 'size' => $plan[$key]['bytes'],
             'sha256' => $plan[$key]['sha256']], 'EXACT_PLANNED_SOURCE_PIN');
     $identity = ['project' => $plan['project'], 'run_id' => $plan['run_id'], 'feature' => 'full-runtime-v1'];
     $oldReceipt = pru_receipt($identity, $old); $newReceipt = pru_receipt($identity, $new);
     foreach ($plan['old_ready'] as $key => $value) pru_require($oldReceipt[$key] === $value, 'EXACT_OLD_READY_SOURCE');
-    $oldBytes = pru_read('/baseline/crmeb/' . PRU_SERVICE); $newBytes = pru_read('/source/crmeb/' . PRU_SERVICE);
+    $oldBytes = pru_read('/baseline/crmeb/' . $relativePath); $newBytes = pru_read('/source/crmeb/' . $relativePath);
     pru_require(pru_pin($oldBytes) === $plan['before'] && pru_pin($newBytes) === $plan['after'], 'PLANNED_COMPLETE_SERVICE_BYTES');
     $ready = pru_read('/runtime-app/.preview-runtime-ready.json'); $ini = pru_read('/runtime-app/.env');
-    pru_file_mode('/runtime-app/' . PRU_SERVICE, 0644); pru_file_mode('/runtime-app/.preview-runtime-ready.json', 0600);
-    pru_require(pru_read('/runtime-app/' . PRU_SERVICE) === $oldBytes
+    pru_file_mode('/runtime-app/' . $relativePath, 0644); pru_file_mode('/runtime-app/.preview-runtime-ready.json', 0600);
+    pru_require(pru_read('/runtime-app/' . $relativePath) === $oldBytes
         && $ready === json_encode($oldReceipt, JSON_THROW_ON_ERROR) . "\n", 'ACTUAL_OLD_SERVICE_AND_READY');
     $GLOBALS['pru_phase'] = 'original_complete_old_runtime_verify';
     preview_full_runtime_verify($old, $identity, $oldReceipt, $ini);
@@ -119,9 +123,10 @@ function pru_main(array $argv): int
     $planRaw = pru_read('/plan.json'); $plan = json_decode($planRaw, true, 32, JSON_THROW_ON_ERROR);
     pru_require(is_array($plan), 'PLAN_OBJECT');
     pru_keys($plan, ['schema','scope','project','run_id','old_source_sha','baseline_source_sha','new_source_sha','relative_path','before','after','old_ready']);
+    $relativePath = $plan['relative_path'];
     pru_require($plan['schema'] === 1 && $plan['scope'] === 'LOCAL_FULL_RUNTIME_REVIEW_SERVICE_UPDATE'
         && is_string($plan['run_id']) && preg_match('/\A[0-9]{14}[a-f0-9]{6}\z/D', $plan['run_id']) === 1
-        && $plan['project'] === 'mall-preview-' . $plan['run_id'] && $plan['relative_path'] === PRU_SERVICE, 'FIXED_PLAN_INSTANCE_AND_PATH');
+        && $plan['project'] === 'mall-preview-' . $plan['run_id'] && in_array($relativePath, PRU_SERVICE_PATHS, true), 'FIXED_PLAN_INSTANCE_AND_PATH');
     foreach (['old_source_sha','baseline_source_sha','new_source_sha'] as $key)
         pru_require(is_string($plan[$key]) && preg_match('/\A[a-f0-9]{40}\z/D', $plan[$key]) === 1, 'PLAN_COMMIT_ID');
     pru_require($plan['new_source_sha'] !== $plan['old_source_sha'] && $plan['new_source_sha'] !== $plan['baseline_source_sha'], 'NEW_DECLARED_SOURCE');
@@ -146,7 +151,7 @@ function pru_main(array $argv): int
         preview_full_runtime_write('/out/ready-before.json', $state['ready'], 0600);
         preview_full_runtime_write('/out/plan-summary.json', $planRaw, 0600);
         $GLOBALS['pru_phase'] = 'atomic_service_replacement';
-        pru_replace('/runtime-app/' . PRU_SERVICE, $state['oldBytes'], $state['newBytes'], 0644);
+        pru_replace('/runtime-app/' . $relativePath, $state['oldBytes'], $state['newBytes'], 0644);
         $GLOBALS['pru_phase'] = 'atomic_ready_replacement';
         pru_replace('/runtime-app/.preview-runtime-ready.json', $state['ready'], json_encode($state['newReceipt'], JSON_THROW_ON_ERROR) . "\n", 0600);
     }
@@ -158,7 +163,7 @@ function pru_main(array $argv): int
         'status' => $argv[1] === 'apply' ? 'VERIFIED_PLANNED_CODE_AND_READY_UPDATE_ONLY' : 'VERIFIED_PLANNED_OLD_RUNTIME_AND_SINGLE_SOURCE_CHANGE_ONLY',
         'project' => $plan['project'], 'run_id' => $plan['run_id'], 'old_source_sha' => $plan['old_source_sha'],
         'baseline_source_sha' => $plan['baseline_source_sha'], 'new_source_sha' => $plan['new_source_sha'],
-        'relative_path' => PRU_SERVICE, 'before' => $plan['before'], 'after' => $plan['after'],
+        'relative_path' => $relativePath, 'before' => $plan['before'], 'after' => $plan['after'],
         'old_ready' => $plan['old_ready'], 'new_ready' => array_intersect_key($state['newReceipt'], array_flip(array_keys($plan['old_ready']))),
         'FPM_stopped' => 'NOT_OBSERVED_CALLER_RESPONSIBILITY', 'INI_or_credentials_published' => false,
         'business_DB_network_or_business_volume_write' => 'NOT_PERFORMED', 'application_or_release_acceptance' => 'NOT_RUN'];
