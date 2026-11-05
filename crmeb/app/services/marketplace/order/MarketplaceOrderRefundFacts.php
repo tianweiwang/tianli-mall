@@ -669,7 +669,7 @@ final class MarketplaceOrderRefundFacts
                 if(!in_array($movement['kind'],['release','return_in'],true)) self::unavailable();
                 $movements[]=$movement;
             }
-            $result['movements']=$movements; $result['public_result']=self::object($result['public_result']);
+            $result['movements']=$movements; $result['public_result']=self::treeObject($result['public_result']);
             $row['request_payload']=$request; $row['result_payload']=$result; $out[]=$row;
         }
         return $out;
