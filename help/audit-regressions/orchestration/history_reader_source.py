@@ -863,7 +863,8 @@ function nhecu_upgradePublic(array $context, array $freeze, array $handoff, arra
         && $upgrade['schema_create_window'] === [$result['children'][12]['started_at'], $result['children'][12]['finished_at']]
         && $schemaRow['updated_at'] >= $upgrade['schema_create_window'][0] && $schemaRow['updated_at'] <= $upgrade['schema_create_window'][1], 'NHECU_REAL_COMPLETE173_SCHEMA_WINDOW_AND_REFUND_NULL_RECEIPT');
     nhecu_held($proofs);
-    return ['receipt' => $result, 'retirement' => $retired, 'before' => $before, 'after' => $previous,
+    return ['receipt' => ['current_structure_upgrade' => array_intersect_key($upgrade, ['refund_readiness' => true])],
+        'retirement' => $retired, 'before' => $before, 'after' => $previous,
         'schema_row' => $schemaRow, 'retired_pin' => $proofs[$base . 'current-structure-upgrade-retired.json']['pin']];
 }
 /** Exact MS6 declaration from SchemaVersionGate, checked against captured metadata. */
