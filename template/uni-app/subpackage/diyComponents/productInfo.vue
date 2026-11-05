@@ -112,7 +112,7 @@
                   background:
                     index === selectedIndex ? specSelectedBgColor : '#777777',
                 }"
-                @click="changeSpec(item, index)"
+                @click="changeSpec(item)"
               >
                 <image :src="item.image" mode="aspectFill"></image>
                 <view class="spec-info">
@@ -162,7 +162,7 @@
                 class="spec-item"
                 v-for="(item, index) in skuList"
                 :key="index"
-                @click="changeSpec(item, index)"
+                @click="changeSpec(item)"
               >
                 <image
                   :src="item.image"
@@ -202,7 +202,7 @@
                         ? specSelectedColor
                         : 'transparent',
                   }"
-                  @click="changeSpec(item, index)"
+                  @click="changeSpec(item)"
                 >
                   <image :src="item.image" mode="aspectFill"></image>
                   <text
@@ -340,7 +340,7 @@
                   class="spec-item"
                   v-for="(item, index) in skuList"
                   :key="index"
-                  @click="changeSpec(item, index)"
+                  @click="changeSpec(item)"
                   :style="{
                     borderColor:
                       index === selectedIndex
@@ -417,12 +417,16 @@ export default {
   data() {
     return {
       currentSwiper: 0,
-      selectedIndex: 0,
       videoControls: true,
       videoPlaying: false,
     };
   },
   computed: {
+    selectedIndex() {
+      const { skuUnique } = this.priceData;
+      if (skuUnique) return this.skuList.findIndex((sku) => sku.unique === skuUnique);
+      return this.skuList.length === 1 ? 0 : -1;
+    },
     displayInfo() {
       const price = this.priceData.price ?? this.productData.price ?? "—";
       const quote = this.priceData.real_price;
@@ -433,13 +437,11 @@ export default {
       let fsales = this.productData.fsales || 0;
       let unit_name = this.productData.unit_name || "";
 
-      if (this.skuList.length > 0 && this.selectedIndex < this.skuList.length) {
-        let sku = this.skuList[this.selectedIndex];
-        if (sku) {
-          if (sku.ot_price) ot_price = sku.ot_price;
-          if (sku.vip_price) vip_price = sku.vip_price;
-          if (sku.stock || sku.stock === 0) stock = sku.stock;
-        }
+      const sku = this.skuList[this.selectedIndex];
+      if (sku) {
+        if (sku.ot_price) ot_price = sku.ot_price;
+        if (sku.vip_price) vip_price = sku.vip_price;
+        if (sku.stock || sku.stock === 0) stock = sku.stock;
       }
       return { price, ot_price, vip_price, stock, fsales, unit_name, real_price };
     },
@@ -672,10 +674,7 @@ export default {
     onVideoPause() {
       this.videoPlaying = false;
     },
-    changeSpec(item, index) {
-      if (index !== undefined) {
-        this.selectedIndex = index;
-      }
+    changeSpec(item) {
       this.$emit("changeSpec", item);
     },
     showSpecModal() {
@@ -702,17 +701,6 @@ export default {
         );
       }
       return hex;
-    },
-  },
-  watch: {
-    skuList: {
-      handler(val) {
-        if (val && val.length > 0) {
-          this.selectedIndex = 0;
-        }
-      },
-      deep: true,
-      immediate: true,
     },
   },
 };

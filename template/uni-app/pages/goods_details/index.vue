@@ -836,16 +836,18 @@ export default {
     setRealPrice(id, unique, product = this.storeInfo) {
       const request = ++this.realPriceRequest;
       const price = product.price ?? this.storeInfo.price;
+      const skuUnique = product.unique || unique || "";
       this.realPriceData = {
         price,
         ot_price: product.ot_price ?? this.storeInfo.ot_price,
+        skuUnique,
       };
       this.$set(this.attr.productSelect, "price", price);
       if (!/^[A-Za-z0-9]{8}$/.test(unique || '')) return false;
       return realPrice(id, unique).then((res) => {
         if (request !== this.realPriceRequest || id !== this.storeInfo.id ||
             unique !== this.attr.productSelect.unique) return;
-        this.realPriceData = res.data;
+        this.realPriceData = { ...res.data, skuUnique };
         this.$set(this.attr.productSelect, "price", res.data.real_price);
         this.$set(this.attr.productSelect, "vip_price", res.data.member_price);
         this.ot_price = res.data.ot_price;
