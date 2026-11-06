@@ -1,6 +1,6 @@
 # 统一本机多商户商城使用说明
 
-2026-11-05 · 当前预览端口18212。基于现有CRMEB，复用原商品、SKU、规格、价格、库存和页面风格。本实例使用合成资料和明确标注的测试支付，真实收退款尚未启用。
+2026-11-06 · 当前预览端口18212。基于现有CRMEB，复用原商品、SKU、规格、价格、库存和页面风格。本实例使用合成资料和明确标注的测试支付，真实收退款尚未启用。
 
 ## 从这里进入
 
@@ -13,7 +13,7 @@
 
 使用已有的本机合成账号，按相应身份登录。已有商家3员工已完成首次设置，可直接登录。
 
-导入微信开发者工具时，选择 [r5 工程的 project.config.json](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-devtools18212-r5/project.config.json) 所在目录。该工程指向本机18212，沿用已选定的接口测试号，包含评价提示、商品价格和多规格显示修复。r5 已编译并核对导入包，模拟器交互及真机待验。已有原生记录对应 r2，覆盖合成顾客登录、商品、已有订单、两种退款详情、文字评价及回复，以及订单6的结算、测试付款和包裹读回。[r5 导入包记录](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/MP-R5-IMPORT-PACKAGE.json)
+导入微信开发者工具时，选择 [当前小程序工程的 project.config.json](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-paused-shop-build-r3/mp-weixin/dist/project.config.json) 所在目录。该工程指向本机 18212，沿用已选定的接口测试号，已编译并核对主页面产物。当前包的模拟器交互和真机待验。此前原生交易证据对应较早的 r2 工程，覆盖合成顾客登录、商品、订单、两种退款详情、评价及回复，以及订单6的结算、测试付款和包裹读回。 [当前构建记录](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-paused-shop-build-r3/mp-weixin/BUILD.json) · [原交易实证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-ORDER-VERIFICATION.json)
 
 ## 按这个顺序体验正常流程
 
@@ -43,7 +43,7 @@
 
 ## 当前版本和验收边界
 
-本机后端为 ae13dc8fa1e4e3dd259e5d917649715eec9f1567，平台和商家使用包含评价提示改进的网页构建。18212 当前 H5 和小程序 r5 对应同一顾客端源码 2a8771。已在 H5 实测默认规格、页面切换和弹窗切换，售价、原价、库存和选中样式与同一 SKU 的接口结果一致。单规格商品7在375和1280宽度均显示售价12.50元、库存20。小程序原生交易实证对应 r2，r5 的原生交互待验。[当前 H5 安装](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/SKU-H5-INSTALL-2a8771.json) · [多规格页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-multi-sku-positive-20261105-090619/RESULT.json) · [单规格复验](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/product-sku-web-wsl-r1/adjacent-single-sku-RESULT.json)
+18212 当前后端为 5b6e244a9198ef3316caee56f6ff7681fa575538，H5 和当前小程序包复用 378b37b0c 的同一份前端源码。商品规格、价格和库存仍复用原商城。平台暂停接单后，顾客仍可浏览商品及查看或移除已有购物车项，商品详情购买入口收起，混合购物车可继续结算另一家营业店铺。原平台开关的暂停、恢复和两条购物车接口已实测。 [实际预览验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-live-paused-merchant-sales-entry-20261106-163049.json) · [多规格页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-multi-sku-positive-20261105-090619/RESULT.json) · [单规格复验](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/product-sku-web-wsl-r1/adjacent-single-sku-RESULT.json)
 
 新合成顾客首次保存收货地址已在 18212 用原 HTTP 入口通过，返回的正 ID 与地址列表及默认地址一致，测试地址已清理。商城、平台、商家、客服入口均为 HTTP 200。[地址保存实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/first-address-http-fixed-20261105-095535.json) · [后端安装及生效读回](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/first-address-runtime-install-r1/LIVE.json)
 
