@@ -47,6 +47,8 @@
 
 ## 当前版本和验收边界
 
+商家端现已安装候选 `775f9cd02` 的正式离线构建，入口资源为 `app.0da22ad8.js`。同一构建在当前 18212 实际核对订单21全退、订单13部分退款、订单6旧已付及订单20未付款；保存的图片资料仍与原图逐字节一致。1440/390宽度页面已检查，测试会话退出且后台浏览器已关闭。该构建将继续用于完整正常验收；完整 B 尚未通过。[本次安装](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant-formal-build-775f9-20261107-r1/INSTALL.json) · [当前商家页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant-formal-build-775f9-20261107-r1/UI-RESULT.json)
+
 商家订单详情已补齐保存的退款摘要：有新版售后摘要的订单直接显示已确认退款、退款申请占用及剩余可申请金额；测试付款对应“已确认测试退款”。订单21显示19.90/0.00/0.00元，部分退款订单13显示20.15/0.00/20.15元，原有订单6与未付款订单20兼容展示已核对。桌面1440和窄屏390实际页面无横向溢出。已打开的商家页面刷新后生效。[商家构建与本机安装](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant-refund-summary-build-20261107-r1/INSTALL.json) · [实际页面结果](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant-refund-summary-build-20261107-r1/UI-RESULT.json)
 
 18212 当前后端为 5b6e244a9198ef3316caee56f6ff7681fa575538，H5 和当前小程序包复用 378b37b0c 的同一份前端源码。商品规格、价格和库存仍复用原商城。平台暂停接单后，顾客仍可浏览商品及查看或移除已有购物车项，商品详情购买入口收起，混合购物车可继续结算另一家营业店铺。原平台开关的暂停、恢复和两条购物车接口已实测。 [实际预览验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-live-paused-merchant-sales-entry-20261106-163049.json) · [多规格页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-multi-sku-positive-20261105-090619/RESULT.json) · [单规格复验](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/product-sku-web-wsl-r1/adjacent-single-sku-RESULT.json)
