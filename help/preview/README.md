@@ -1,6 +1,6 @@
 # 本机多商户预览
 
-## 统一版本入口（18212，2026-11-06）
+## 统一版本入口（18212，2026-11-07）
 
 当前统一开发候选入口：
 
@@ -11,7 +11,9 @@
 
 快速操作、已保存样例和小程序工程入口见 [统一本机交付使用说明](UNIFIED-LOCAL-DELIVERY.md)；执行顺序、剩余事项和验收状态只维护在原 [PROGRESS.md](H:/天俪商城/artifacts/project-organization-20261023/current20261025-business-progress-r1/PROGRESS.md)。
 
-当前后端为 `5b6e244a9198ef3316caee56f6ff7681fa575538`，商家端已安装 `775f9cd02` 的正式离线构建，顾客H5和当前小程序包使用 `378b37b0c` 的同一份前端源码。商家四种保存订单及图片资料已在安装后核对，参见[当前商家实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant-formal-build-775f9-20261107-r1/UI-RESULT.json)。[当前小程序r3工程](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-paused-shop-build-r3/mp-weixin/dist/project.config.json)已编译并核对主页面产物；当前包的模拟器交互和真机仍待验，较早r2的原生证据不代签r3。历史旧预览实例已回收，当前统一使用上方18212入口。
+当前后端与平台/客服前端为 `d10a84f2cc619474316a8b3ea64cc97b2ff20f37`，商家端已安装 `775f9cd02` 的正式离线构建，顾客H5和当前小程序包使用 `378b37b0c` 的同一份前端源码。商家四种保存订单及图片资料已在安装后核对，参见[当前商家实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant-formal-build-775f9-20261107-r1/UI-RESULT.json)。[当前小程序r3工程](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-paused-shop-build-r3/mp-weixin/dist/project.config.json)已编译并核对主页面产物；当前包的模拟器交互和真机仍待验，较早r2的原生证据不代签r3。历史旧预览实例已回收，当前统一使用上方18212入口。
+
+2026-11-07 原平台客服私有图片已补齐当前版本实测：原顾客H5与客服工作台双向发送、读取原图和刷新历史均通过，图片字节一致。实际发现的PC当前会话摘要不更新已修复，消息8/9到达后列表立即采用服务端保存的摘要与时间，原会话ID、身份、头像、选中和未读保持。390/1366宽度页面保持原样式且无横向溢出，两端测试会话退出、自有浏览器关闭；完整正式正常验收与原生小程序选图仍待。[本次页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/customer-service-images-20261107-r1/FIXED-RESULT.json)。下方11月4日至5日旧客服记录仍保持其原来的文字/订单卡片范围。
 
 ## 原始装包与联调记录（2026-11-04至2026-11-05，历史）
 
