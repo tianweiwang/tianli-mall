@@ -3750,7 +3750,7 @@ def current_completion_file(path):
     current_assert(current_stream(pointer,True)==raw,'COMPLETION_FULL_PUBLIC_FILE_READBACK')
     return pointer,raw
 
-def current_completion_outer(a):
+def current_legacy_completion_outer(a):
     current_assert(type(a) is dict and set(a)=={'scope','original_session','context','worker_close','completion'}
         and a['scope']=='INTERRUPTED_A_WITH_INDEPENDENT_COMPLETION'
         and type(a['original_session']) is int and a['original_session']==84600,'ONE_EXACT_INTERRUPTED_A_INPUT')
@@ -3778,7 +3778,7 @@ def current_completion_outer(a):
             and (raw==b'' if kind=='stderr' else bool(raw)),'COMPLETION_FULL_ACTUAL_OUTER_STREAMS')
     return made
 
-def current_interrupted_a(a,authority_pointer,normal_root,freeze_sha):
+def current_legacy_interrupted_a(a,authority_pointer,normal_root,freeze_sha):
     made=current_completion_outer(a);c=a['completion'];source=current_stream(c['source'],True)
     tree=ast.parse(source);constants={}
     for node in tree.body:
@@ -3948,6 +3948,302 @@ def current_interrupted_a(a,authority_pointer,normal_root,freeze_sha):
         'coordinator_complete':completed,'fresh_native_count':len(fresh),'public_rows':[public[n] for n in sorted(public)],
         'public_closure_counts':{'new_source_runtime_capture_roots':root_counts,'new_roots_unique_files':len(new_paths),
             'ci_bound_public_files_outside_new_roots':len(set(public)-new_paths),'derived_unique_union_files':len(public)}}
+'''
+
+
+_INTERRUPTED_A_CONSUMER += r'''
+def current_completion_segments(a):
+    return type(a) is dict and type(a.get('completion')) is dict and a['completion'].get('kind')=='ORIGINAL_NORMAL_CONTINUATION'
+
+def current_completion_outer(a):
+    if not current_completion_segments(a):
+        return current_legacy_completion_outer(a)
+    from datetime import datetime
+    current_assert(set(a)=={'scope','original_session','context','worker_close','completion'}
+        and a['scope']=='INTERRUPTED_A_WITH_INDEPENDENT_COMPLETION'
+        and type(a['original_session']) is int and a['original_session']>0,'SEGMENTS_EXACT_ORIGINAL_A_INPUT')
+    c=a['completion'];current_assert(set(c)=={'kind','source','source_review','result','admission','supervisor','independent_zero','outer'},
+        'SEGMENTS_EXACT_EIGHT_COMPLETION_INPUTS')
+    outer=c['outer'];current_assert(type(outer) is dict and set(outer)=={'created','terminal','stdout','stderr'},'SEGMENTS_OUTER_FOUR')
+    made=current_json(outer['created']);terminal=current_json(outer['terminal']);supervisor=current_json(c['supervisor'])
+    current_assert(set(made)=={'pid','supervisor_pid','argv'} and type(made['pid']) is int and made['pid']>0
+        and type(made['supervisor_pid']) is int and made['supervisor_pid']>0
+        and set(terminal)=={'pid','native_exit','wait_returncode','stdout','stderr','at_utc'}
+        and type(terminal['pid']) is int and terminal['pid']==made['pid']
+        and type(terminal['native_exit']) is int and type(terminal['wait_returncode']) is int
+        and terminal['native_exit']==terminal['wait_returncode']==0,'SEGMENTS_REAL_SAME_PID_WAIT_ZERO')
+    current_assert(set(supervisor)=={'supervisor_pid','at_utc','source_sha256','scope','original_outer'}
+        and supervisor['supervisor_pid']==made['supervisor_pid']
+        and supervisor['scope']=='SAME_RUN_NORMAL_BUSINESS_CONTINUATION_ONLY'
+        and supervisor['original_outer']=='INTERRUPTED_EXIT_UNKNOWN'
+        and supervisor['source_sha256']==c['source']['sha256'],'SEGMENTS_REAL_PRESTART_SOURCE_PIN')
+    started=datetime.fromisoformat(supervisor['at_utc']);ended=datetime.fromisoformat(terminal['at_utc'])
+    current_assert(started.utcoffset() is not None and ended.utcoffset() is not None and started<ended,'SEGMENTS_REAL_CAPTURE_TIMES')
+    argv=made['argv'];current_assert(type(argv) is list and len(argv)==7 and all(type(x) is str for x in argv)
+        and Path(argv[0]).is_absolute() and argv[1:5]==['-I','-B','-X','utf8']
+        and Path(argv[5])==Path(c['source']['path']) and argv[6]=='continue','SEGMENTS_ACTUAL_CONTINUATION_ARGV')
+    current_stream(c['source'])
+    for kind in ('stdout','stderr'):
+        raw=current_stream(outer[kind],True)
+        current_assert(terminal[kind]=={'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+            and (raw==b'' if kind=='stderr' else bool(raw)),'SEGMENTS_ACTUAL_FULL_OUTER_STREAMS')
+    return made
+
+def current_normal_capture(stem,read):
+    streams={};files={}
+    for suffix in ('created.json','terminal.json','stdout','stderr'):
+        files[suffix],streams[suffix]=read(Path(str(stem)+'.'+suffix))
+    made=json.loads(streams['created.json']);terminal=json.loads(streams['terminal.json'])
+    current_assert(type(made) is dict and set(made)=={'argv','pid'} and type(made['pid']) is int and made['pid']>0
+        and type(terminal) is dict and set(terminal)=={'pid','native_exit','wait_returncode','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256'}
+        and type(terminal['pid']) is int and terminal['pid']==made['pid']
+        and type(terminal['native_exit']) is int and type(terminal['wait_returncode']) is int
+        and terminal['native_exit']==terminal['wait_returncode']==0 and streams['stderr']==b'','SEGMENTS_SAME_CHILD_NATIVE_WAIT_ZERO')
+    for kind in ('stdout','stderr'):
+        current_assert(type(terminal[kind+'_bytes']) is int and terminal[kind+'_bytes']==len(streams[kind])
+            and terminal[kind+'_sha256']==hashlib.sha256(streams[kind]).hexdigest(),'SEGMENTS_FULL_CAPTURE_STREAM_PINS')
+    match=re.fullmatch(r'([0-9]{3,})-(.+)',stem.name);current_assert(match is not None,'SEGMENTS_NATIVE_SEQUENCE_STEM')
+    return {'sequence':int(match[1]),'label':match[2],'argv':made['argv'],'native':terminal,'files':files,'stdout':streams['stdout']}
+
+def current_normal_capture_context(row,context,normal_root,cli_pins,close_raw,zero_raw):
+    argv=row['argv'];current_assert(type(argv) is list and len(argv)>=6 and all(type(x) is str for x in argv)
+        and Path(argv[0]).is_absolute() and argv[1:4]==['-B','-X','utf8'],'SEGMENTS_NATIVE_PYTHON_ARGV')
+    script=Path(argv[4]);args=argv[5:];profile=Path(context['prep_dir']);run=Path(context['run_dir'])
+    current_assert(script.parent==profile and script.name in cli_pins,'SEGMENTS_ONLY_ORIGINAL_PINNED_CLI')
+    if script.name=='ms4-host.py':
+        if args[0]=='prepare':
+            current_assert(len(args)==5 and args[:2]==['prepare','--binding'] and args[3]=='--run-root'
+                and Path(args[2])==Path(normal_root)/'validation/materialize-freeze-assets-r1/freeze-binding.json'
+                and Path(args[4])==run.parent and row['label']=='prepare','SEGMENTS_ORIGINAL_PREPARE_ARGV')
+        else:
+            current_assert(args[0]!='--help' and len(args) in (3,7) and args[1]=='--context'
+                and Path(args[2])==run/'actual-run-context.json','SEGMENTS_SAME_CONTEXT_HOST_ARGV')
+            if len(args)==7:
+                current_assert(args[0] in ('observe','finish-helper') and args[3]=='--proof'
+                    and args[5:]==['--seconds','30'] and row['label']==args[0]+'-'+args[4],'SEGMENTS_EXACT_OBSERVATION_OR_FINISH_ARGV')
+            else:current_assert(row['label']==args[0],'SEGMENTS_EXACT_STAGE_LABEL')
+        row['value']=json.loads(row['stdout'])
+    elif script.name=='normal-close-ms4-fulfillment.py':
+        current_assert(len(args)==3 and args[0]=='--context' and Path(args[1])==run/'actual-run-context.json'
+            and args[2]=='--worker-normal' and row['label']=='worker-normal-close','SEGMENTS_ORIGINAL_CLOSE_ARGV')
+        row['value']=json.loads(close_raw)
+    else:
+        current_assert(len(args)==5 and args[0]=='--context' and Path(args[1])==run/'actual-run-context.json'
+            and args[2:]==['--close-result-sha256',hashlib.sha256(close_raw).hexdigest(),'--worker-normal']
+            and row['label']=='worker-independent-zero' and json.loads(row['stdout'])==json.loads(zero_raw),'SEGMENTS_ORIGINAL_ZERO_ARGV_AND_RESULT')
+        row['value']=json.loads(zero_raw)
+    current_assert(type(row['value']) is dict,'SEGMENTS_SAVED_JSON_RESULT')
+
+def current_normal_business_records(driver,records,context,read):
+    # Only these original pure predicates and the saved-response stage are reachable.
+    # No original command/main/Host/continuation module is imported or executed.
+    tree=ast.parse(driver);defs={n.name:n for n in tree.body if isinstance(n,ast.FunctionDef)}
+    names=('require','observe','finish_helper','registered','authorize')
+    main=defs['main'];start=next(i for i,n in enumerate(main.body) if isinstance(n,ast.If)
+        and isinstance(n.test,ast.Compare) and isinstance(n.test.left,ast.Subscript)
+        and isinstance(n.test.left.value,ast.Name) and n.test.left.value.id=='prepared')
+    end=next(i for i,n in enumerate(main.body) if i>start and isinstance(n,ast.Assign)
+        and isinstance(n.targets[0],ast.Name) and n.targets[0].id=='result')
+    body=main.body[start:end];pure=[defs[n] for n in names]
+    allowed={'require','stage','observe','finish_helper','registered','authorize','type','RuntimeError'}
+    for root in [*pure,*body]:
+        for node in ast.walk(root):
+            current_assert(not isinstance(node,(ast.Import,ast.ImportFrom,ast.Global,ast.Nonlocal)),'SEGMENTS_PURE_AST_NO_IMPORT_OR_GLOBAL')
+            if isinstance(node,ast.Attribute):current_assert(node.attr=='get','SEGMENTS_PURE_AST_ONLY_DICT_GET')
+            if isinstance(node,ast.Call):
+                current_assert((isinstance(node.func,ast.Name) and node.func.id in allowed)
+                    or (isinstance(node.func,ast.Attribute) and node.func.attr=='get'),'SEGMENTS_PURE_AST_FINITE_CALL_CLOSURE')
+    cursor=1
+    def stage(name,proof=None):
+        nonlocal cursor
+        current_assert(cursor<len(records)-2,'SEGMENTS_FINITE_CAPTURE_CURSOR')
+        row=records[cursor];cursor+=1
+        wanted=[name,'--context',str(Path(context['run_dir'])/'actual-run-context.json')]
+        if proof is not None:wanted+=['--proof',proof,'--seconds','30']
+        args=row['argv'][5:]
+        current_assert(Path(row['argv'][4]).name=='ms4-host.py' and args[0]==wanted[0]
+            and args[1]=='--context' and Path(args[2])==Path(wanted[2]) and args[3:]==wanted[3:],'SEGMENTS_ORIGINAL_BUSINESS_STAGE_ORDER')
+        if name in ('observe','finish-helper'):
+            created=json.loads(read(Path(context['run_dir'])/'evidence'/(proof+'-created.json'))[1])
+            key='id' if name=='observe' else 'container_id'
+            current_assert(row['value'][key]==created['id'],'SEGMENTS_OBSERVE_AND_FINISH_ORIGINAL_CREATED_CID')
+        return row['value']
+    function=ast.parse('def validate_saved_business_chain():\n    pass\n').body[0];function.body=body
+    module=ast.fix_missing_locations(ast.Module(body=[*pure,function],type_ignores=[]))
+    namespace={'__builtins__':{'type':type,'str':str,'int':int,'RuntimeError':RuntimeError},
+        'stage':stage,'prepared':records[0]['value']}
+    exec(compile(module,'original-normal-pure-saved-business-predicates','exec'),namespace)
+    namespace['validate_saved_business_chain']()
+    current_assert(cursor==len(records)-2 and [r['label'] for r in records[-2:]]==['worker-normal-close','worker-independent-zero']
+        and sum(Path(r['argv'][4]).name=='normal-close-ms4-fulfillment.py' for r in records)==1
+        and sum(Path(r['argv'][4]).name=='verify-zero-ms4-fulfillment.py' for r in records)==1,'SEGMENTS_COMPLETE_ORIGINAL_BUSINESS_THEN_ONE_CLOSE_ZERO')
+
+def current_normal_continuation(a,authority_pointer,normal_root,freeze_sha):
+    from datetime import datetime
+    made=current_completion_outer(a);c=a['completion'];public={}
+    def read(path):
+        pointer,raw=current_completion_file(path)
+        current_assert(pointer['path'] not in public or public[pointer['path']]==pointer,'SEGMENTS_PUBLIC_INPUT_UNCHANGED')
+        public[pointer['path']]=pointer;return pointer,raw
+    def fixed(pointer):
+        observed,raw=read(pointer['path']);current_assert(observed==pointer,'SEGMENTS_FIXED_PUBLIC_POINTER');return raw
+    context_raw=fixed(a['context']);context=json.loads(context_raw);close_raw=fixed(a['worker_close']);close=json.loads(close_raw)
+    zero_raw=fixed(c['independent_zero']);zero=json.loads(zero_raw);authority=json.loads(fixed(authority_pointer))
+    root=Path(c['source']['path']).parent;normal=Path(normal_root);run=Path(context['run_dir']);profile=normal/'validation/actual-profile'
+    current_assert(context['source_sha']==authority['source_sha'] and context['repo_dir']==authority['validation_root']
+        and context['prep_dir']==profile.as_posix() and context['freeze_sha256']==freeze_sha
+        and context['project']=='tianli-audit-'+context['run_id'] and re.fullmatch('[a-f0-9]{20}',context['run_id']) is not None
+        and run.name==context['run_id'] and a['context']['path']==(run/'actual-run-context.json').as_posix()
+        and a['worker_close']['path']==(run/'evidence/ms4-worker-normal-close-result.json').as_posix()
+        and c['independent_zero']['path']==(run/'evidence/ms4-worker-normal-independent-zero.json').as_posix(),'SEGMENTS_ORIGINAL_CONTEXT_SOURCE_FREEZE_PATHS')
+    for protected in (normal,run,Path(authority['candidate_root']),Path(authority['validation_root'])):
+        current_assert(not root.is_relative_to(protected) and not protected.is_relative_to(root),'SEGMENTS_COMPLETION_DISJOINT_FROM_ORIGINAL_SOURCE_AND_RUN')
+    for key,name in (('source','continue.py'),('admission','ADMISSION.json'),('supervisor','supervisor.json'),('result','RESULT.json')):
+        current_assert(Path(c[key]['path'])==root/name,'SEGMENTS_ORIGINAL_COMPLETION_PATHS');fixed(c[key])
+    for key,name in (('created','created.json'),('terminal','terminal.json'),('stdout','stdout'),('stderr','stderr')):
+        current_assert(Path(c['outer'][key]['path'])==root/name,'SEGMENTS_ORIGINAL_OUTER_PATHS');fixed(c['outer'][key])
+    result=json.loads(fixed(c['result']));admission=json.loads(fixed(c['admission']))
+    current_assert(set(result)=={'scope','status','run_id','source_sha','original_outer_state','original_full_a_acceptance','original_capture_preserved','close','zero','at_utc'}
+        and result['scope']=='SAME_RUN_NORMAL_BUSINESS_CONTINUATION_ONLY'
+        and result['status']=='CONTINUED_BUSINESS_WORKER_CLOSE_AND_INDEPENDENT_ZERO'
+        and result['original_outer_state']=='INTERRUPTED_EXIT_UNKNOWN' and result['original_full_a_acceptance'] is False
+        and result['original_capture_preserved'] is True and all(result[k]==context[k] for k in ('run_id','source_sha'))
+        and result['close']==close['status'] and result['zero']==zero['status'],'SEGMENTS_RESULT_NEVER_SIGNS_ORIGINAL_A')
+    driver_pointer,driver_raw=read(normal/'validation/run.py');driver=driver_raw.decode('utf-8').replace('\r\n','\n').replace('\r','\n')
+    tree=ast.parse(driver);defs={n.name:n for n in tree.body if isinstance(n,ast.FunctionDef)}
+    constants={t.id:ast.literal_eval(n.value) for n in tree.body if isinstance(n,ast.Assign)
+        for t in n.targets if isinstance(t,ast.Name) and t.id=='PINS'}
+    cli_pins=constants['PINS'];current_assert(set(cli_pins)=={'ms4-host.py','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py'},'SEGMENTS_ORIGINAL_THREE_CLI_PINS')
+    for name,digest in cli_pins.items():current_assert(read(profile/name)[0]['sha256']==digest,'SEGMENTS_ALL_ORIGINAL_CLI_BYTES')
+    main=defs['main'];start=next(i for i,n in enumerate(main.body) if isinstance(n,ast.Expr) and isinstance(n.value,ast.Call)
+        and isinstance(n.value.func,ast.Name) and n.value.func.id=='authorize' and isinstance(n.value.args[0],ast.Constant)
+        and n.value.args[0].value=='authorize-aftersale-review-close')
+    end=next(i for i,n in enumerate(main.body) if i>start and isinstance(n,ast.Assign) and isinstance(n.targets[0],ast.Name) and n.targets[0].id=='final')
+    tail=ast.Module(body=main.body[start:end],type_ignores=[])
+    source_functions={name:{'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()} for name in
+        ('require','sha','command','stage','observe','finish_helper','registered','authorize')
+        for raw in [ast.get_source_segment(driver,defs[name]).encode('utf-8')]}
+    review=json.loads(fixed(c['source_review']));terminal=current_json(c['outer']['terminal'])
+    current_assert(set(review)=={'schema','scope','status','timing','reviewed_at_utc','reviewer','candidate','supervisor','original_driver','source_functions','source_tail','checks','findings'}
+        and type(review['schema']) is int and review['schema']==1 and review['scope']=='CURRENT_ORIGINAL_NORMAL_CONTINUATION_SOURCE_REVIEW'
+        and review['status']=='PASS_SOURCE_REVIEW_ONLY' and review['timing']=='POST_EXECUTION_SOURCE_READBACK'
+        and type(review['reviewer']) is str and bool(review['reviewer']) and review['findings']==[]
+        and review['candidate']==c['source'] and review['supervisor']==c['supervisor'] and review['original_driver']==driver_pointer
+        and review['source_functions']==source_functions
+        and review['source_tail']=={'first_statement':'authorize-aftersale-review-close','stop_before':'final','statements':len(tail.body),
+            'ast_sha256':hashlib.sha256(ast.dump(tail,include_attributes=False).encode('utf-8')).hexdigest()}
+        and review['checks']==dict.fromkeys(('original_helpers_reused','original_ast_tail_reused','only_capture_namespace_redirected',
+            'same_run_observation_seam','original_outer_remains_unknown','original_business_close_zero_assertions_unchanged'),True),
+        'SEGMENTS_CURRENT_INDEPENDENT_SOURCE_READBACK_AND_ORIGINAL_AST')
+    reviewed=datetime.fromisoformat(review['reviewed_at_utc']);current_assert(reviewed.utcoffset() is not None
+        and reviewed>datetime.fromisoformat(terminal['at_utc']),'SEGMENTS_POST_EXECUTION_REVIEW_NOT_BACKDATED')
+    source=ast.parse(fixed(c['source']));values={t.id:ast.literal_eval(n.value) for n in source.body if isinstance(n,ast.Assign)
+        for t in n.targets if isinstance(t,ast.Name) and t.id in ('SOURCE_HASH','SOURCE_SHA','FREEZE_HASH','HELPER_ID','TARGET_ID')}
+    current_assert(values['SOURCE_HASH']==driver_pointer['sha256'] and values['SOURCE_SHA']==context['source_sha']
+        and values['FREEZE_HASH']==context['freeze_sha256'],'SEGMENTS_CONTINUATION_ORIGINAL_SOURCE_BINDINGS')
+    current_assert(set(admission)=={'scope','source_sha','run_id','source_driver_sha256','original_outer_state','missing_original_capture',
+        'source_original_files','registration_container_id','aftersale_container_id','at_utc'}
+        and admission['scope']==result['scope'] and admission['source_sha']==context['source_sha'] and admission['run_id']==context['run_id']
+        and admission['source_driver_sha256']==driver_pointer['sha256'] and admission['original_outer_state']=='INTERRUPTED_EXIT_UNKNOWN'
+        and admission['registration_container_id']==values['HELPER_ID'] and admission['aftersale_container_id']==values['TARGET_ID'],
+        'SEGMENTS_REAL_ADMISSION_SOURCE_CONTEXT_AND_CREATED_IDS')
+    originals=[];missing=[];archives=(normal/'validation/native-normal-start-assets-r1',run/'root-orchestration')
+    for ordinal,archive in enumerate(archives):
+        current_assert(read(archive/'root-driver-source.py')[1]==driver_raw,'SEGMENTS_THREE_IDENTICAL_ORIGINAL_DRIVERS')
+        expected={'root-driver-source.py'}
+        if ordinal==0:
+            actual=json.loads(read(archive/'ACTUAL-CONTEXT.json')[1]);expected.add('ACTUAL-CONTEXT.json')
+            current_assert(actual=={'context':a['context']['path'],'run_id':context['run_id'],'source_sha':context['source_sha'],
+                'freeze_sha256':context['freeze_sha256']},'SEGMENTS_ORIGINAL_PREPARE_CONTEXT')
+        for path in sorted(archive.glob('*.created.json')):
+            stem=archive/path.name[:-len('.created.json')];expected.add(path.name)
+            absent=[suffix for suffix in ('terminal.json','stdout','stderr') if not Path(str(stem)+'.'+suffix).exists()]
+            if absent:
+                current_assert(ordinal==1 and absent==['terminal.json','stdout','stderr'],'SEGMENTS_ONLY_ONE_WHOLE_UNKNOWN_CAPTURE')
+                pointer,raw=read(path);missing.append((stem,json.loads(raw),pointer));continue
+            row=current_normal_capture(stem,read);current_normal_capture_context(row,context,normal_root,cli_pins,close_raw,zero_raw)
+            originals.append(row);expected.update(stem.name+'.'+suffix for suffix in ('terminal.json','stdout','stderr'))
+        current_assert({p.name for p in archive.iterdir()}==expected,'SEGMENTS_ORIGINAL_CAPTURE_NAMESPACE_COMPLETE')
+    originals.sort(key=lambda row:row['sequence'])
+    current_assert(originals and [r['sequence'] for r in originals]==list(range(1,len(originals)+1)) and len(missing)==1
+        and originals[0]['label']=='prepare','SEGMENTS_COMPLETE_ORIGINAL_PREFIX_AND_ONE_GAP')
+    gap,gap_created,gap_pointer=missing[0];gap_match=re.fullmatch(r'([0-9]{3,})-(.+)',gap.name)
+    current_assert(gap_match is not None and int(gap_match[1])==len(originals)+1==admission['missing_original_capture']
+        and type(gap_created) is dict and set(gap_created)=={'argv','pid'} and type(gap_created['pid']) is int and gap_created['pid']>0,
+        'SEGMENTS_ACTUAL_UNKNOWN_OBSERVATION_SEQUENCE')
+    current_assert(set(admission['source_original_files'])=={str(p) for p in archives[1].iterdir() if p.is_file()},'SEGMENTS_ADMITTED_ORIGINAL_ROOT_COMPLETE')
+    for path,digest in admission['source_original_files'].items():current_assert(read(path)[0]['sha256']==digest,'SEGMENTS_ADMITTED_ORIGINAL_FILES_HELD')
+    fresh=[];commands=root/'commands';expected=set()
+    for path in sorted(commands.glob('*.created.json')):
+        stem=commands/path.name[:-len('.created.json')];row=current_normal_capture(stem,read)
+        current_normal_capture_context(row,context,normal_root,cli_pins,close_raw,zero_raw);fresh.append(row)
+        expected.update(stem.name+'.'+suffix for suffix in ('created.json','terminal.json','stdout','stderr'))
+    current_assert(fresh and [r['sequence'] for r in fresh]==list(range(1,len(fresh)+1))
+        and {p.name for p in commands.iterdir()}==expected,'SEGMENTS_COMPLETE_FINITE_CONTINUATION_CAPTURES')
+    current_assert(originals[-1]['label']=='aftersale-review-create'
+        and originals[-1]['value']['status']=='LIVE_NEW_NORMAL_REGISTRATION_SAME_HANDLE_PRESERVED'
+        and originals[-1]['value']['container_id']==values['TARGET_ID']
+        and originals[-1]['value']['registration']['id']==values['HELPER_ID']
+        and gap_match[2]==fresh[0]['label']=='observe-register-aftersale-review-normal'
+        and gap_created['argv']==fresh[0]['argv'] and gap_created['pid']!=fresh[0]['native']['pid']
+        and fresh[0]['value']['id']==values['HELPER_ID'] and fresh[0]['value']['status']=='exited'
+        and fresh[0]['value']['pid']==fresh[0]['value']['restart_count']==fresh[0]['value']['exit_code']==0
+        and fresh[1]['label']=='finish-helper-register-aftersale-review-normal' and fresh[1]['value']['container_id']==values['HELPER_ID']
+        and [r['label'] for r in fresh[2:4]]==['aftersale-review-bind','aftersale-review-start']
+        and all(r['value']['container_id']==values['TARGET_ID'] for r in fresh[2:4]),'SEGMENTS_ONLY_SAME_CREATED_CID_OBSERVATION_SEAM')
+    current_normal_business_records(driver,originals+fresh,context,read)
+    for value,status,scope in ((close,'VERIFIED_MS4_WORKER_NORMAL_CLOSE_ZERO_RESIDUAL','MS4_WORKER_NORMAL_CLOSE_ONLY'),
+            (zero,'VERIFIED_MS4_WORKER_NORMAL_INDEPENDENT_SIX_QUERY_ZERO','MS4_WORKER_NORMAL_CLOSE_INDEPENDENT_ZERO_ONLY')):
+        current_assert(value['status']==status and value['scope']==scope and all(value[k]==context[k] for k in ('run_id','source_sha','freeze_sha256'))
+            and value['context_sha256']==hashlib.sha256(context_raw).hexdigest() and type(value['native_exit']) is int and value['native_exit']==0
+            and value['full_acceptance']=='INCOMPLETE' and value['stopped_samples']=='NOT RUN','SEGMENTS_ORIGINAL_CLOSE_ZERO_SCOPES')
+    current_assert(close['exact_nonforce_removed']=={'containers':4,'networks':1,'volumes':9} and close['ordinary_stop_and_exact_nonforce_remove'] is True
+        and close['close_source_sha256']==zero['close_source_sha256']==cli_pins['normal-close-ms4-fulfillment.py']
+        and close['reviewed_host_sha256']==zero['host_source_sha256']==cli_pins['ms4-host.py']
+        and zero['zero_source_sha256']==cli_pins['verify-zero-ms4-fulfillment.py'] and zero['close_result_sha256']==a['worker_close']['sha256']
+        and close['final_inventory']=={kind:{'project':[],'run':[]} for kind in ('container','network','volume')},'SEGMENTS_ORIGINAL_CLOSE_ZERO_SOURCE_AND_RESOURCE_ASSERTIONS')
+    current_assert([(q['kind'],q['label']) for q in zero['queries']]==[(k,l) for k in ('container','network','volume') for l in ('project','run')]
+        and all(type(q['native_exit']) is int and q['native_exit']==0 and q['stdout_bytes']==q['stderr_bytes']==0
+            and q['stdout_sha256']==q['stderr_sha256']==hashlib.sha256(b'').hexdigest() for q in zero['queries']),'SEGMENTS_SIX_NATIVE_RAW_EMPTY_QUERIES')
+    for phase in ('before','after'):
+        value=zero['global_consumers'][phase]
+        current_assert(set(value)=={'inspected_container_count','operations','original_container_ids','allowed_original_consumers','unexpected_original_resource_consumers'}
+            and value['allowed_original_consumers']==[] and type(value['unexpected_original_resource_consumers']) is int
+            and value['unexpected_original_resource_consumers']==0 and type(value['inspected_container_count']) is int
+            and value['inspected_container_count']>=0 and len(value['operations'])==value['inspected_container_count']+2,'SEGMENTS_ORIGINAL_GLOBAL_CONSUMERS')
+    for path in (run/'root-orchestration/RESULT.json',archives[0]/'RESULT.json',normal/'launcher/normal-start.terminal.json',
+            normal/'launcher/normal-start.stdout',normal/'launcher/normal-start.stderr',*(Path(str(gap)+'.'+s) for s in ('terminal.json','stdout','stderr'))):
+        current_assert(not path.exists() and not path.is_symlink(),'SEGMENTS_ORIGINAL_OUTER_AND_GAP_REMAIN_UNKNOWN')
+    current_assert({p.name for p in root.iterdir()}=={'continue.py','ADMISSION.json','supervisor.json','created.json','terminal.json','stdout','stderr','RESULT.json','commands'},
+        'SEGMENTS_COMPLETE_CONTINUATION_PUBLIC_ROOT')
+    for pointer in list(public.values()):current_assert(current_completion_file(pointer['path'])[0]==pointer,'SEGMENTS_ALL_READ_PUBLIC_BYTES_HELD')
+    fresh_paths={path for path in public if Path(path).is_relative_to(root)}
+    return {'context':context,'context_raw':context_raw,'close':close,'close_raw':close_raw,'zero':zero,'zero_raw':zero_raw,
+        'result':result,'result_raw':fixed(c['result']),'outer_created':made,
+        'coordinator_complete':{'count':len(originals)},'fresh_native_count':len(fresh),'incomplete_sequence':len(originals)+1,
+        'zero_source_sha256':cli_pins['verify-zero-ms4-fulfillment.py'],'public_rows':[public[p] for p in sorted(public)],
+        'public_closure_counts':{'new_source_runtime_capture_roots':{root.as_posix():len(fresh_paths)},'new_roots_unique_files':len(fresh_paths),
+            'ci_bound_public_files_outside_new_roots':len(set(public)-fresh_paths),'derived_unique_union_files':len(public)}}
+
+def current_interrupted_a(a,authority_pointer,normal_root,freeze_sha):
+    if current_completion_segments(a):
+        return current_normal_continuation(a,authority_pointer,normal_root,freeze_sha)
+    proof=current_legacy_interrupted_a(a,authority_pointer,normal_root,freeze_sha)
+    # The old stricter source/CI/window checks above remain intact. Both formats
+    # additionally use the same capture/context reader and return the same facts.
+    cli_pins={name:current_completion_file(Path(proof['context']['prep_dir'])/name)[0]['sha256']
+        for name in ('ms4-host.py','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py')}
+    completed=[]
+    for archive in (Path(normal_root)/'validation/native-normal-start-assets-r1',Path(proof['context']['run_dir'])/'root-orchestration'):
+        for path in sorted(archive.glob('*.created.json')):
+            stem=archive/path.name[:-len('.created.json')]
+            if not Path(str(stem)+'.terminal.json').exists():continue
+            row=current_normal_capture(stem,current_completion_file)
+            current_normal_capture_context(row,proof['context'],normal_root,cli_pins,proof['close_raw'],b'{}');completed.append(row)
+    current_assert(len(completed)==proof['coordinator_complete']['count'],'COMPLETION_LEGACY_COMMON_CAPTURE_COUNT')
+    proof['incomplete_sequence']=proof['coordinator_complete']['count']+1
+    proof['zero_source_sha256']=proof['zero']['zero_source_sha256']
+    return proof
 '''
 
 
@@ -4447,7 +4743,9 @@ def _completed_a(normal: dict[str, Any], a: dict[str, Any],
            "_completion_public_rows": encode(proof["public_rows"]),
            "_completion_public_counts": encode(proof["public_closure_counts"]),
            "_completion_native_counts": encode({"original_completed": proof["coordinator_complete"]["count"],
-                                                 "fresh_completion": proof["fresh_native_count"]})}
+                                                 "fresh_completion": proof["fresh_native_count"],
+                                                 "incomplete_sequence": proof["incomplete_sequence"],
+                                                 "zero_source_sha256": proof["zero_source_sha256"]})}
     return consumer, setup, context, raw
 
 
@@ -4992,7 +5290,7 @@ def _b_interrupted_review_runtime(raw: str) -> str:
         and all(fixed['A'][key]==A_QUALIFICATION[key] for key in ['normal_root_result','worker_close','independent_zero','post_a_history']),
         'B_REVIEW_REAL_A_FIVE_PROOFS_STILL_EXACT')
     for name in ['normal_root_result','worker_close','independent_zero','post_a_history','context']:current_stream(fixed['A'][name])'''
-    after = '''    global CURRENT_COMPLETION_PUBLIC_ROWS,CURRENT_COMPLETION_NATIVE_COUNT
+    after = '''    global CURRENT_COMPLETION_PUBLIC_ROWS,CURRENT_COMPLETION_NATIVE_COUNT,CURRENT_ORIGINAL_COMPLETED_COUNT,CURRENT_ORIGINAL_INCOMPLETE_SEQUENCE
     current_b_outer(fixed['normal']['outer'],fixed['normal']['review'])
     current_assert(set(fixed)=={'schema','scope','source_authority','normal','A','materials','build_proofs','base_source','history','runtime_root','network_subnets','post_a'}
         and type(fixed['A']) is dict and fixed['A']==CURRENT_INTERRUPTED_A
@@ -5003,6 +5301,8 @@ def _b_interrupted_review_runtime(raw: str) -> str:
     proof=current_interrupted_a(CURRENT_INTERRUPTED_A,CURRENT_B_TECHNICAL_AUTHORITY,CURRENT_COMPLETION_NORMAL_ROOT,CURRENT_COMPLETION_FREEZE)
     CURRENT_COMPLETION_PUBLIC_ROWS=proof['public_rows']
     CURRENT_COMPLETION_NATIVE_COUNT=proof['fresh_native_count']
+    CURRENT_ORIGINAL_COMPLETED_COUNT=proof['coordinator_complete']['count']
+    CURRENT_ORIGINAL_INCOMPLETE_SEQUENCE=proof['incomplete_sequence']
     current_stream(fixed['post_a']['history'])'''
     require(raw.count(before) == 1, "B_ONE_ORIGINAL_REVIEW_A_ZERO_GATE")
     candidate = raw.replace(before, after, 1)
@@ -5025,7 +5325,7 @@ def _b_interrupted_retirement(source: bytes) -> str:
     require(candidate.count(old) == 1, "B_ONE_ORIGINAL_ZERO_PATH_JOIN")
     candidate = candidate.replace(old, new, 1)
     old = "zero['zero_source_sha256'] == OLD_CLI_PINS['verify-zero-ms4-fulfillment.py']"
-    new = "zero['zero_source_sha256'] == CURRENT_INTERRUPTED_A['completion']['source']['sha256']"
+    new = "zero['zero_source_sha256'] == proof['zero_source_sha256']"
     require(candidate.count(old) == 1, "B_ONE_ORIGINAL_ZERO_SOURCE_JOIN")
     candidate = candidate.replace(old, new, 1)
     candidate = once(candidate.encode(), b"    commands = prior_native_history(context, close_raw, zero_raw)",
@@ -5033,7 +5333,7 @@ def _b_interrupted_retirement(source: bytes) -> str:
     candidate = once(candidate.encode(), b"    preserved,prior = current_post_a_history(args,context,final_raw,close_raw,zero_raw)",
                      b"    preserved,prior = current_interrupted_post_a_history(args,context)").decode()
     candidate = once(candidate.encode(), b"    prior['native_commands'] = len(commands)",
-                     b"    prior['native_commands'] = commands['count']\n    prior['completion_native_commands'] = proof['fresh_native_count']\n    prior['original_incomplete_sequence'] = 206").decode()
+                     b"    prior['native_commands'] = commands['count']\n    prior['completion_native_commands'] = proof['fresh_native_count']\n    prior['original_incomplete_sequence'] = proof['incomplete_sequence']").decode()
     compile(candidate, "current-interrupted-original-retirement", "exec")
     return candidate
 
@@ -5051,7 +5351,7 @@ def _b_interrupted_root(raw: bytes, name: str) -> bytes:
         text = once(text.encode(), b"    assert re.fullmatch('[a-f0-9]{64}',args.normal_root_result_sha256)",
                      b"    assert re.fullmatch('[a-f0-9]{64}',args.interrupted_completion_result_sha256)").decode()
         text = once(text.encode(), b"        'prior_normal_root_result':prior['normal_root_result'],'prior_public_history_inventory':prior['history_inventory'],",
-                     b"        'prior_interrupted_A_completion':prior['completion_result'],'prior_public_history_inventory':prior['history_inventory'],\n        'prior_original_A_status':prior['original_A_status'],'prior_completion_native_commands_verified':prior['completion_native_commands'],").decode()
+                     b"        'prior_interrupted_A_completion':prior['completion_result'],'prior_public_history_inventory':prior['history_inventory'],\n        'prior_original_A_status':prior['original_A_status'],'prior_completion_native_commands_verified':prior['completion_native_commands'],\n        'prior_original_incomplete_sequence':prior['original_incomplete_sequence'],").decode()
         before = "        'outer_coordinator_precondition':{'original_session':A_OUTER_SESSION,\n            'native_exit_zero':'MUST_HAVE_BEEN_VERIFIED_BY_ROOT_BEFORE_INVOCATION',\n            'materializer_observation':'NOT_OBSERVED_OR_INFERRED_FROM_INTERNAL_CHILD_RECEIPTS'},"
         text = once(text.encode(), before.encode(), b"        'outer_coordinator_precondition':current_interrupted_precondition(),").decode()
         text = text.replace("INCOMPLETE_NOT_EXECUTABLE: Root must first bind actual current R40 A outer0 and full normal/close/zero/post-A history; identity and internal receipts do not prove that terminal.",
@@ -5061,7 +5361,7 @@ def _b_interrupted_root(raw: bytes, name: str) -> bytes:
         before = "    require(type(A_QUALIFICATION) is dict and set(A_QUALIFICATION) == {'outer_native_exit','normal_root_result','worker_close','independent_zero','post_a_history'}, 'INCOMPLETE_R40_A_QUALIFICATION_REQUIRED')\n    require(type(A_QUALIFICATION['outer_native_exit']) is int and A_QUALIFICATION['outer_native_exit'] == 0, 'ACTUAL_R40_NORMAL_OUTER_ZERO_REQUIRED')"
         text = once(text.encode(), before.encode(), b"    current_interrupted_qualification()").decode()
         before = "    require(setup['prior_normal_root_result'] == A_QUALIFICATION['normal_root_result'] and setup['prior_public_history_inventory'] == {key:A_QUALIFICATION['post_a_history'][key] for key in ['path','bytes','sha256']}, 'SAME_QUALIFIED_R40_A_PUBLIC_INPUTS')"
-        after = "    require(setup['prior_interrupted_A_completion'] == A_QUALIFICATION['completion']['result'] and setup['prior_original_A_status']=='UNKNOWN/INTERRUPTED'\n        and setup['outer_coordinator_precondition']==current_interrupted_precondition()\n        and type(setup['prior_completion_native_commands_verified']) is int and setup['prior_completion_native_commands_verified']==CURRENT_COMPLETION_NATIVE_COUNT\n        and setup['prior_native_commands_verified']==205\n        and setup['prior_public_history_inventory'] == {key:A_QUALIFICATION['post_a_history'][key] for key in ['path','bytes','sha256']}, 'SAME_QUALIFIED_INTERRUPTION_COMPLETION_PUBLIC_INPUTS')"
+        after = "    require(setup['prior_interrupted_A_completion'] == A_QUALIFICATION['completion']['result'] and setup['prior_original_A_status']=='UNKNOWN/INTERRUPTED'\n        and setup['outer_coordinator_precondition']==current_interrupted_precondition()\n        and type(setup['prior_completion_native_commands_verified']) is int and setup['prior_completion_native_commands_verified']==CURRENT_COMPLETION_NATIVE_COUNT\n        and setup['prior_native_commands_verified']==CURRENT_ORIGINAL_COMPLETED_COUNT\n        and setup['prior_original_incomplete_sequence']==CURRENT_ORIGINAL_INCOMPLETE_SEQUENCE\n        and setup['prior_public_history_inventory'] == {key:A_QUALIFICATION['post_a_history'][key] for key in ['path','bytes','sha256']}, 'SAME_QUALIFIED_INTERRUPTION_COMPLETION_PUBLIC_INPUTS')"
         text = once(text.encode(), before.encode(), after.encode()).decode()
     return text.encode()
 
@@ -5608,8 +5908,10 @@ def current_b_a_capture_failure_precondition():
             after[name] += note
     if interrupted:
         note = ("\n\n## 本派生来源的中断后独立完成准入\n\n"
-            "原正常A保持 UNKNOWN/INTERRUPTED、退出码为 null，不生成或替代其206终态、Root RESULT或旧zero。"
-            "本类型只消费原1–205完整原生0、普通close0及独立完成actor的真实四件0，保留全部业务、源保全和六查询断言。\n\n"
+            "原正常A保持 UNKNOWN/INTERRUPTED、退出码为 null，不生成或替代其中断命令终态或Root RESULT。"
+            "准入消费原完整前缀及独立完成的真实原生四件。旧独立核零格式保持；同Run原链续段格式只接纳唯一未完成observe，"
+            "由同proof、同原created CID的新观察承接，沿原业务调用AST消费保存结果，关闭和核零仍绑定原脚本。"
+            "前缀数量、缺口序号和续段数量均来自已核原件，保留全部业务、源保全和六查询断言。\n\n"
             "新A输入始终为 scope/original_session/context/worker_close/completion 五键；新B输入另以顶层 post_a={history,contract} 保存已采公件，"
             "合计十二键。原A0的十一键B输入及八键A输入不变。运行本派生Root materializer时使用 --interrupted-completion-result-sha256；"
             "该参数只绑定新独立完成RESULT，不冒充 --normal-root-result-sha256。\n\n"

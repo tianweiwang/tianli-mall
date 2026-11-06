@@ -8,6 +8,10 @@
 
 宿主进程被强制结束或机器断电时，进程内回收代码无法执行；接续任务必须先读取已有记录、核对真实进程与资源并完成收尾，再启动新实例。旧冻结脚本和证据原样保留，不宣称它们均有自动回收。组件检查也不代替下一次实际运行的关闭结果。
 
+正常验收的分段记录沿用 `INTERRUPTED_A_WITH_INDEPENDENT_COMPLETION` 五键输入。新增的 `completion.kind=ORIGINAL_NORMAL_CONTINUATION` 形式要求八键：`kind/source/source_review/result/admission/supervisor/independent_zero/outer`。它只支持完整成功前缀、唯一未完成的观察、同容器同参数续观及原业务尾段；原记录保持各自序号，不能跳过未知的创建、启动或删除操作。独立审查明确记录实际审查时间；执行后读回只能核对原启动摘要，不倒签执行前审查。
+
+该形式以纯读取方式核完整捕获、当前构建来源、原业务顺序、关闭与独立核零；原 A 外层仍标记 `UNKNOWN/INTERRUPTED`，不补写缺失终态或原 `RESULT`。两个后续 B 入口共用同一证明，并从证明中读取实际数量、缺口和原核零脚本摘要。既有完整 A 和旧中断格式保持，原 prepare 的独立捕获也必须纳入 post-A 公共文件清单；源检查通过不表示 B 页面验收已执行。
+
 `verify_history_zero.py` 是当前 history reader 正常关闭后的独立只读入口，仅接受显式 `--profile current-history-reader-v1`，并要求 `--context`、`--close-result-sha256`、`--close-source-sha256`、`--source-sha256` 和全新外置 `--output`。Root 须先取得原 Host close 外层自然退出0；工具精确消费实际12键 close、9键 before、11条普通关闭操作及原7/12键 native 四件的 `wait_exit`，不补造旧协议字段。原冻结 independent-zero r2 及其 PLAN 保持，工具只依赖标准库和同目录固定摘要的 `retire_failed_history.py` 纯 helper，运行不加载仓库外脚本。
 
 该入口核 phase INDEX/原 pins、冻结双源及14件准备来源，从本次独立窗口起保全公件完整字节、原生九字段与命名空间，私有内容只读元数据；五个资源原件 `manifest.json/network.json/containers.jsonl/volumes.txt/volumes.jsonl` 按阶段正常演进，各归档自身仍严格按 INDEX 校验，其余已归档原件保持。随后仅执行六项 fresh 标签查询和安全全局 CID/名称/网络/物理挂载别名投影，全部原生四件写入 OUT，不停止或删除资源。结果不声称 R21 未产生的旧 PUBLIC-INPUTS 关闭期保全，不替代13seal→4CLI→22CLI→9HTTP的完整非作者业务读回，`full_acceptance` 保持 `INCOMPLETE`；SOURCE/compile/help 不代表真实 zero 已执行。
