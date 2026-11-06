@@ -33,7 +33,7 @@
 - `bootstrap.sh` 在 Git Bash 或原生 Bash 执行，先检查所有镜像和版本、创建独立资源、导入安装种子，再记录容器 ID、卷名、内部网络与地址。`run.sh <RUN_ID> <脚本> [参数...]` 负责启动一次性 runner 和必要的服务故障场景；`teardown.sh` 按 manifest 与实际标签/ID 双重核对后仅清理本次资源。
 - ISO-FULL 的启动保护沿用 §3.4 的 RUN_ID、双哨兵、库名、受限权限检查。主机固定为 `audit-mysql` / `audit-redis`、端口固定为 3306/6379，解析后的地址必须与 manifest 中经过 Docker 核验的本次容器地址一致。禁止接受调用方自选主机或业务实例地址。
 - `audit_app_start()` / `audit_app_stop()` 通过本次运行目录中的受限控制记录请求专用应用容器启停 PHP 内置服务器；配置只从受限凭据卷注入 `PHP_*` 环境变量（ThinkPHP `Env::getEnv()` 的读取规则）。不创建 `crmeb/.env`。`install.lock` 仍按 §3.5 哨兵规则处理。
-- 初始建库、导入种子、写入双哨兵属于引导阶段，只能在已核对的本次专用实例内完成；之后任何测试写入和应用启动都必须经过 guard。测试失败保留证据，不自动清理。
+- 初始建库、导入种子、写入双哨兵属于引导阶段，只能在已核对的本次专用实例内完成；之后任何测试写入和应用启动都必须经过 guard。测试失败保留原证据，资源按 §7 收尾；保留证据不等于长期保留已无用途的容器、卷和网络。
 - 2026-10-11 用户批准安装后的文件校验初始化：安装种子没有当前版本的 `write_md5` 标记，真实 `login/info` 首次请求会通过 `SystemFileServices::writeMd5()` 重建 `eb_system_file_md5`，其 TRUNCATE 需要 DROP 权限。bootstrap 在双哨兵和受限账号 guard 已通过后，只用本次专用 `audit_migrator` 初始化真实 ThinkPHP，调用该现有方法实际生成当前源码的文件校验数据；成功后以现有 `CacheServices::setDbCache()` 写入当前版本标记，并检查数据非空。此步骤只在引导容器内执行，migrator 配置不传给应用或 runner；应用仍使用仅有 DML 权限的 `audit_app`。不新增表或权限种子，不伪造标记跳过校验生成，Z07 的业务码 200 断言保持不变。
 
 - 2026-10-11 MS0b HTTP接线前置（依用户委托自主推进，05 Task4记录）：每个新RUN在私有app-secrets卷生成独立auth.session_epoch/stamp_key（与签名key不同），通过PHP_AUTH_*供给专用应用，不在宿主控制文件、命令行或输出传真实值。runner另只读挂载本次app-runtime卷，核对真实HTTP文件缓存/业务日志；访问日志正常增长单独做敏感值检查。冷错误场景仅TCP监听就绪，不调用login/info预热。supervisor配置override仅白名单中的缺AUTH值/short、debug true/false、同一audit-mysql的闭合端口1或3306、本次RUN安全cache prefix；guard连接仍固定真实3306/6379并核双哨兵/DML权限，不改变账号/库/网络主机。原MS0a配置override保留；安装writeMd5初始化仍只bootstrap专用migrator真实执行。
@@ -385,9 +385,11 @@ audit_finish(): never                 // 汇总，写 JSONL，有 FAIL 时以退
 
 ## 7. 清理
 
-- `teardown.sh <RUN_ID>`：读取 manifest，执行 `docker compose -p tianli-audit-<RUN_ID> down -v`，停止应用进程，删除带本次哨兵的 `crmeb/.env` 与 `install.lock`。
-- 失败时保留运行目录作为证据，不自动删除。
-- 不对 manifest 之外的任何容器、卷、数据库、键执行删除。
+- 回收是每次测试的完成条件，成功、失败和协调中断均须收尾。成功走原正常关闭及独立核零；失败先保存实际错误、进程终态和输出，再核对本次资源身份并回收。宿主运行目录和原失败记录保留，清理成功不改变业务失败状态。
+- `teardown.sh <RUN_ID>` 适用于它已支持的原隔离实例：先读取 manifest 和实际资源，沿该 project 执行包含所有 profile 的 `down --volumes --remove-orphans`，只删除本次哨兵匹配的本地文件。其他冻结运行使用各自已核对的关闭入口，不能把这一命令直接套到未知实例。
+- 对失败或中断的实例，确认自有宿主子进程已终态、无继续执行用途，逐项核对原运行记录、容器完整 ID、run/project 标签、卷创建身份、网络及全局消费者。正常停止、非强制删除本次容器，删除无其他消费者的专用卷及空网络；不使用全局 prune 或只按名称前缀批量删除。
+- 完成后分别查询容器、卷、网络，确认本次资源为零并核对仍在使用的预览及其他项目。无法确认身份或仍有消费者的对象不得猜测删除，须记录准确保留范围、原因和下一次复核点。新一轮启动前先处理上一轮回收；不得只记录命令退出0就视为清理完成。
+- 当前历史整轮使用维护入口 `help/audit-regressions/orchestration/run_history_normal.py` 的成功关闭及失败回收路径；旧归档脚本的字节保留，不据此宣称全部旧脚本已经具备自动回收。
 
 
 顾客R2实际复测与失败关闭（2026-10-17）：clean `c25b879880791ce81dc0dc16ae22ca9920b165a6`、Run `202610170844240f83f1`的九初始化、四MS5及真实files-bootstrap均0；prepare在source门禁M4C_TEN_MIGRATION_DUAL_RO_SOURCE_BYTES实际1，HTTP0/childNULL、夹具未运行。只读诊断确认public tmpfs仅遮workspace的安装SQL；单file RO bind正面诊断全部20源匹配且SQL不可写。原实例按固定1087原件/原3CID1网6卷关闭，两个同CLI stop-1真实0、nonforce移除；关闭 `317028fb0a8d3e31bc0512b9aa69a9559bdf2059d390e24205e8441ca1239b53`、独立六raw/全局核零 `61456e9a01e40a522b374c7cbf2a08d6e97b4469c369c4c6b680546c90889319`均实际0，原prepare raw1保持。Main在zero0后才解冻。
