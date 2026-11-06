@@ -2950,6 +2950,14 @@ B_QA_ORACLE_ORIGINAL = {"bytes": 254827, "sha256": "ed6b7d24f195c096218126c9ae60
 B_QA_ORACLE_CURRENT = {"bytes": 256327, "sha256": "965091fda39308f73e43f51fb6b913ff3fe467840405974ede28b868dfe3ae0c"}
 B_STOREFRONT_PAUSE_SOURCE = "5b6e244a9198ef3316caee56f6ff7681fa575538"
 B_STOREFRONT_PAUSE_ORACLE = {"bytes": 256636, "sha256": "e0224705eb42f7ddc0171a34489e6d7ba2cbdec91b91a2ec65855cd1a7aa5495"}
+B_IMAGE_FORM_QA_PINS = {
+    "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php": {
+        "bytes": 84106, "sha256": "2ff101b9bd914bff951b38e92ca48364a801f8324c4b4f021c2aebfc68acc140"},
+    B_QA_ORACLE_PATH: {
+        "bytes": 265096, "sha256": "c71c71e4ca06a2f44c0e34c92165845338d84c919719640c7a1245910dda615c"},
+    "help/audit-regressions/isolated/ms4-ui-prepare.php": {
+        "bytes": 44186, "sha256": "f4969534405f80a2a04687010ddf8fa2678c1f913764082045677376830dd7a1"},
+}
 B_QA_ORACLE_A_AUTHORITY = {
     "path": "H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101/current-source-ae13/CURRENT-SOURCE-TECHNICAL-AUTHORITY.json",
     "bytes": 1120, "sha256": "69aa34946326af7c27167d63de92d4c649180336218748b2de07eb1b85c3462f"}
@@ -3076,6 +3084,53 @@ def _b_qa_project_requirements(rows, proof, check):
     return [after if row["path"] == B_QA_ORACLE_PATH else row for row in rows]
 
 
+def _b_image_form_sources(inventory):
+    """Recognize the reviewed three-file UI extension; this does not approve A or B."""
+    return all(inventory.get(path) == {"path": path, **value}
+               for path, value in B_IMAGE_FORM_QA_PINS.items())
+
+
+def _b_image_form_mounts(after, inventory):
+    """Only the UI preparer can append its proven uploads to the existing private volume."""
+    if not _b_image_form_sources(inventory):
+        return None
+    proof = {"source_files": [{"path": path, **value} for path, value in B_IMAGE_FORM_QA_PINS.items()],
+             "role": "audit-ms4-ui-prepare", "private_mount": "/run/audit-customer-form", "files": {}}
+    key = "candidate/compose.yml"
+    original = after[key]
+    match = re.search(rb"^  audit-ms4-ui-prepare:\n.*?(?=^  [a-zA-Z0-9_-]+:|\Z)", original, re.M | re.S)
+    require(match is not None, "B_ONE_UI_PREPARE_COMPOSE_ROLE")
+    old_role = match.group(0)
+    old_mount = b"      - customer-form-evidence:/run/audit-customer-form:ro\n"
+    new_mount = b"      - customer-form-evidence:/run/audit-customer-form:rw\n"
+    new_role = once(old_role, old_mount, new_mount)
+    after[key] = once(original, old_role, new_role)
+    require(once(after[key], new_role, old_role) == original, "B_UI_PREPARE_ONLY_MOUNT_COMPOSE_INVERSE")
+    proof["files"][key] = {"before": pin(original), "after": pin(after[key])}
+    old_mount = b"CUSTOMER_FORM_PRIVATE_ROOT: ('volume', context['project'] + '_customer-form-evidence', False)}"
+    new_mount = b"CUSTOMER_FORM_PRIVATE_ROOT: ('volume', context['project'] + '_customer-form-evidence', True)}"
+    for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+        key = "candidate/" + name
+        original = after[key]
+        old_body = functions(original)["ui_prepare_owned"]
+        new_body = once(old_body, old_mount, new_mount)
+        after[key] = once(original, old_body, new_body)
+        require(once(after[key], new_body, old_body) == original, "B_UI_PREPARE_ONLY_MOUNT_CONSUMER_INVERSE")
+        proof["files"][key] = {"before": pin(original), "after": pin(after[key])}
+    proof["whole_files_inverse_exact"] = True
+    return proof
+
+
+def _b_browser_source_literal(raw, before, after):
+    """Keep the length and digest of a qualified PHP source together in each consumer."""
+    require(before["path"] == after["path"], "B_BROWSER_SAME_QUALIFIED_SOURCE_PATH")
+    old_literal = f"bytes:{before['bytes']},sha256:'{before['sha256']}'".encode()
+    new_literal = f"bytes:{after['bytes']},sha256:'{after['sha256']}'".encode()
+    changed = once(raw, old_literal, new_literal)
+    require(once(changed, new_literal, old_literal) == raw, "B_BROWSER_SOURCE_LITERAL_WHOLE_FILE_INVERSE")
+    return changed, {"before": pin(raw), "after": pin(changed)}
+
+
 def derive_b_profile(authority_pointer: dict[str, Any],
                      network_subnets: dict[str, str] | None = None) -> dict[str, Any]:
     """Pure finite B Source transformation; no A claim, output, import or runtime."""
@@ -3102,11 +3157,12 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                      "sha256": "e61184d208d9f6f0dfbfad9eb5eb32635ed8fd103e62f7abe5852712f5ee9be3"}
     oracle_current = inventory[oracle_path]
     oracle_update = None
+    image_form = _b_image_form_sources(inventory)
     if oracle_current != oracle_before:
         allowed_oracle = {
             B_QA_ORACLE_SOURCE: B_QA_ORACLE_CURRENT,
             B_STOREFRONT_PAUSE_SOURCE: B_STOREFRONT_PAUSE_ORACLE,
-        }.get(authority["source_sha"], B_QA_ORACLE_ORIGINAL)
+        }.get(authority["source_sha"], B_IMAGE_FORM_QA_PINS[oracle_path] if image_form else B_QA_ORACLE_ORIGINAL)
         require(oracle_current == {"path": oracle_path, **allowed_oracle}, "B_FIXED_CURRENT_UI_PREPARE_ORACLE_BYTES")
         oracle_update = {"before": oracle_before, "after": oracle_current}
         delta = source_review.get("semantic_delta")
@@ -3237,13 +3293,8 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                     after[key] = once(after[key], row["sha256"].encode(), changed["sha256"].encode())
                     require(row["bytes"] == changed["bytes"], "B_BROWSER_ONLY_FIXED_SAME_SIZE_BACKEND_LITERAL")
                     continue
-                old_literal = f"bytes:{row['bytes']},sha256:'{row['sha256']}'".encode()
-                new_literal = f"bytes:{changed['bytes']},sha256:'{changed['sha256']}'".encode()
-                original_browser = after[key]
-                after[key] = once(original_browser, old_literal, new_literal)
-                require(once(after[key], new_literal, old_literal) == original_browser,
-                        "B_UI_PREPARE_ORACLE_BROWSER_LITERAL_WHOLE_FILE_INVERSE")
-                oracle_browser_proofs[name] = {"before": pin(original_browser), "after": pin(after[key])}
+                after[key], proof = _b_browser_source_literal(after[key], row, changed)
+                oracle_browser_proofs[name] = proof
     require(oracle_update is None or len(oracle_browser_proofs) == 2, "B_BOTH_UI_PREPARE_ORACLE_BROWSER_LITERALS")
     contract = decode(after["browser-v1/ui-business-consumer-contract.json"])
     contract["php_sources"] = {row["path"]: {k:row[k] for k in ("bytes", "sha256")} for row in core["core_sources"]}
@@ -3270,6 +3321,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
         after[key] = raw
     if network_subnets is not None:
         network_subnets = _b_networks(after, network_subnets)
+    image_form_proof = _b_image_form_mounts(after, inventory)
     for name, symbol, target in (("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
         ("normal-close-ms4-fulfillment.py", "UI_HOST_SHA256", "ms4-host.py"),
@@ -3308,6 +3360,8 @@ def derive_b_profile(authority_pointer: dict[str, Any],
         if network_subnets is not None:
             changed |= ({"ui_web_connect", "ui_web_networks"} if name == "ms4-host.py"
                         else {"ui_zero_network_identity", "ui_zero_resource_networks"} if name == "verify-zero-ms4-fulfillment.py" else set())
+        if image_form_proof is not None and name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+            changed |= {"ui_prepare_owned"}
         require(set(current_functions) == set(original_functions) | added
                 and all(current_functions[symbol] == body for symbol, body in original_functions.items() if symbol not in changed),
                 "B_ALL_NON_TARGET_PYTHON_BUSINESS_AND_RESOURCE_FUNCTIONS_RAW_EXACT")
@@ -3320,6 +3374,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             "browser_compatibility": browser_compatibility,
             **({"ui_prepare_oracle_update": {**oracle_update, "browser_whole_file_inverse_exact": True,
                 "browser_files": oracle_browser_proofs}} if oracle_update is not None else {}),
+            **({"ui_image_form_preparation": image_form_proof} if image_form_proof is not None else {}),
             "forward": forward, "reverse": reverse,
             "network_subnets": network_subnets,
             "status": "PURE_B_PROFILE_DERIVED_NOT_APPROVED_NO_A_OR_RUNTIME"}
@@ -6195,6 +6250,8 @@ def current_b_a_capture_failure_precondition():
     derivation["aftersale_review_image_consumer"] = derived["aftersale_review_image_consumer"]
     derivation["declared_native_order_anchors_before_original_early_seal"] = True
     derivation["browser_compatibility"] = derived["browser_compatibility"]
+    if "ui_image_form_preparation" in derived:
+        derivation["ui_image_form_preparation"] = derived["ui_image_form_preparation"]
     derivation["actual_clean_Source_Val_M_A_build_B_Run"] = {"source_sha":head,
         "normal_M":fixed["normal"]["result"], "A":a_qualification, "materials":fixed["materials"]["producer_result"], "B_Run":None}
     if qa_equivalence is not None:
@@ -6280,6 +6337,10 @@ def current_b_a_capture_failure_precondition():
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     if oracle_proof is not None:
         checks["ui_prepare_oracle_update"] = oracle_proof
+    if "ui_image_form_preparation" in derived:
+        checks["ui_image_form_preparation"] = derived["ui_image_form_preparation"]
+        for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+            checks["changed_python_bodies"][name].append("ui_prepare_owned")
     if gateway_logout is not None:
         checks["profile_logout_and_isolated_mysql"] = gateway_logout
     if qa_equivalence is not None:

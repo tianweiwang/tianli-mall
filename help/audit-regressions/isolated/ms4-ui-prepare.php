@@ -148,7 +148,7 @@ function m4up_source(bool $beforePublicCopy=true): array
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
     $volumes=['/workspace'=>['source-tree',false],'/source'=>['source-tree',false],
         '/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
-        M4AR_PRIVATE=>['aftersale-evidence',true],M4CF_ROOT=>['customer-form-evidence',false]];
+        M4AR_PRIVATE=>['aftersale-evidence',true],M4CF_ROOT=>['customer-form-evidence',true]];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
         m4c_expect(in_array($mount['Destination'],['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],true)
@@ -170,8 +170,8 @@ function m4up_source(bool $beforePublicCopy=true): array
             m4up_expect(in_array('ro',explode(',',$left[5]??''),true)&&!in_array('rw',explode(',',$left[5]??''),true),
                 'UI_SOURCE_TREE_ACTUAL_KERNEL_ROOT_READONLY');}}
     m4up_expect($sourceRoots===['/workspace'=>1,'/source'=>1],'UI_SOURCE_TREE_BOTH_KERNEL_ROOTS_ONCE');
-    m4up_expect(count($cuMounts)===1&&in_array('ro',$cuMounts[0],true)&&!in_array('rw',$cuMounts[0],true),
-        'UI_CU_SINGLE_ACTUAL_PRIVATE_ROOT_READONLY_MOUNT');
+    m4up_expect(count($cuMounts)===1&&in_array('rw',$cuMounts[0],true)&&!in_array('ro',$cuMounts[0],true),
+        'UI_CU_SINGLE_ACTUAL_PRIVATE_ROOT_UPLOAD_WRITABLE_MOUNT');
     $tmpfs=$created['tmpfs'];$tmpKeys=array_keys($tmpfs);sort($tmpKeys,SORT_STRING);
     m4c_expect($tmpKeys===['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],'M4C_EXACT_THREE_PRIVATE_TMPFS');
     foreach($tmpfs as $options)m4c_expect(is_string($options)&&in_array('rw',explode(',',$options),true),'M4C_WRITABLE_PRIVATE_TMPFS');
