@@ -58,6 +58,59 @@ _PUBLIC_READ_SIZED_AFTER = _PUBLIC_READ_SIZED_BEFORE.replace(
     b"stream_get_contents($handle, 67108865)", b"stream_get_contents($handle, $before['size'] + 1)", 1)
 
 
+# Diagnostic-only seams: the original transport, Closing predicates/deadline,
+# sole AFTER capture and assertion remain unchanged. No private response bytes
+# or request values are published; intent sequence/step were already qualified.
+_CLOSING_BEFORE = rb'''function nhecr_wait_closing(array &$children, array $response, array $beforePrivate): bool
+{
+    if (!is_int($response['local_port']) || $response['local_port'] <= 0) return false;
+    $prefix = $beforePrivate['native_streams']['http']['stderr']['raw']; $until = hrtime(true) + 3000000000;
+    do {
+        $status = nhep_child_native($children['http']); if (!$status['running']) return false;
+        $raw = nhecr_stream_capture($children)['http']['stderr']['raw'];
+        if (!str_starts_with($raw, $prefix)) return false;
+        if (str_ends_with($raw, '] 127.0.0.1:' . $response['local_port'] . " Closing\n")) return true;
+        usleep(5000);
+    } while (hrtime(true) < $until);
+    return false;
+}
+'''
+_CLOSING_AFTER = _CLOSING_BEFORE.replace(
+    b"array $beforePrivate): bool", b"array $beforePrivate, ?string &$closingReason = null): bool", 1
+).replace(
+    b"$response['local_port'] <= 0) return false;",
+    b"$response['local_port'] <= 0) { $closingReason = 'invalid_local_port'; return false; }", 1
+).replace(
+    b"if (!$status['running']) return false;",
+    b"if (!$status['running']) { $closingReason = 'child_not_running'; return false; }", 1
+).replace(
+    b"if (!str_starts_with($raw, $prefix)) return false;",
+    b"if (!str_starts_with($raw, $prefix)) { $closingReason = 'stream_prefix_changed'; return false; }", 1
+).replace(
+    b' . " Closing\\n")) return true;',
+    b' . " Closing\\n")) { $closingReason = \'matched_closing_line\'; return true; }', 1
+).replace(
+    b"    return false;\n}", b"    $closingReason = 'deadline_exhausted'; return false;\n}", 1
+)
+_TRANSPORT_EXPECT_BEFORE = rb'''            nhecr_expect(is_array($response) && $closing && $response['http'] === 200 && $response['transport_errno'] === 0,
+                'NHECR_ONE_REAL_TRANSPORT_AND_COMPLETE_CLOSING_BEFORE_ACTUAL_AFTER');
+'''
+_TRANSPORT_EXPECT_AFTER = b"            try {\n" + _TRANSPORT_EXPECT_BEFORE + rb'''            } catch (RuntimeException $error) {
+                if ($error->getMessage() === 'NHECR_ONE_REAL_TRANSPORT_AND_COMPLETE_CLOSING_BEFORE_ACTUAL_AFTER') {
+                    // Already-qualified scalar facts only; preserve the original failure if diagnostic output fails.
+                    try {
+                        fwrite(STDERR, 'NHECR_TRANSPORT_CLOSING_DIAGNOSTIC ' . json_encode([
+                            'sequence' => $intent['sequence'], 'step' => $intent['step'],
+                            'closing' => $closing, 'closing_reason' => $closingReason,
+                            'http' => $response['http'], 'transport_errno' => $response['transport_errno'],
+                        ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+                    } catch (Throwable $ignored) {}
+                }
+                throw $error;
+            }
+'''
+
+
 # Ordered, exact byte replacements; reverse_reader applies these in reverse.
 # All other bytes, including the producer's original eleven-control seal, stay
 # unchanged. These transformations do not establish a runtime verification result.
@@ -198,6 +251,15 @@ READER_SEAMS = (
         b"'NHECR_CURRENT_REFUND_COMPLETE_INDEPENDENT63_DTO'",
         b"'NHECR_CURRENT_REFUND_COMPLETE_INDEPENDENT73_DTO'",
     ),
+    ("closing_safe_reason_only", _CLOSING_BEFORE, _CLOSING_AFTER),
+    (
+        "closing_safe_reason_call",
+        b"            $response = null; $primary = null; $extra = []; $closing = false;\n"
+        b"            try { $response = nhecr_transport($intent, $request, $extra); $closing = nhecr_wait_closing($children, $response, $before['private']); }\n",
+        b"            $response = null; $primary = null; $extra = []; $closing = false; $closingReason = null;\n"
+        b"            try { $response = nhecr_transport($intent, $request, $extra); $closing = nhecr_wait_closing($children, $response, $before['private'], $closingReason); }\n",
+    ),
+    ("transport_closing_safe_failure_scalars", _TRANSPORT_EXPECT_BEFORE, _TRANSPORT_EXPECT_AFTER),
 )
 
 

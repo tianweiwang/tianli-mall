@@ -94,6 +94,8 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 输出保存 before/candidate、实际作者及内部模块原字节、完整输入来源、publication、标准正逆 patch 和全成员摘要。publication 只是来源清单，运行仍须另有真实外部五键 source review。当前 Host 在 prepare 前核该 review、四键 publication 与七项实际绑定，将两份来源原件完整复制到 Run；后继步骤和 reader 重核同一原件。`current-structure-upgrade` 已接原 37 步 seal、四个 CLI 与 producer/driver 两次真实退役前置，再沿原 16 个结构 CLI 和完整数据库、文件、Redis 观察升级；reader 仍须核 173 表基线和原九项 HTTP，最后普通关闭、独立核零。源码接线和来源采用不代替这些实际运行结果。
 
+Reader 仅在原 transport/Closing 断言自然失败后向 stderr 补已验证的 `sequence/step`、`closing`、固定 `closing_reason` 枚举、`http` 和 `transport_errno` 六项安全标量，不输出 URL、请求/响应内容、凭据或异常原文；原单次 30 秒 transport、3 秒 Closing、唯一 AFTER 捕获、成功结果和原异常保持，整件正逆、语法及正常 Closing 组件通过不代表旧失败已定位到具体分项或历史整轮已通过。
+
 历史 initializer 的默认运费模板在 MS2 结构迁移后含第八列 `mer_id`。来源变换保留原安装 SQL 和七列 canonical 值比较，使用固定 `mer_id => null` 的完整八列行生成快照预期，并增加全行严格比较；原全库、Redis、metadata、DDL 和自增值检查保持。旧七列预期已用实际正常行在 PHP 重放失败，修后表达式通过；新的完整 initializer 和非空历史链仍须在新来源、新隔离 Run 中实际验证，旧失败不改签。
 
 历史文件准备 CLI 会解码完整双源清单并整读源码；实际 R8 在 PHP 128M 上限退出255。其固定字节变换只在原入口检查后、首次完整资格读取前，核原128M并将本进程预算设为512M、核返回值与回读；共享 Compose、挂载、命令及业务 HTTP 默认预算不变。该 CLI 同进程的旧 App 初始化也使用此预算，所有原数据与文件检查保持；新完整运行仍须实证，原失败不重启或改签。

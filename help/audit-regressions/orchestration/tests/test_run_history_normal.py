@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -186,6 +187,75 @@ class HistoryRunnerNormalTests(unittest.TestCase):
             self.assertTrue(snapshot["global_volumes"][mount["Name"]]["mountpoint"].startswith("/"))
         RUNNER.no_foreign_consumers(snapshot, set(snapshot["targets"]["containers"]))
         self.assertEqual(snapshot, unchanged)
+
+
+READER_SPEC = importlib.util.spec_from_file_location("history_reader_source", ENTRY.with_name("history_reader_source.py"))
+READER = importlib.util.module_from_spec(READER_SPEC)
+READER_SPEC.loader.exec_module(READER)
+ARCHIVED_READER = ENTRY.parent / "sources/nonempty-history-current-reader-private-context-components-source-r2/candidate/legacy-current-reader.php"
+
+
+def reader_closing_positive_component():
+    """PHP component for an existing PHP 8.2 runtime; no sockets or application."""
+    return b"<?php\n" + READER._CLOSING_AFTER + rb'''
+function nhep_child_native(array &$child): array { $child['observations']++; return ['running' => true]; }
+function nhecr_stream_capture(array $children): array {
+    return ['http' => ['stderr' => ['raw' => "prior\n[normal] 127.0.0.1:12345 Closing\n"]]];
+}
+function nhecr_expect(bool $condition, string $code): void { if (!$condition) throw new RuntimeException($code); }
+$children = ['http' => ['observations' => 0]];
+$response = ['local_port' => 12345, 'http' => 200, 'transport_errno' => 0];
+$before = ['native_streams' => ['http' => ['stderr' => ['raw' => "prior\n"]]]];
+$closingReason = null;
+$closing = nhecr_wait_closing($children, $response, $before, $closingReason);
+nhecr_expect($closing === true && $closingReason === 'matched_closing_line'
+    && $children['http']['observations'] === 1, 'NORMAL_EXACT_PORT_CLOSING');
+nhecr_expect(nhecr_wait_closing($children, $response, $before) === true
+    && $children['http']['observations'] === 2, 'ORIGINAL_THREE_ARGUMENT_CALL');
+$intent = ['sequence' => 1, 'step' => 'customer_login'];
+''' + READER._TRANSPORT_EXPECT_AFTER + b'echo "NORMAL_CLOSING_AND_SUCCESS_ASSERTION_PASS\\n";\n'
+
+
+class HistoryReaderDiagnosticPositiveTests(unittest.TestCase):
+    """Finite source and normal Closing checks only; no failure samples or run."""
+
+    def test_complete_archived_reader_transform_and_reverse_all_existing_modes(self):
+        raw = ARCHIVED_READER.read_bytes()
+        for readiness, anchors in ((False, False), (True, False), (True, True)):
+            with self.subTest(refund_readiness=readiness, legacy_refund_anchors=anchors):
+                candidate = READER.transform_reader(raw, refund_readiness=readiness, legacy_refund_anchors=anchors)
+                self.assertEqual(READER.reverse_reader(candidate, refund_readiness=readiness,
+                                                       legacy_refund_anchors=anchors), raw)
+                self.assertEqual(candidate.count(READER._CLOSING_AFTER), 1)
+                self.assertEqual(candidate.count(READER._TRANSPORT_EXPECT_AFTER), 1)
+                self.assertEqual(candidate.count(b"nhecr_transport($intent, $request, $extra)"), 1)
+                self.assertEqual(candidate.count(b"$actual = nhecr_capture($state, $db, $redis, $children);"), 1)
+                self.assertIn(b"CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 30", candidate)
+                start = candidate.index(b"            $response = null; $primary = null;")
+                after = candidate.index(b"$actual = nhecr_capture($state, $db, $redis, $children);", start)
+                diagnostic = candidate.index(READER._TRANSPORT_EXPECT_AFTER, start)
+                self.assertLess(after, diagnostic)
+
+    def test_closing_only_adds_reason_assignments_and_original_assertion_survives(self):
+        original = READER._CLOSING_AFTER.replace(
+            b", ?string &$closingReason = null", b"", 1)
+        original = re.sub(rb"\{ \$closingReason = '[a-z_]+'; return (false|true); \}",
+                          rb"return \1;", original)
+        original = original.replace(b"$closingReason = 'deadline_exhausted'; ", b"", 1)
+        self.assertEqual(original, READER._CLOSING_BEFORE)
+        self.assertEqual(READER._TRANSPORT_EXPECT_AFTER.count(READER._TRANSPORT_EXPECT_BEFORE), 1)
+        self.assertIn(b"throw $error;", READER._TRANSPORT_EXPECT_AFTER)
+        fields = re.findall(rb"'([a-z_]+)' =>", READER._TRANSPORT_EXPECT_AFTER)
+        self.assertEqual(fields, [b"sequence", b"step", b"closing", b"closing_reason", b"http", b"transport_errno"])
+        self.assertIn(b"catch (Throwable $ignored) {}", READER._TRANSPORT_EXPECT_AFTER)
+
+    def test_normal_component_contains_actual_closing_and_unchanged_success_predicate(self):
+        component = reader_closing_positive_component()
+        self.assertEqual(component.count(READER._CLOSING_AFTER), 1)
+        self.assertEqual(component.count(READER._TRANSPORT_EXPECT_AFTER), 1)
+        self.assertIn(b"NORMAL_EXACT_PORT_CLOSING", component)
+        self.assertIn(b"ORIGINAL_THREE_ARGUMENT_CALL", component)
+        self.assertNotIn(b"curl_exec", component)
 
 
 if __name__ == "__main__":
