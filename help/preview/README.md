@@ -1,16 +1,23 @@
 # 本机多商户预览
 
-## 统一版本入口（18212，2026-11-04）
+## 统一版本入口（18212，2026-11-06）
 
 当前统一开发候选入口：
 
-- [平台后台](http://127.0.0.1:18212/admin/)
-- [商家后台](http://127.0.0.1:18212/merchant/)
+- [平台后台](http://127.0.0.1:18212/admin/login)
+- [商家后台](http://127.0.0.1:18212/merchant/#/login)
 - [顾客商城](http://127.0.0.1:18212/)
+- [原平台客服](http://127.0.0.1:18212/kefu/)
 
-快速操作、已保存样例和小程序工程入口见 [统一本机交付使用说明](UNIFIED-LOCAL-DELIVERY.md)。
+快速操作、已保存样例和小程序工程入口见 [统一本机交付使用说明](UNIFIED-LOCAL-DELIVERY.md)；执行顺序、剩余事项和验收状态只维护在原 [PROGRESS.md](H:/天俪商城/artifacts/project-organization-20261023/current20261025-business-progress-r1/PROGRESS.md)。
 
-新实例位于 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/preview18212-r1`，使用全新数据库、缓存、双网络和数据卷。后端仍为 `f8da54e7b5d2b7142993fdef1b1d1d6b8c2d58cf` 的完整快照；平台、商家前端继续复用输入逐件相同的 R100 f181 构建，顾客 H5 和小程序已采用本轮订单摘要布局修复的同一份565文件输入重新构建。原 source-full 流程已完成初始化、完整服务健康、常驻进程检查、接口及三角色页面登录，原18206/18208预览保留。
+当前后端为 `5b6e244a9198ef3316caee56f6ff7681fa575538`，顾客H5和当前小程序包使用 `378b37b0c` 的同一份前端源码。[当前小程序r3工程](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-paused-shop-build-r3/mp-weixin/dist/project.config.json)已编译并核对主页面产物；当前包的模拟器交互和真机仍待验，较早r2的原生证据不代签r3。历史旧预览实例已回收，当前统一使用上方18212入口。
+
+## 原始装包与联调记录（2026-11-04至2026-11-05，历史）
+
+以下各批次内容均按原时点保留，“当前”“本候选”等表述仅指该批次，不覆盖上方现行入口、版本与验收状态。旧端口链接仅供追溯历史证据。
+
+当时的新实例位于 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/preview18212-r1`，使用全新数据库、缓存、双网络和数据卷。当时后端为 `f8da54e7b5d2b7142993fdef1b1d1d6b8c2d58cf` 的完整快照；平台、商家前端继续复用输入逐件相同的 R100 f181 构建，顾客 H5 和小程序已采用本轮订单摘要布局修复的同一份565文件输入重新构建。原 source-full 流程已完成初始化、完整服务健康、常驻进程检查、接口及三角色页面登录，原18206/18208预览当时保留，现已回收。
 
 2026-11-05 后端输入等价补证：原后端装包来源 `f8da54e7b5d2b7142993fdef1b1d1d6b8c2d58cf` 与正式候选 `46956e5231f9a0a3cd1981d0bc8e315be630be9c` 的 `crmeb/` 全部13,486个跟踪文件，路径、Git blob和mode逐项相同；`composer.lock` 与原镜像vendor记录的规范化锁定摘要也一致，因此继续复用本机18212。原装包、镜像vendor及前端构建来源保持各自记录。此补证覆盖跟踪源码和锁定输入；运行中容器字节、正式三端及发布验收仍按各自结果登记。补证位于 `artifacts/multi-merchant-final-normal-20261104-r101/preview18212-backend-input-equivalence-r1.json`。
 
@@ -40,7 +47,7 @@
 
 平台资金入口：[资金设置](http://127.0.0.1:18212/admin/marketplace/finance-settings)、[测试交易](http://127.0.0.1:18212/admin/marketplace/finance-transactions)。本候选已实际核对根单1的订单金额40.30元、累计已确认退款40.30元、当前占用0元及唯一一次已应用付款。资金设置可记录收款方案、平台费和结算退款规则；本轮仅用未保存表单临时按商品实付40.30元、运费0、5%费率测算，页面结果2.02元，随后重新读取原保存草稿，保留初始草稿、14项未配置和0次修改。5%只用于合成测算，不是已决定的经营费率；通道费、商家实际到账和实际结算仍未确认，真实资金未启用。随后补验的测试交易页已显示根单4的订单金额40.30元、累计已确认退款20.15元、当前占用0元和1次付款尝试；根单1原40.30元退款事实保持，仍未选择费率版本。
 
-当前小程序导入目录为 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-build18212-r2/mp-weixin/dist`，已实际构建连接18212，使用原接口测试号，并包含同一订单摘要布局修复；H5/MP 的565文件输入摘要均为 `ed9e07537b51ae259d4e364a080f2df4ff3574349b9b920b5591078fb9d8fb87`。原小程序 r1 产物保留。开发者工具扫码由用户选择稍后恢复；当前不签新包原生业务或真机通过。真实资金、正式AppID/隐私选图、历史迁移及完整阶段/发布验收继续保留。
+该批次小程序导入目录为 `H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/mp-build18212-r2/mp-weixin/dist`，已实际构建连接18212，使用原接口测试号，并包含同一订单摘要布局修复；H5/MP 的565文件输入摘要均为 `ed9e07537b51ae259d4e364a080f2df4ff3574349b9b920b5591078fb9d8fb87`。原小程序 r1 产物保留。开发者工具扫码由用户选择稍后恢复；当前不签新包原生业务或真机通过。真实资金、正式AppID/隐私选图、历史迁移及完整阶段/发布验收继续保留。
 
 实际结果见同一交付根的 `NEW-PRODUCT-DISCOVERY.json`、`MOBILE375-DISCOVERY.json`、`ORDER-LAYOUT-VERIFICATION-r2.json`、`H5-LAYOUT-INSTALL-r2.json`、`FINANCE-UI-r2.json`、`CART-GROUPS.json`、`NEW-MERCHANT-PRODUCT.json`、`NEW-MERCHANT-ORDER.json`、`NORMAL-TRADE.json`、`REVIEW.json`、`AFTERSALE.json`、`AFTERSALE-API.json`、`RETURN-ONE-API-r1.json`、`RETURN-ONE-INVENTORY-r1.json`、`RETURN-ONE-RESULT-r2.json`、`RETURN-ONE-VISUAL320-r2.json`、`CUSTOMER-SERVICE.json` 和 `browser-ui-r1` 截图。原 `FRONTEND-REUSE.json` 保留首次三端装包的历史读回，不将它改签为本轮新顾客构建。本节只登记统一本机候选及上述正常流程，不代表生产发布或完整阶段验收。每段页面验证完成即关闭用完的临时后台标签；首次交易、售后1及客服闭环完成时，临时标签已全部关闭。本次退一件验证结束也已关闭三个临时页，仅保留用户原入驻商家页，浏览器视口已恢复。
 
