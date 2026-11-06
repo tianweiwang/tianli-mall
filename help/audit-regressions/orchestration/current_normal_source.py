@@ -2950,6 +2950,40 @@ B_QA_ORACLE_ORIGINAL = {"bytes": 254827, "sha256": "ed6b7d24f195c096218126c9ae60
 B_QA_ORACLE_CURRENT = {"bytes": 256327, "sha256": "965091fda39308f73e43f51fb6b913ff3fe467840405974ede28b868dfe3ae0c"}
 B_STOREFRONT_PAUSE_SOURCE = "5b6e244a9198ef3316caee56f6ff7681fa575538"
 B_STOREFRONT_PAUSE_ORACLE = {"bytes": 256636, "sha256": "e0224705eb42f7ddc0171a34489e6d7ba2cbdec91b91a2ec65855cd1a7aa5495"}
+B_IMAGE_FORM_SOURCE = "775f9cd02b6e9c777d954556a1159af1578c8fbd"
+B_IMAGE_FORM_PARENT = "e148c831035fa1753d196de1504fe708435977dd"
+B_IMAGE_FORM_A_AUTHORITY = {
+    "path": "H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101/current-source-5b6/CURRENT-SOURCE-TECHNICAL-AUTHORITY.json",
+    "bytes": 1138, "sha256": "1ef8238036d6e964b37e4b6ed118dbc0e319fe8491d888f60f6a635e318293f2"}
+B_IMAGE_FORM_A_REVIEW = {
+    "path": "H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101/image-form-a-input-impact-775f9-r2/INDEPENDENT-REVIEW.json",
+    "bytes": 8415, "sha256": "36fcebfb5267948cceea2ce53baf50946a38dc2b6a670c87cd8b3621fb3c3ae3"}
+B_IMAGE_FORM_CHANGED_PATHS = (
+    "docs/multi-merchant/03-test-environment.md", "docs/multi-merchant/CURRENT-STATUS.md",
+    "help/audit-regressions/isolated/README.md",
+    "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+    "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+    "help/audit-regressions/isolated/ms4-history-ownership-normal.php",
+    "help/audit-regressions/isolated/ms4-ui-prepare.php",
+    "help/audit-regressions/orchestration/README.md",
+    "help/audit-regressions/orchestration/current_normal_source.py",
+    "help/audit-regressions/orchestration/history_ownership_normal.py",
+    "help/audit-regressions/orchestration/history_upgrade_source.py",
+    "help/audit-regressions/orchestration/run_history_normal.py",
+    "help/audit-regressions/orchestration/tests/test_current_b_image_form_sources.py",
+    "help/audit-regressions/orchestration/tests/test_current_normal_interrupted_segments.py",
+    "help/audit-regressions/orchestration/tests/test_current_normal_source_performance.py",
+    "help/audit-regressions/orchestration/tests/test_history_ownership_source.py",
+    "help/audit-regressions/orchestration/tests/test_run_history_normal.py",
+    "help/preview/README.md", "help/preview/UNIFIED-LOCAL-DELIVERY.md",
+    "template/merchant/src/pages/order/detail.vue",
+)
+B_IMAGE_FORM_LAST_COMMIT_PATHS = (
+    "help/audit-regressions/isolated/ms4-ui-prepare.php",
+    "help/audit-regressions/orchestration/README.md",
+    "help/audit-regressions/orchestration/current_normal_source.py",
+    "help/audit-regressions/orchestration/tests/test_current_b_image_form_sources.py",
+)
 B_IMAGE_FORM_QA_PINS = {
     "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php": {
         "bytes": 84106, "sha256": "2ff101b9bd914bff951b38e92ca48364a801f8324c4b4f021c2aebfc68acc140"},
@@ -2972,19 +3006,8 @@ B_QA_ROOT_BODIES = {
 }
 
 
-def _b_qa_oracle_equivalence(fixed, reader, check):
-    """Read the one reviewed old-A/new-B QA equivalence in the author and both Roots."""
-    original_pin = B_QA_ORACLE_A_AUTHORITY
-    current_pin = fixed["source_authority"]
-    original = json.loads(reader(original_pin))
-    current = json.loads(reader(current_pin))
-    oracle = B_QA_ORACLE_PATH
-    check(original["source_sha"] == "ae13dc8fa1e4e3dd259e5d917649715eec9f1567"
-          and current["source_sha"] == B_QA_ORACLE_SOURCE
-          and len({a[k] for a in (original, current) for k in ("candidate_root", "validation_root")}) == 4,
-          "B_QA_EXACT_DISTINCT_PRODUCT_AND_TEST_SOURCE_TREES")
-    roles = ["driver", "customer", "paid", "fulfillment", "aftersale_review", "worker"]
-    frontends = ["h5", "merchant", "admin"]
+def _b_reviewed_source_inputs(original, current, reader, check):
+    """Read both complete pinned captures with the original dual-checkout contract."""
     captures, reviews, inventories = [], [], []
     fields = ("path", "git_mode", "git_blob", "bytes", "sha256")
     for authority in (original, current):
@@ -3025,6 +3048,23 @@ def _b_qa_oracle_equivalence(fixed, reader, check):
         inventories.append(inventory)
         captures.append(capture)
         reviews.append(review)
+    return captures, reviews, inventories
+
+
+def _b_qa_oracle_equivalence(fixed, reader, check):
+    """Read the one reviewed old-A/new-B QA equivalence in the author and both Roots."""
+    original_pin = B_QA_ORACLE_A_AUTHORITY
+    current_pin = fixed["source_authority"]
+    original = json.loads(reader(original_pin))
+    current = json.loads(reader(current_pin))
+    oracle = B_QA_ORACLE_PATH
+    check(original["source_sha"] == "ae13dc8fa1e4e3dd259e5d917649715eec9f1567"
+          and current["source_sha"] == B_QA_ORACLE_SOURCE
+          and len({a[k] for a in (original, current) for k in ("candidate_root", "validation_root")}) == 4,
+          "B_QA_EXACT_DISTINCT_PRODUCT_AND_TEST_SOURCE_TREES")
+    roles = ["driver", "customer", "paid", "fulfillment", "aftersale_review", "worker"]
+    frontends = ["h5", "merchant", "admin"]
+    captures, reviews, inventories = _b_reviewed_source_inputs(original, current, reader, check)
     before, after = inventories
     check(captures[1]["source_parents"] == [original["source_sha"]]
           and list(before) == list(after)
@@ -3075,8 +3115,91 @@ def _b_qa_oracle_equivalence(fixed, reader, check):
         "original_validation": original["validation_root"], "normal_freeze": freeze_pin}
 
 
+def _b_image_form_equivalence(fixed, reader, check):
+    """Retain the actual 5b6 A; qualify only its unchanged product for the new B."""
+    original = json.loads(reader(B_IMAGE_FORM_A_AUTHORITY))
+    current = json.loads(reader(fixed["source_authority"]))
+    check(original["source_sha"] == B_STOREFRONT_PAUSE_SOURCE
+          and current["source_sha"] == B_IMAGE_FORM_SOURCE
+          and len({a[k] for a in (original, current) for k in ("candidate_root", "validation_root")}) == 4,
+          "B_IMAGE_EXACT_DISTINCT_PRIOR_A_AND_CURRENT_B_SOURCES")
+    captures, reviews, inventories = _b_reviewed_source_inputs(original, current, reader, check)
+    before, after = inventories
+    paths = sorted(path for path in set(before) | set(after) if before.get(path) != after.get(path))
+    check(captures[1]["source_parents"] == [B_IMAGE_FORM_PARENT]
+          and paths == list(B_IMAGE_FORM_CHANGED_PATHS) and set(before) <= set(after),
+          "B_IMAGE_ACTUAL_PARENT_AND_COMPLETE_FIXED_DELTA")
+    fields = ("path", "bytes", "sha256")
+    changes = [{"path": path, "before": before.get(path), "after": after[path]} for path in paths]
+    for path in B_IMAGE_FORM_QA_PINS:
+        check({k: after[path][k] for k in ("bytes", "sha256")} == B_IMAGE_FORM_QA_PINS[path],
+              "B_IMAGE_ONLY_REVIEWED_THREE_QA_FILES")
+    for change in changes:
+        for side, authority in (("before", original), ("after", current)):
+            row = change[side]
+            if row is None:
+                continue
+            for role in ("candidate_root", "validation_root"):
+                raw = reader({"path": (Path(authority[role]) / row["path"]).as_posix(),
+                              **{key: row[key] for key in ("bytes", "sha256")}})
+                check(hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw).hexdigest()
+                      == row["git_blob"], "B_IMAGE_ALL_CHANGED_FILES_JOIN_ACTUAL_FOUR_TREES")
+    normal = json.loads(reader(fixed["normal"]["result"]))
+    freeze_pin = {"path": normal["freeze"], "bytes": normal["freeze_bytes"], "sha256": normal["freeze_sha256"]}
+    freeze = json.loads(reader(freeze_pin))
+    tree = freeze["source_tree"]
+    check(normal["source_sha"] == freeze["source_sha"] == tree["source_sha"] == original["source_sha"]
+          and normal["repo"] == freeze["requested_repo_source"] == original["validation_root"]
+          and tree["files"] == [{k: row[k] for k in fields} for row in before.values()],
+          "B_IMAGE_ORIGINAL_A_ENTIRE_SOURCE_TREE_AND_IDENTITY_HELD")
+    helper = "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php"
+    check({k: before[helper][k] for k in ("bytes", "sha256")} == {
+        "bytes": 82220, "sha256": "877c882c575e49fc025d6f9ad0611631bfb114e1459226b0106ccb68104cd913"},
+        "B_IMAGE_ORIGINAL_SHARED_HELPER_FIXED")
+    roles = {}
+    for role in ("driver", "customer", "paid", "fulfillment", "aftersale_review", "worker"):
+        members = freeze[role + "_source_files"]
+        check(type(members) is list and members and len({row["path"] for row in members}) == len(members)
+              and all({k: before[row["path"]][k] for k in row} == row for row in members),
+              "B_IMAGE_ALL_PRIOR_A_ROLE_MEMBERS_JOIN_ORIGINAL_CAPTURE")
+        changed = [row["path"] for row in members if any(after[row["path"]][k] != row[k] for k in row)]
+        check(changed == ([] if role == "driver" else [helper]), "B_IMAGE_ONLY_SHARED_HELPER_IN_PRIOR_A_ROLES")
+        roles[role] = {"member_count": len(members), "changed_paths": changed}
+    for prefix in ("crmeb/", "template/uni-app/", "template/admin/"):
+        left = {p: row for p, row in before.items() if p.startswith(prefix)}
+        right = {p: row for p, row in after.items() if p.startswith(prefix)}
+        check(left and left == right, "B_IMAGE_COMPLETE_APPLICATION_H5_AND_ADMIN_INPUTS_IDENTICAL")
+    check([p for p in paths if p.startswith("template/merchant/")]
+          == ["template/merchant/src/pages/order/detail.vue"], "B_IMAGE_MERCHANT_REQUIRES_OWN_CURRENT_BUILD")
+    check(type(B_IMAGE_FORM_A_REVIEW) is dict, "B_IMAGE_INDEPENDENT_SEMANTIC_REVIEW_REQUIRED")
+    review = json.loads(reader(B_IMAGE_FORM_A_REVIEW))
+    check(review["original_source"] == original["source_sha"] and review["current_source"] == current["source_sha"]
+          and review["status"] == "PASS_PRIOR_A_REUSE_SOURCE_BOUNDARY_ONLY",
+          "B_IMAGE_FIXED_INDEPENDENT_REVIEW_NOT_NEW_A_ACCEPTANCE")
+    return {"kind": "image_form", "scope": "5B6_PRIOR_A_REUSE_NOT_CURRENT_A_PASS",
+        "original_authority": B_IMAGE_FORM_A_AUTHORITY, "current_authority": fixed["source_authority"],
+        "independent_review": B_IMAGE_FORM_A_REVIEW, "original_source": original["source_sha"],
+        "original_validation": original["validation_root"], "current_source": current["source_sha"],
+        "current_parent": B_IMAGE_FORM_PARENT, "normal_freeze": freeze_pin, "changes": changes,
+        "normal_roles": roles, "latest_commit_paths": list(B_IMAGE_FORM_LAST_COMMIT_PATHS),
+        "new_A_passed": False, "new_B_paid_and_UI_runtime": "REQUIRED_NOT_GRANTED_BY_THIS_PROOF"}
+
+
 def _b_qa_project_requirements(rows, proof, check):
-    """Project only the reviewed oracle when old normal requirements join new B Core3."""
+    """Join reviewed same-path deltas without altering the original normal domain."""
+    if proof.get("kind") == "image_form":
+        changes = {row["path"]: row for row in proof["changes"]}
+        projected = []
+        for row in rows:
+            change = changes.get(row["path"])
+            if change is None:
+                projected.append(row)
+                continue
+            check(change["before"] is not None and row == {key: change["before"][key] for key in row},
+                  "B_IMAGE_EACH_PROJECTED_REQUIREMENT_MATCHES_ORIGINAL_BYTES")
+            projected.append({key: change["after"][key] for key in row})
+        check(len(projected) == len(rows), "B_IMAGE_OLD_REQUIREMENT_DOMAIN_RETAINED")
+        return projected
     before, after = ({key: proof["change"][side][key] for key in ("path", "bytes", "sha256")}
                      for side in ("before", "after"))
     check([row for row in rows if row["path"] == B_QA_ORACLE_PATH] == [before]
@@ -4835,6 +4958,7 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
         post_pointer, post_contract = a["post_a_history"], a["post_a_contract"]
     qa_equivalence = None
     normal_authority_pointer, normal_authority, material_inventory = authority_pointer, authority, inventory
+    material_authority_pointer = authority_pointer
     if authority["source_sha"] == B_QA_ORACLE_SOURCE:
         require(_a_capture_failed(a), "B_QA_ONLY_ORIGINAL_AE13_CAPTURE_FAILURE_EVIDENCE")
         qa_equivalence = _b_qa_oracle_equivalence(fixed, read_pointer, require)
@@ -4845,6 +4969,14 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
                  "after_git_blob": after_oracle["git_blob"]}], "B_QA_ACTUAL_DIRECT_GIT_DELTA")
         normal_authority_pointer = B_QA_ORACLE_A_AUTHORITY
         normal_authority, material_inventory = reviewed_authority(normal_authority_pointer)
+        material_authority_pointer = normal_authority_pointer
+    elif authority["source_sha"] == B_IMAGE_FORM_SOURCE:
+        qa_equivalence = _b_image_form_equivalence(fixed, read_pointer, require)
+        require([row["path"] for row in _raw_delta(Path(authority["candidate_root"]),
+                B_IMAGE_FORM_PARENT, B_IMAGE_FORM_SOURCE)] == list(B_IMAGE_FORM_LAST_COMMIT_PATHS),
+                "B_IMAGE_ACTUAL_DIRECT_PARENT_COMMIT_FILES")
+        normal_authority_pointer = B_IMAGE_FORM_A_AUTHORITY
+        normal_authority, _ = reviewed_authority(normal_authority_pointer)
     consumer, setup, context, _ = _completed_a(fixed["normal"], a, normal_authority_pointer, normal_authority)
     post = decode(read_pointer(post_pointer))
     require(set(post_contract) == {"header", "files_key", "retained_public_files", "prior_public_inventory",
@@ -4863,7 +4995,7 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
             observed = _reviewed_normal_stage(outcome, fixed["normal"], stage, read_pointer, require)
             require(all(row in post[post_contract["files_key"]] for row in observed["public_files"]),
                     "B_COMPLETE_TYPED_STAGE_EVIDENCE_IN_POST_A_PUBLIC_HISTORY")
-    materials, material_result = _b_materials(fixed["materials"], normal_authority_pointer,
+    materials, material_result = _b_materials(fixed["materials"], material_authority_pointer,
         material_inventory, fixed["build_proofs"])
     # Construction below has no runtime side effects; all emitted scripts retain
     # the original guards and require a separate fixed independent Source review.
@@ -5365,7 +5497,7 @@ def _b_interrupted_review_runtime(raw: str) -> str:
     return candidate
 
 
-def _b_interrupted_retirement(source: bytes) -> str:
+def _b_interrupted_retirement(source: bytes, *, image_form: bool = False) -> str:
     original = _source_function(source, "current_original_retirement")
     first = original.index("    final_raw = file_pin(OLD_RESULT,")
     last = original.index("    context_raw = file_pin(", first)
@@ -5389,6 +5521,13 @@ def _b_interrupted_retirement(source: bytes) -> str:
                      b"    preserved,prior = current_interrupted_post_a_history(args,context)").decode()
     candidate = once(candidate.encode(), b"    prior['native_commands'] = len(commands)",
                      b"    prior['native_commands'] = commands['count']\n    prior['completion_native_commands'] = proof['fresh_native_count']\n    prior['original_incomplete_sequence'] = proof['incomplete_sequence']").decode()
+    if image_form:
+        old_authority = b"current_interrupted_a(CURRENT_INTERRUPTED_A,SOURCE_REVIEW_AUTHORITY,"
+        new_authority = b"current_interrupted_a(CURRENT_INTERRUPTED_A,B_IMAGE_FORM_A_AUTHORITY,"
+        prior = candidate.encode()
+        candidate = once(prior, old_authority, new_authority).decode()
+        require(once(candidate.encode(), new_authority, old_authority) == prior,
+                "B_IMAGE_INTERRUPTED_RETIREMENT_ORIGINAL_A_AUTHORITY_INVERSE")
     compile(candidate, "current-interrupted-original-retirement", "exec")
     return candidate
 
@@ -5778,7 +5917,8 @@ def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, byte
     return proof
 
 
-def _b_qa_root_sources(root_m: bytes, root_s: bytes, normal_consumer: bytes) -> tuple[bytes, bytes, bytes]:
+def _b_qa_root_sources(root_m: bytes, root_s: bytes, normal_consumer: bytes, *,
+                       image_form: bool = False) -> tuple[bytes, bytes, bytes]:
     materializer = (
         (b"def current_original_retirement(args):\n",
          b"def current_original_retirement(args):\n"
@@ -5818,6 +5958,11 @@ def _b_qa_root_sources(root_m: bytes, root_s: bytes, normal_consumer: bytes) -> 
          b"        prior_row = original_rows[path] if path == B_QA_ORACLE_PATH else row\n"
          b"        assert tracked['main'][path]==tracked['validation'][path]==prior_row"),
     )
+    if image_form:
+        old_prior = b"        prior_row = original_rows[path] if path == B_QA_ORACLE_PATH else row\n"
+        new_prior = b"        prior_row = original_rows[path] if path in original_rows else row\n"
+        materializer = tuple((old, once(new, old_prior, new_prior) if old_prior in new else new)
+                             for old, new in materializer)
     startup = (
         (b"and normal_pub['source_sha'] == SOURCE\n        and normal_pub['parent'] == SOURCE_PARENT",
          b"and normal_pub['source_sha'] == CURRENT_SOURCE_SHA\n        and normal_pub['parent'] == CURRENT_B_PARENT"),
@@ -5887,7 +6032,9 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         normal_root / "validation", after["root-source/root-ui-start-to-ready.py"])
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
     data = decode(read_pointer(binding["source_data"]))
-    parent = binding["parent"] if qa_equivalence is None else qa_equivalence["original_source"]
+    image_form_reuse = qa_equivalence is not None and qa_equivalence.get("kind") == "image_form"
+    parent = (qa_equivalence["current_parent"] if image_form_reuse else
+              binding["parent"] if qa_equivalence is None else qa_equivalence["original_source"])
     a = fixed["A"]
     interrupted = _interrupted_a(a)
     a_session = a["original_session"] if interrupted else a["session"]
@@ -6050,9 +6197,10 @@ def current_b_a_capture_failure_precondition():
     current_requirements = data["requirements"]
     if qa_equivalence is not None:
         current_requirements = _b_qa_project_requirements(current_requirements, qa_equivalence, require)
-        require(head == B_QA_ORACLE_SOURCE and data["source_sha"] == parent
+        require(head == (B_IMAGE_FORM_SOURCE if image_form_reuse else B_QA_ORACLE_SOURCE)
+            and data["source_sha"] == qa_equivalence["original_source"]
             and all(inventory[row["path"]] == row for row in current_requirements),
-            "B_QA_ALL_ORIGINAL_NORMAL_REQUIREMENTS_WITH_ONE_REVIEWED_ORACLE_PROJECTION")
+            "B_QA_ALL_ORIGINAL_NORMAL_REQUIREMENTS_WITH_REVIEWED_SOURCE_PROJECTION")
     rows = {row["path"]: row for row in current_requirements}
     for row in core["core_sources"]:
         require(row["path"] not in rows or rows[row["path"]] == row, "B_CONSISTENT_CORE_AND_NORMAL_SOURCE_OVERLAP")
@@ -6062,6 +6210,8 @@ def current_b_a_capture_failure_precondition():
     if qa_equivalence is None:
         latest = [inventory[row["path"]] for row in data["commit_chain"][-1]["files"]]
         require(latest and data["commit_chain"][-1]["source_sha"] == head, "B_ACTUAL_LAST_PARENT_COMMIT_FILES")
+    elif image_form_reuse:
+        latest = [inventory[path] for path in qa_equivalence["latest_commit_paths"]]
     else:
         latest = [inventory[B_QA_ORACLE_PATH]]
     members = {"files": list(inventory.values())}
@@ -6468,7 +6618,7 @@ def current_b_a_capture_failure_precondition():
     # SOURCE-PINS omits itself; its fixed digest is installed only after the two
     # callers are complete through an external reviewed publication descriptor.
     review_runtime = (normal_stage_review_runtime or _B_SOURCE_REVIEW).replace("**CURRENT_B_SOURCE_PINS", "**review['source_pins']")
-    if head == B_STOREFRONT_PAUSE_SOURCE:
+    if head == B_STOREFRONT_PAUSE_SOURCE or image_form_reuse:
         outer_decode = b"    created=current_json(outcome['created']);terminal=current_json(outcome['terminal'])\n"
         outer_dispatch = outer_decode + (
             b"    if _b_current_powershell_outer(outcome, created, terminal, materialize_review,\n"
@@ -6486,16 +6636,26 @@ def current_b_a_capture_failure_precondition():
             + "\nCURRENT_COMPLETION_NORMAL_ROOT = " + repr(normal_root.as_posix())
             + "\nCURRENT_COMPLETION_FREEZE = " + repr(setup["freeze_sha256"]) + "\n"
             + _INTERRUPTED_A_CONSUMER + "\n" + _INTERRUPTED_B_QUALIFICATION + "\n")
+        if image_form_reuse:
+            old_call = b"current_interrupted_a(CURRENT_INTERRUPTED_A,CURRENT_B_TECHNICAL_AUTHORITY,"
+            prior_call = b"current_interrupted_a(CURRENT_INTERRUPTED_A,B_IMAGE_FORM_A_AUTHORITY,"
+            original_interruption_review = review_runtime.encode()
+            review_runtime = once(original_interruption_review, old_call, prior_call).decode()
+            require(once(review_runtime.encode(), prior_call, old_call) == original_interruption_review,
+                    "B_IMAGE_INTERRUPTED_QUALIFICATION_ORIGINAL_A_AUTHORITY_INVERSE")
     if qa_equivalence is not None:
-        root_m, root_s, normal_bytes = _b_qa_root_sources(root_m, root_s, normal_consumer.encode())
+        root_m, root_s, normal_bytes = _b_qa_root_sources(root_m, root_s, normal_consumer.encode(),
+                                                        image_form=image_form_reuse)
         normal_consumer = normal_bytes.decode()
         original_review_runtime = review_runtime.encode()
+        target_source = b"B_IMAGE_FORM_SOURCE" if image_form_reuse else b"B_QA_ORACLE_SOURCE"
+        equivalence_function = b"_b_image_form_equivalence" if image_form_reuse else b"_b_qa_oracle_equivalence"
         qa_seams = (
-            (b"review['source_sha']==CURRENT_SOURCE_SHA", b"review['source_sha']==B_QA_ORACLE_SOURCE"),
-            (b"publication['source_sha']==CURRENT_SOURCE_SHA", b"publication['source_sha']==B_QA_ORACLE_SOURCE"),
+            (b"review['source_sha']==CURRENT_SOURCE_SHA", b"review['source_sha']==" + target_source),
+            (b"publication['source_sha']==CURRENT_SOURCE_SHA", b"publication['source_sha']==" + target_source),
             (b"    fixed=current_json(CURRENT_B_FIXED_INPUT)\n",
              b"    fixed=current_json(CURRENT_B_FIXED_INPUT)\n"
-             b"    observed_qa = _b_qa_oracle_equivalence(fixed, lambda pointer: current_stream(pointer, True), current_assert)\n"
+             b"    observed_qa = " + equivalence_function + b"(fixed, lambda pointer: current_stream(pointer, True), current_assert)\n"
              b"    current_assert(observed_qa == CURRENT_B_QA_ORACLE_EQUIVALENCE, 'B_FIXED_ORIGINAL_A_AND_QA_INPUT_EQUIVALENCE')\n"),
         )
         qa_review_runtime = original_review_runtime
@@ -6510,10 +6670,16 @@ def current_b_a_capture_failure_precondition():
             "B_QA_ORACLE_ORIGINAL": B_QA_ORACLE_ORIGINAL, "B_QA_ORACLE_CURRENT": B_QA_ORACLE_CURRENT,
             "B_QA_ORACLE_A_AUTHORITY": B_QA_ORACLE_A_AUTHORITY, "B_QA_ORACLE_PHP_COMPONENT": B_QA_ORACLE_PHP_COMPONENT,
             "CURRENT_B_QA_ORACLE_EQUIVALENCE": qa_equivalence}
+        if image_form_reuse:
+            qa_constants.update(B_IMAGE_FORM_SOURCE=B_IMAGE_FORM_SOURCE, B_IMAGE_FORM_PARENT=B_IMAGE_FORM_PARENT,
+                B_STOREFRONT_PAUSE_SOURCE=B_STOREFRONT_PAUSE_SOURCE, B_IMAGE_FORM_A_AUTHORITY=B_IMAGE_FORM_A_AUTHORITY,
+                B_IMAGE_FORM_A_REVIEW=B_IMAGE_FORM_A_REVIEW, B_IMAGE_FORM_CHANGED_PATHS=B_IMAGE_FORM_CHANGED_PATHS,
+                B_IMAGE_FORM_LAST_COMMIT_PATHS=B_IMAGE_FORM_LAST_COMMIT_PATHS, B_IMAGE_FORM_QA_PINS=B_IMAGE_FORM_QA_PINS)
         shared_constants += "".join(name + " = " + repr(value) + "\n" for name, value in qa_constants.items())
         author = stable_read(Path(__file__).resolve())
         shared_constants += "\n".join(_source_function(author, name) for name in (
-            "_b_qa_oracle_equivalence", "_b_qa_project_requirements")) + "\n"
+            "_b_reviewed_source_inputs", "_b_image_form_equivalence" if image_form_reuse else "_b_qa_oracle_equivalence",
+            "_b_qa_project_requirements")) + "\n"
     for name,raw,shared in (("root-ui-materialize-freeze.py",root_m,normal_consumer),
                             ("root-ui-start-to-ready.py",root_s,normal_consumer)):
         if interrupted:
@@ -6526,7 +6692,7 @@ def current_b_a_capture_failure_precondition():
         stage_constants = "CURRENT_B_NORMAL_STAGE_INPUTS = " + repr(fixed["normal"]) + "\n" if stage_facts else ""
         extra = shared_constants + "CURRENT_B_M_OUTER = "+repr(fixed["normal"]["outer"])+"\n"+stage_constants+shared+interruption_runtime+normal_stage_runtime+review_runtime
         if interrupted and name == "root-ui-materialize-freeze.py":
-            extra += "\n" + _interrupted_post_a_consumer(raw) + "\n" + _b_interrupted_retirement(raw)
+            extra += "\n" + _interrupted_post_a_consumer(raw) + "\n" + _b_interrupted_retirement(raw, image_form=image_form_reuse)
             extra += "\noriginal_retirement=current_interrupted_retirement\n"
         # Insert before the original main dispatch. The single detached branch
         # expectation above is checked separately; other helpers stay intact.
