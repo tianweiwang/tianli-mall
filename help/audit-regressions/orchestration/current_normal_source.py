@@ -3294,10 +3294,120 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             "status": "PURE_B_PROFILE_DERIVED_NOT_APPROVED_NO_A_OR_RUNTIME"}
 
 
+def _b_current_powershell_outer(outcome, created, terminal, materialize_review, reader, check):
+    """Verify the actual 5b6 PowerShell captures without rewriting them as Python captures."""
+    from calendar import timegm
+    from datetime import datetime
+
+    base = Path("H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101")
+    folders = {base / "normal-m-5b6-capture": "materialize",
+               base / "normal-a-5b6-capture": "normal-start"}
+    folder = Path(outcome["created"]["path"]).parent
+    if folder not in folders:
+        return False
+    stage = folders[folder]
+    materialize = stage == "materialize"
+    scope, outer_pid, child_pid = ("SOURCE_MATERIALIZATION_ONLY_NO_DOCKER_OR_APP_OPERATIONS", 23960, 16572) if materialize else (
+        "FORMAL_A_CURRENT_NORMAL_APP_SQL_HTTP_BUSINESS", 49696, 24908)
+    review_path = base / "normal-source-independent-review-5b6.json"
+    review = {"path": review_path.as_posix(), "bytes": 14320,
+              "sha256": "26ea1a68f8636bc6e1fedfff7f0b4fc13a856e86608c29fd4f0f930b70785357"}
+    check(materialize == (materialize_review is not None)
+          and (not materialize or materialize_review == review), "B_5B6_RAW_OUTER_STAGE_AND_REVIEW")
+    for key in ("created", "terminal", "stdout", "stderr"):
+        name = key + ".json" if key in ("created", "terminal") else key
+        check(outcome[key]["path"] == (folder / name).as_posix(), "B_5B6_RAW_OUTER_FIXED_FOUR_PATHS")
+    check(set(created) == {"argv", "at_utc", "process_local_git_longpaths", "pid", "scope"}
+          and set(terminal) == {"at_utc", "wait_returncode", "stderr_bytes", "stdout_bytes", "native_exit", "pid"}
+          and created["scope"] == scope and created["process_local_git_longpaths"] is True
+          and type(created["pid"]) is type(terminal["pid"]) is int and created["pid"] == terminal["pid"] == outer_pid
+          and type(terminal["native_exit"]) is type(terminal["wait_returncode"]) is int
+          and terminal["native_exit"] == terminal["wait_returncode"] == 0, "B_5B6_RAW_OUTER_REAL_NATIVE_AND_WAIT_ZERO")
+
+    root = base / "normal-source-5b6"
+    entry = "materializer/prepare.py" if materialize else "validation/run.py"
+    argv = created["argv"]
+    review_args = ["--source-review-file", review["path"], "--source-review-sha256", review["sha256"]]
+    check(type(argv) is list and len(argv) == 11 and all(type(value) is str for value in argv)
+          and Path(argv[0]).is_absolute() and argv[1:] == ["-I", "-B", "-X", "utf8",
+              (root / "launcher/launch.py").as_posix(), stage, *review_args], "B_5B6_RAW_OUTER_ACTUAL_LAUNCHER_ARGV")
+
+    def unique_object(items):
+        result = {}
+        for key, value in items:
+            check(key not in result, "B_5B6_RAW_OUTER_UNIQUE_JSON_KEYS")
+            result[key] = value
+        return result
+
+    approved = json.loads(reader(review), object_pairs_hook=unique_object)
+    check(approved["schema"] == 1 and approved["status"] == "PASS_CURRENT_NORMAL18_SOURCE_REVIEW"
+          and approved["source_sha"] == "5b6e244a9198ef3316caee56f6ff7681fa575538"
+          and approved["original_business_suffix_exact"] is True and approved["source_graph_and_stream_contract_reviewed"] is True
+          and len(approved["members"]) == 18, "B_5B6_RAW_OUTER_ACTUAL_APPROVED_NORMAL18")
+    for name in ("launcher/launch.py", entry):
+        reader({"path": (root / name).as_posix(), **approved["members"][name]})
+
+    def actual_child_record(suffix):
+        path = root / "launcher" / (stage + "." + suffix)
+        for node in (path, *path.parents):
+            facts = node.lstat()
+            check(not stat.S_ISLNK(facts.st_mode) and not (getattr(facts, "st_file_attributes", 0) & 1024),
+                  "B_5B6_RAW_OUTER_ORIGINAL_ORDINARY_CHILD_RECORD")
+        check(stat.S_ISREG(path.lstat().st_mode), "B_5B6_RAW_OUTER_ORIGINAL_REGULAR_CHILD_RECORD")
+        raw = path.read_bytes()
+        verified = reader({"path": path.as_posix(), "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()})
+        return json.loads(verified, object_pairs_hook=unique_object)
+
+    child_created, child_terminal = (actual_child_record(name) for name in ("created.json", "terminal.json"))
+    check(set(child_created) == {"pid", "argv", "started_ns"}
+          and set(child_terminal) == {"pid", "native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+          and type(child_created["pid"]) is type(child_terminal["pid"]) is int
+          and child_created["pid"] == child_terminal["pid"] == child_pid
+          and type(child_terminal["native_exit"]) is type(child_terminal["wait_returncode"]) is int
+          and child_terminal["native_exit"] == child_terminal["wait_returncode"] == 0,
+          "B_5B6_RAW_OUTER_ORIGINAL_CHILD_NATIVE_AND_WAIT_ZERO")
+
+    def utc_ns(value):
+        match = re.fullmatch(r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)\.(\d{7})Z", value) if type(value) is str else None
+        check(match is not None, "B_5B6_RAW_OUTER_ORIGINAL_CANONICAL_UTC")
+        seconds = timegm(datetime.strptime(match[1], "%Y-%m-%dT%H:%M:%S").timetuple())
+        return seconds * 1000000000 + int(match[2]) * 100
+
+    check(type(child_created["started_ns"]) is type(child_terminal["finished_ns"]) is int
+          and utc_ns(created["at_utc"]) < child_created["started_ns"] < child_terminal["finished_ns"] < utc_ns(terminal["at_utc"]),
+          "B_5B6_RAW_OUTER_ORIGINAL_CHILD_INSIDE_OUTER_WINDOW")
+    child_argv = child_created["argv"]
+    child_args = list(review_args)
+    if not materialize:
+        child_args = ["--root-source-pins-sha256", approved["members"]["validation/PINS.json"]["sha256"],
+                      "--setup-sha256", "51e9b6f00efdb559cf8d237c399f12c27667255e0c32d2388958262c4da85960", *child_args]
+    check(type(child_argv) is list and len(child_argv) == 5 + len(child_args)
+          and all(type(value) is str for value in child_argv) and Path(child_argv[0]) == Path(argv[0])
+          and child_argv[1:4] == ["-B", "-X", "utf8"] and Path(child_argv[4]) == root / entry
+          and child_argv[5:] == child_args, "B_5B6_RAW_OUTER_ORIGINAL_CHILD_ARGV")
+    streams = {}
+    for key in ("stdout", "stderr"):
+        stream = child_terminal[key]
+        check(stream["path"] == (root / "launcher" / (stage + "." + key)).as_posix(),
+              "B_5B6_RAW_OUTER_ORIGINAL_CHILD_STREAM_PATH")
+        child_raw = reader(stream)
+        streams[key] = reader(outcome[key])
+        check(type(terminal[key + "_bytes"]) is int and len(streams[key]) == terminal[key + "_bytes"]
+              and (bool(child_raw) and bool(streams[key]) if key == "stdout" else child_raw == streams[key] == b""),
+              "B_5B6_RAW_OUTER_COMPLETE_ORIGINAL_STREAMS")
+    check([json.loads(line, object_pairs_hook=unique_object) for line in streams["stdout"].splitlines()] == [
+          {"state": "SAME_NATIVE_PROCESS_LIVE", "stage": stage, "pid": child_pid},
+          {"state": "ACTUAL_STAGE_TERMINAL", "stage": stage, "pid": child_pid, "native_exit": 0, "wait_returncode": 0}],
+          "B_5B6_RAW_OUTER_ORIGINAL_LIVE_AND_TERMINAL_MARKERS")
+    return True
+
+
 def _b_outer(outcome: dict[str, Any], materialize_review: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     require(type(outcome) is dict and set(outcome) == {"created", "terminal", "stdout", "stderr"},
             "B_EXPLICIT_ACTUAL_OUTER_FOUR_FILES")
     created, terminal = (decode(read_pointer(outcome[key])) for key in ("created", "terminal"))
+    if _b_current_powershell_outer(outcome, created, terminal, materialize_review, read_pointer, require):
+        return created, terminal
     milliseconds = materialize_review is not None and type(created) is dict and "started_ms" in created
     started, finished = ("started_ms", "finished_ms") if milliseconds else ("started_ns", "finished_ns")
     require(type(created) is dict and {"pid", "argv", started} <= set(created)
@@ -5964,6 +6074,17 @@ def current_b_a_capture_failure_precondition():
     # SOURCE-PINS omits itself; its fixed digest is installed only after the two
     # callers are complete through an external reviewed publication descriptor.
     review_runtime = (normal_stage_review_runtime or _B_SOURCE_REVIEW).replace("**CURRENT_B_SOURCE_PINS", "**review['source_pins']")
+    if head == B_STOREFRONT_PAUSE_SOURCE:
+        outer_decode = b"    created=current_json(outcome['created']);terminal=current_json(outcome['terminal'])\n"
+        outer_dispatch = outer_decode + (
+            b"    if _b_current_powershell_outer(outcome, created, terminal, materialize_review,\n"
+            b"                                  lambda pointer: current_stream(pointer, True), current_assert):\n"
+            b"        return\n")
+        current_review_runtime = once(review_runtime.encode(), outer_decode, outer_dispatch)
+        require(once(current_review_runtime, outer_dispatch, outer_decode) == review_runtime.encode(),
+                "B_5B6_RAW_OUTER_COMPLETE_GENERATED_REVIEW_DISPATCH_INVERSE")
+        author = stable_read(Path(__file__).resolve())
+        review_runtime = _source_function(author, "_b_current_powershell_outer") + "\n\n" + current_review_runtime.decode()
     interruption_runtime = ""
     if interrupted:
         review_runtime = _b_interrupted_review_runtime(review_runtime)
