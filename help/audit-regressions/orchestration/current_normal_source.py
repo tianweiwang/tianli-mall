@@ -5495,8 +5495,9 @@ def current_b_a_capture_failure_precondition():
     artifacts = constant(before["root-source/root-ui-materialize-freeze.py"], "ARTIFACTS")
     require(len(artifacts) == 17, "B_ORIGINAL_COMPLETE_SEVENTEEN")
     for name, raw in materials.items(): after["candidate/" + name] = raw
+    use_browser_runtime_successor = qa_equivalence is not None or head == B_STOREFRONT_PAUSE_SOURCE
     gateway_logout = None
-    if qa_equivalence is not None:
+    if use_browser_runtime_successor:
         nginx_key = "candidate/ms4-ui-nginx.conf"
         nginx_before = after[nginx_key]
         old_route = b"|users/login/index|store/index|"
@@ -5530,7 +5531,7 @@ def current_b_a_capture_failure_precondition():
         gateway_logout = {"profile_route": "/pages/users/user_info/index", "nginx_before": old_pin,
                           "nginx_after": new_pin, "native_aio": False,
                           "whole_gateway_and_compose_inverses_exact": True}
-    browser_materials = _b_bind_browser_materials(after, materials, task2_login_projection=qa_equivalence is not None)
+    browser_materials = _b_bind_browser_materials(after, materials, task2_login_projection=use_browser_runtime_successor)
     base = fixed["base_source"]
     require(set(base) == {"root", "PINS", "FINAL"}, "B_ORIGINAL_OBSERVER59_SOURCE_AUTHORITY")
     base_root = Path(base["root"])
@@ -5836,8 +5837,9 @@ def current_b_a_capture_failure_precondition():
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     if oracle_proof is not None:
         checks["ui_prepare_oracle_update"] = oracle_proof
-    if qa_equivalence is not None:
+    if gateway_logout is not None:
         checks["profile_logout_and_isolated_mysql"] = gateway_logout
+    if qa_equivalence is not None:
         checks["qa_oracle_equivalence"] = qa_equivalence
         checks["qa_changed_python_bodies"] = B_QA_ROOT_BODIES
         for name in ("root-ui-materialize-freeze.py", "root-ui-start-to-ready.py"):
