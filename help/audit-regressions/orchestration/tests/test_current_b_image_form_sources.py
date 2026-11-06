@@ -1,7 +1,9 @@
 """Positive source and native-facts components; no Docker or archived launcher runs."""
 import copy
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
 
 
@@ -105,6 +107,118 @@ class ImageFormSourceTests(unittest.TestCase):
         self.assertIn("count($cuMounts)===1&&in_array('rw',$cuMounts[0],true)&&!in_array('ro',$cuMounts[0],true)", raw)
         self.assertIn("'UI_SOURCE_TREE_ACTUAL_KERNEL_ROOT_READONLY'", raw)
         self.assertIn("$sourceRoots===['/workspace'=>1,'/source'=>1]", raw)
+
+    def test_runtime_successor_uses_original_components_and_keeps_exact_inverses(self):
+        candidate = dict(self.baseline)
+        AUTHOR._b_image_form_mounts(candidate, self.inventory)
+        prior = dict(candidate)
+        proof = AUTHOR._b_runtime_successor(self.baseline, candidate)
+        self.assertTrue(proof["task2_login_projection"])
+        self.assertTrue(proof["whole_gateway_and_compose_inverses_exact"])
+        self.assertEqual(candidate["candidate/compose.yml"].replace(b', "--innodb-use-native-aio=OFF"', b""),
+                         prior["candidate/compose.yml"])
+        self.assertEqual(candidate["candidate/ms4-ui-nginx.conf"].replace(b"|users/user_info/index|", b"|"),
+                         prior["candidate/ms4-ui-nginx.conf"])
+        # Only exercise the source binder; these are explicit synthetic counts,
+        # not material-producer or actual-build acceptance records.
+        materials = {"ms4-order.png": self.baseline["candidate/ms4-order.png"],
+                     "manifests/ui-public-copy-profile.json": AUTHOR.encode({"public_source_files": list(range(2536))})}
+        materials.update({"manifests/ui-" + role + "-dist.json": AUTHOR.encode({"files": list(range(count))})
+                          for role, count in (("h5", 337), ("merchant", 30), ("admin", 603))})
+        result = AUTHOR._b_bind_browser_materials(candidate, materials, task2_login_projection=proof["task2_login_projection"])
+        self.assertTrue(result["whole_producer_and_zero_inverse_exact"])
+        self.assertIn(b"TASK2_ACTUAL_LOGOUT_EMPTY_DATA_RESPONSE", candidate["browser-v1/ms4-ui-business-producer.mjs"])
+        self.assertIn(b"path==='/adminapi/login/info'", candidate["browser-v1/ms4-ui-business-producer.mjs"])
+        self.assertEqual(AUTHOR.functions(candidate["candidate/ms4-host.py"]).keys(),
+                         AUTHOR.functions(prior["candidate/ms4-host.py"]).keys())
+
+
+class UtcLauncherOuterTests(unittest.TestCase):
+    """Synthetic successful component records; never a claim about the running A."""
+
+    def successful_fixture(self, folder, materialize):
+        root = folder / "normal"
+        stage = "materialize" if materialize else "normal-start"
+
+        def write(path, value):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            raw = value if isinstance(value, bytes) else AUTHOR.encode(value)
+            path.write_bytes(raw)
+            return {"path": path.as_posix(), **AUTHOR.pin(raw)}
+
+        source_sha = "a" * 40
+        binding = write(root / "qualification/CURRENT-BINDING.json", {"normal_root": root.as_posix(), "source_sha": source_sha})
+        names = ["launcher/launch.py", "materializer/prepare.py", "validation/run.py", "validation/PINS.json"]
+        names += ["synthetic-%02d" % index for index in range(14)]
+        members = {name: {key: value for key, value in write(root / name, b"SYNTHETIC_SOURCE_COMPONENT\n").items() if key != "path"}
+                   for name in names}
+        review = write(folder / "source-review.json", {"schema": 1, "status": "PASS_CURRENT_NORMAL18_SOURCE_REVIEW",
+            "source_sha": source_sha, "binding": binding, "members": members,
+            "original_business_suffix_exact": True, "source_graph_and_stream_contract_reviewed": True})
+        setup = write(root / "validation/materialize-freeze-assets-r1/RESULT.json",
+                      {"schema": 2, "source_sha": source_sha, "source_review": review, "freeze_sha256": "b" * 64})
+        admission = write(folder / "admission.json", {"status": "CURRENT_NORMAL_RUNTIME_ADMISSION_PASS",
+            "at_utc": "2026-11-06T22:00:00.000000+00:00", "source_sha": source_sha,
+            "M_result": {key: setup[key] for key in ("path", "sha256")}, "freeze_sha256": "b" * 64, "runtime_started": False})
+        common = ["--source-review-file", review["path"], "--source-review-sha256", review["sha256"]]
+        executable = (folder / "python.exe").as_posix()
+        created = {"pid": 100, "argv": [executable, "-I", "-B", "-X", "utf8",
+            (root / "launcher/launch.py").as_posix(), stage, *common],
+            "at_utc": "2026-11-06T22:00:01.000000+00:00", "process_local_git_longpaths": True}
+        created.update({"scope": "SOURCE_MATERIALIZATION_ONLY_NO_DOCKER_OR_APP_OPERATIONS"} if materialize else {"admission": admission["path"]})
+        child_args = common if materialize else ["--root-source-pins-sha256", members["validation/PINS.json"]["sha256"],
+                                                "--setup-sha256", setup["sha256"], *common]
+        entry = "materializer/prepare.py" if materialize else "validation/run.py"
+        child_created = {"pid": 200, "argv": [executable, "-B", "-X", "utf8", (root / entry).as_posix(), *child_args],
+                         "started_ns": 1794002402000000000}
+        write(root / "launcher" / (stage + ".created.json"), child_created)
+        child_streams = {key: write(root / "launcher" / (stage + "." + key), b"SYNTHETIC_SUCCESS\n" if key == "stdout" else b"")
+                         for key in ("stdout", "stderr")}
+        write(root / "launcher" / (stage + ".terminal.json"),
+              {"pid": 200, "native_exit": 0, "wait_returncode": 0, "finished_ns": 1794002403000000000, **child_streams})
+        markers = [{"state": "SAME_NATIVE_PROCESS_LIVE", "stage": stage, "pid": 200},
+                   {"state": "ACTUAL_STAGE_TERMINAL", "stage": stage, "pid": 200, "native_exit": 0, "wait_returncode": 0}]
+        raw_stdout = b"".join((json.dumps(marker) + "\n").encode() for marker in markers)
+        outcome = {key: write(folder / "capture" / key, raw_stdout if key == "stdout" else b"") for key in ("stdout", "stderr")}
+        terminal = {"pid": 100, "native_exit": 0, "wait_returncode": 0, "at_utc": "2026-11-06T22:00:04.000000+00:00",
+                    "stdout_bytes": len(raw_stdout), "stderr_bytes": 0}
+        outcome.update(created=write(folder / "capture/created.json", created), terminal=write(folder / "capture/terminal.json", terminal))
+        return outcome, review if materialize else None
+
+    def test_successful_m_and_a_use_same_author_and_generated_consumer_without_writes(self):
+        with tempfile.TemporaryDirectory(prefix="positive-utc-component-", dir=ROOT) as temp:
+            folder = Path(temp)
+            for materialize in (True, False):
+                scope = folder / ("m" if materialize else "a")
+                outcome, review = self.successful_fixture(scope, materialize)
+                before = {path: path.read_bytes() for path in scope.rglob("*") if path.is_file()}
+                created, terminal = AUTHOR._b_outer(outcome, review)
+                self.assertEqual(created["pid"], terminal["pid"])
+                runtime = AUTHOR._b_utc_review_runtime(AUTHOR._B_SOURCE_REVIEW)
+                namespace = {"Path": Path, "json": json, "stat": AUTHOR.stat, "hashlib": AUTHOR.hashlib, "re": AUTHOR.re,
+                             "current_json": lambda pointer: AUTHOR.decode(AUTHOR.read_pointer(pointer)),
+                             "current_stream": lambda pointer, *args: AUTHOR.read_pointer(pointer), "current_assert": AUTHOR.require}
+                exec(compile(runtime, "synthetic-positive-generated-review", "exec"), namespace)
+                namespace["current_b_outer"](outcome, review)
+                self.assertEqual({path: path.read_bytes() for path in scope.rglob("*") if path.is_file()}, before)
+
+    def test_old_powershell_dispatch_stays_before_utc_and_all_other_runtime_bytes_survive(self):
+        decode = "    created=current_json(outcome['created']);terminal=current_json(outcome['terminal'])\n"
+        dispatch = ("    if _b_current_powershell_outer(outcome, created, terminal, materialize_review,\n"
+                    "                                  lambda pointer: current_stream(pointer, True), current_assert):\n"
+                    "        return\n")
+        original = AUTHOR._B_SOURCE_REVIEW.replace(decode, decode + dispatch, 1)
+        result = AUTHOR._b_utc_review_runtime(original)
+        functions = AUTHOR.functions(result.encode())
+        current = functions["current_b_outer"].decode()
+        self.assertLess(current.index("if _b_current_powershell_outer"), current.index("if _b_utc_launcher_outer"))
+        utc_dispatch = ("    if _b_utc_launcher_outer(outcome, created, terminal, materialize_review,\n"
+                        "                             lambda pointer: current_stream(pointer, True), current_assert):\n"
+                        "        return\n")
+        self.assertEqual(result.splitlines()[0],
+                         "def _b_utc_launcher_outer(outcome, created, terminal, materialize_review, reader, check):")
+        self.assertEqual(current.replace(utc_dispatch, ""), AUTHOR.functions(original.encode())["current_b_outer"].decode())
+        self.assertEqual(functions["current_b_source_review"], AUTHOR.functions(original.encode())["current_b_source_review"])
 
 
 if __name__ == "__main__":

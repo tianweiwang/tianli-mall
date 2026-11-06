@@ -3611,11 +3611,134 @@ def _b_current_powershell_outer(outcome, created, terminal, materialize_review, 
     return True
 
 
+def _b_utc_launcher_outer(outcome, created, terminal, materialize_review, reader, check):
+    """Consume the original aware-UTC wrapper and its pinned native launcher records."""
+    from calendar import timegm
+    from datetime import datetime
+
+    if type(created) is not dict or "at_utc" not in created:
+        return False
+    materialize = materialize_review is not None
+    stage = "materialize" if materialize else "normal-start"
+    metadata = {"scope"} if materialize else {"admission"}
+    check(set(created) == {"pid", "argv", "at_utc", "process_local_git_longpaths"} | metadata
+          and type(terminal) is dict
+          and set(terminal) == {"pid", "at_utc", "native_exit", "wait_returncode", "stdout_bytes", "stderr_bytes"}
+          and created["process_local_git_longpaths"] is True
+          and type(created["pid"]) is type(terminal["pid"]) is int and created["pid"] == terminal["pid"] > 0
+          and type(terminal["native_exit"]) is type(terminal["wait_returncode"]) is int
+          and terminal["native_exit"] == terminal["wait_returncode"] == 0,
+          "B_UTC_OUTER_EXACT_ORIGINAL_SCHEMA_SAME_PID_NATIVE_WAIT_ZERO")
+    if materialize:
+        check(created["scope"] == "SOURCE_MATERIALIZATION_ONLY_NO_DOCKER_OR_APP_OPERATIONS",
+              "B_UTC_OUTER_ORIGINAL_M_SCOPE")
+    folder = Path(outcome["created"]["path"]).parent
+    for key in ("created", "terminal", "stdout", "stderr"):
+        name = key + ".json" if key in ("created", "terminal") else key
+        check(Path(outcome[key]["path"]) == folder / name, "B_UTC_OUTER_ORIGINAL_FOUR_PATHS")
+    argv = created["argv"]
+    check(type(argv) is list and len(argv) == 11 and all(type(value) is str for value in argv)
+          and Path(argv[0]).is_absolute() and Path(argv[5]).is_absolute() and Path(argv[8]).is_absolute()
+          and argv[1:5] == ["-I", "-B", "-X", "utf8"] and argv[6] == stage
+          and argv[7] == "--source-review-file" and argv[9] == "--source-review-sha256"
+          and re.fullmatch(r"[a-f0-9]{64}", argv[10]) is not None,
+          "B_UTC_OUTER_ORIGINAL_LAUNCHER_ARGV")
+    root = Path(argv[5]).parent.parent
+    check(Path(argv[5]) == root / "launcher/launch.py", "B_UTC_OUTER_ORIGINAL_LAUNCHER_PATH")
+
+    def unique_object(items):
+        result = {}
+        for key, value in items:
+            check(key not in result, "B_UTC_OUTER_UNIQUE_JSON_KEYS")
+            result[key] = value
+        return result
+
+    def actual(path, expected_sha=None):
+        path = Path(path)
+        for node in (path, *path.parents):
+            facts = node.lstat()
+            check(not stat.S_ISLNK(facts.st_mode) and not (getattr(facts, "st_file_attributes", 0) & 1024),
+                  "B_UTC_OUTER_ORIGINAL_ORDINARY_PUBLIC_FILE")
+        check(path.is_absolute() and stat.S_ISREG(path.lstat().st_mode), "B_UTC_OUTER_ORIGINAL_REGULAR_PUBLIC_FILE")
+        raw = path.read_bytes()
+        pointer = {"path": path.as_posix(), "bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+        check(expected_sha is None or pointer["sha256"] == expected_sha, "B_UTC_OUTER_EXPLICIT_FILE_SHA")
+        return pointer, json.loads(reader(pointer), object_pairs_hook=unique_object)
+
+    review, approved = actual(argv[8], argv[10])
+    check(not materialize or review == materialize_review, "B_UTC_OUTER_FIXED_M_REVIEW")
+    check(approved["schema"] == 1 and approved["status"] == "PASS_CURRENT_NORMAL18_SOURCE_REVIEW"
+          and type(approved["source_sha"]) is str and re.fullmatch(r"[a-f0-9]{40}", approved["source_sha"]) is not None
+          and approved["original_business_suffix_exact"] is True and approved["source_graph_and_stream_contract_reviewed"] is True
+          and type(approved["members"]) is dict and len(approved["members"]) == 18
+          and Path(approved["binding"]["path"]) == root / "qualification/CURRENT-BINDING.json",
+          "B_UTC_OUTER_PINNED_NORMAL18_SOURCE_REVIEW")
+    binding = json.loads(reader(approved["binding"]), object_pairs_hook=unique_object)
+    check(Path(binding["normal_root"]) == root and binding["source_sha"] == approved["source_sha"],
+          "B_UTC_OUTER_REVIEWED_NORMAL_ROOT_AND_SOURCE")
+    entry = "materializer/prepare.py" if materialize else "validation/run.py"
+    for name in ("launcher/launch.py", entry):
+        reader({"path": (root / name).as_posix(), **approved["members"][name]})
+    child_created, child_terminal = (actual(root / "launcher" / (stage + "." + name))[1]
+                                     for name in ("created.json", "terminal.json"))
+    check(set(child_created) == {"pid", "argv", "started_ns"}
+          and set(child_terminal) == {"pid", "native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+          and type(child_created["pid"]) is type(child_terminal["pid"]) is int
+          and child_created["pid"] == child_terminal["pid"] > 0 and child_created["pid"] != created["pid"]
+          and type(child_terminal["native_exit"]) is type(child_terminal["wait_returncode"]) is int
+          and child_terminal["native_exit"] == child_terminal["wait_returncode"] == 0,
+          "B_UTC_OUTER_ORIGINAL_CHILD_SAME_PID_NATIVE_WAIT_ZERO")
+
+    def utc_ns(value):
+        match = re.fullmatch(r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)\.(\d{6})(?:\+00:00|Z)", value) if type(value) is str else None
+        check(match is not None, "B_UTC_OUTER_ORIGINAL_AWARE_UTC_MICROSECONDS")
+        return timegm(datetime.strptime(match[1], "%Y-%m-%dT%H:%M:%S").timetuple()) * 1000000000 + int(match[2]) * 1000
+
+    check(type(child_created["started_ns"]) is type(child_terminal["finished_ns"]) is int
+          and utc_ns(created["at_utc"]) < child_created["started_ns"] < child_terminal["finished_ns"] < utc_ns(terminal["at_utc"]),
+          "B_UTC_OUTER_ORIGINAL_CHILD_INSIDE_OUTER_WINDOW")
+    child_args = ["--source-review-file", argv[8], "--source-review-sha256", review["sha256"]]
+    if not materialize:
+        setup_pointer, setup = actual(root / "validation/materialize-freeze-assets-r1/RESULT.json")
+        check(setup["schema"] == 2 and setup["source_sha"] == approved["source_sha"]
+              and setup["source_review"] == review, "B_UTC_OUTER_ORIGINAL_A_SAME_REVIEWED_M")
+        reader({"path": (root / "validation/PINS.json").as_posix(), **approved["members"]["validation/PINS.json"]})
+        _, admission = actual(created["admission"])
+        check(admission["status"] == "CURRENT_NORMAL_RUNTIME_ADMISSION_PASS"
+              and admission["source_sha"] == approved["source_sha"]
+              and admission["M_result"] == {key: setup_pointer[key] for key in ("path", "sha256")}
+              and admission["freeze_sha256"] == setup["freeze_sha256"] and admission["runtime_started"] is False
+              and utc_ns(admission["at_utc"]) <= utc_ns(created["at_utc"]),
+              "B_UTC_OUTER_ORIGINAL_A_ADMISSION_BINDS_M_AND_PRECEDES_START")
+        child_args = ["--root-source-pins-sha256", approved["members"]["validation/PINS.json"]["sha256"],
+                      "--setup-sha256", setup_pointer["sha256"], *child_args]
+    child_argv = child_created["argv"]
+    check(type(child_argv) is list and len(child_argv) == 5 + len(child_args)
+          and all(type(value) is str for value in child_argv) and Path(child_argv[0]) == Path(argv[0])
+          and child_argv[1:4] == ["-B", "-X", "utf8"] and Path(child_argv[4]) == root / entry
+          and child_argv[5:] == child_args, "B_UTC_OUTER_ORIGINAL_CHILD_FULL_ARGV")
+    streams = {}
+    for key in ("stdout", "stderr"):
+        check(Path(child_terminal[key]["path"]) == root / "launcher" / (stage + "." + key),
+              "B_UTC_OUTER_ORIGINAL_CHILD_STREAM_PATH")
+        child_raw, streams[key] = reader(child_terminal[key]), reader(outcome[key])
+        check(type(terminal[key + "_bytes"]) is int and len(streams[key]) == terminal[key + "_bytes"]
+              and (bool(child_raw) and bool(streams[key]) if key == "stdout" else child_raw == streams[key] == b""),
+              "B_UTC_OUTER_COMPLETE_ORIGINAL_CHILD_AND_OUTER_STREAMS")
+    check([json.loads(line, object_pairs_hook=unique_object) for line in streams["stdout"].splitlines()] == [
+          {"state": "SAME_NATIVE_PROCESS_LIVE", "stage": stage, "pid": child_created["pid"]},
+          {"state": "ACTUAL_STAGE_TERMINAL", "stage": stage, "pid": child_created["pid"], "native_exit": 0, "wait_returncode": 0}],
+          "B_UTC_OUTER_ORIGINAL_LIVE_AND_TERMINAL_MARKERS")
+    return True
+
+
 def _b_outer(outcome: dict[str, Any], materialize_review: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     require(type(outcome) is dict and set(outcome) == {"created", "terminal", "stdout", "stderr"},
             "B_EXPLICIT_ACTUAL_OUTER_FOUR_FILES")
     created, terminal = (decode(read_pointer(outcome[key])) for key in ("created", "terminal"))
     if _b_current_powershell_outer(outcome, created, terminal, materialize_review, read_pointer, require):
+        return created, terminal
+    if _b_utc_launcher_outer(outcome, created, terminal, materialize_review, read_pointer, require):
         return created, terminal
     milliseconds = materialize_review is not None and type(created) is dict and "started_ms" in created
     started, finished = ("started_ms", "finished_ms") if milliseconds else ("started_ns", "finished_ns")
@@ -5532,6 +5655,24 @@ def _b_interrupted_retirement(source: bytes, *, image_form: bool = False) -> str
     return candidate
 
 
+def _b_utc_review_runtime(review_runtime: str) -> str:
+    """Install the same read-only UTC consumer in both newly authored B Roots."""
+    old = b"    created=current_json(outcome['created']);terminal=current_json(outcome['terminal'])\n"
+    powershell = (b"    if _b_current_powershell_outer(outcome, created, terminal, materialize_review,\n"
+                  b"                                  lambda pointer: current_stream(pointer, True), current_assert):\n"
+                  b"        return\n")
+    if powershell in review_runtime.encode():
+        old += powershell
+    new = old + (
+        b"    if _b_utc_launcher_outer(outcome, created, terminal, materialize_review,\n"
+        b"                             lambda pointer: current_stream(pointer, True), current_assert):\n"
+        b"        return\n")
+    patched = once(review_runtime.encode(), old, new)
+    require(once(patched, new, old) == review_runtime.encode(), "B_UTC_OUTER_COMPLETE_GENERATED_REVIEW_DISPATCH_INVERSE")
+    author = stable_read(Path(__file__).resolve())
+    return _source_function(author, "_b_utc_launcher_outer") + "\n\n" + patched.decode()
+
+
 def _b_interrupted_root(raw: bytes, name: str) -> bytes:
     """Specialize only a newly derived B; archived/ordinary A0 bodies stay raw."""
     text = raw.decode("utf-8")
@@ -5815,6 +5956,53 @@ def _b_verify_joint_php_seal(after: dict[str, bytes], proof: dict[str, Any], art
     return {**proof, "complete": True, "initializer_host_zero_fixed_pins_verified": True,
         "copier_own_library_pin_verified": True, "canonical_helper_inventory_pin_verified": True,
         "final_interface_host_close_zero_dag_verified": True, "complete_source_artifacts": 17}
+
+
+def _b_runtime_successor(before: dict[str, bytes], after: dict[str, bytes]) -> dict[str, Any]:
+    """Apply the reviewed runtime corrections to the same complete B components."""
+    originals = {
+        "candidate/ms4-ui-nginx.conf": {"bytes": 4105, "sha256": "033ae09499501ec9ef9a2ab87d5da53687491be06f20615781f2d5b01c4cbca5"},
+        "candidate/compose.yml": {"bytes": 20968, "sha256": "f060cbb4ff16c57030d1a1767fdbc26f503117607c18b330e40b717a42460e17"},
+        "browser-v1/ms4-ui-business-producer.mjs": {"bytes": 85112, "sha256": "cf4e21c8b4ca037450f46b53b29032dfc7147c7df5156fb0ab441013339485da"},
+    }
+    require(all(pin(before[name]) == wanted for name, wanted in originals.items()),
+            "B_RUNTIME_SUCCESSOR_EXACT_ORIGINAL_COMPONENTS")
+    nginx_key = "candidate/ms4-ui-nginx.conf"
+    nginx_before = after[nginx_key]
+    require(nginx_before == before[nginx_key], "B_RUNTIME_SUCCESSOR_UNCHANGED_GATEWAY_INPUT")
+    old_route = b"|users/login/index|store/index|"
+    new_route = b"|users/login/index|users/user_info/index|store/index|"
+    nginx_after = once(nginx_before, old_route, new_route)
+    require(once(nginx_after, new_route, old_route) == nginx_before, "B_EXACT_PROFILE_ROUTE_INVERSE")
+    old_pin, new_pin = pin(nginx_before), pin(nginx_after)
+    after[nginx_key] = nginx_after
+    for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py", "ms4-initialize.php"):
+        key = "candidate/" + name
+        previous = after[key]
+        if name.endswith(".py"):
+            old_check = (f"'ms4-ui-nginx.conf','bytes':{old_pin['bytes']},\n"
+                         f"        'sha256':'{old_pin['sha256']}'").encode()
+            new_check = (f"'ms4-ui-nginx.conf','bytes':{new_pin['bytes']},\n"
+                         f"        'sha256':'{new_pin['sha256']}'").encode()
+        else:
+            old_check = (f"filesize('/run/ms4-prep/ms4-ui-nginx.conf') === {old_pin['bytes']}\n"
+                         f"        && hash_file('sha256', '/run/ms4-prep/ms4-ui-nginx.conf') === '{old_pin['sha256']}'").encode()
+            new_check = (f"filesize('/run/ms4-prep/ms4-ui-nginx.conf') === {new_pin['bytes']}\n"
+                         f"        && hash_file('sha256', '/run/ms4-prep/ms4-ui-nginx.conf') === '{new_pin['sha256']}'").encode()
+        after[key] = once(previous, old_check, new_check)
+        require(once(after[key], new_check, old_check) == previous, "B_GATEWAY_PIN_WHOLE_FILE_INVERSE")
+    compose_key = "candidate/compose.yml"
+    compose_before = after[compose_key]
+    mysql_command_end = b'NO_ENGINE_SUBSTITUTION"]\n    environment:\n      MYSQL_ROOT_PASSWORD_FILE:'
+    mysql_aio_off = b'NO_ENGINE_SUBSTITUTION", "--innodb-use-native-aio=OFF"]\n    environment:\n      MYSQL_ROOT_PASSWORD_FILE:'
+    after[compose_key] = once(compose_before, mysql_command_end, mysql_aio_off)
+    require(once(after[compose_key], mysql_aio_off, mysql_command_end) == compose_before,
+            "B_ONLY_ISOLATED_MYSQL_NATIVE_AIO_DISABLED")
+    # The material binder validates all original Task2 seams and full inverse;
+    # the baseline producer pin above authorizes that same finite correction.
+    return {"profile_route": "/pages/users/user_info/index", "nginx_before": old_pin,
+            "nginx_after": new_pin, "native_aio": False, "whole_gateway_and_compose_inverses_exact": True,
+            "original_components": originals, "task2_login_projection": True}
 
 
 def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, bytes], *,
@@ -6140,43 +6328,8 @@ def current_b_a_capture_failure_precondition():
     artifacts = constant(before["root-source/root-ui-materialize-freeze.py"], "ARTIFACTS")
     require(len(artifacts) == 17, "B_ORIGINAL_COMPLETE_SEVENTEEN")
     for name, raw in materials.items(): after["candidate/" + name] = raw
-    use_browser_runtime_successor = qa_equivalence is not None or head == B_STOREFRONT_PAUSE_SOURCE
-    gateway_logout = None
-    if use_browser_runtime_successor:
-        nginx_key = "candidate/ms4-ui-nginx.conf"
-        nginx_before = after[nginx_key]
-        old_route = b"|users/login/index|store/index|"
-        new_route = b"|users/login/index|users/user_info/index|store/index|"
-        nginx_after = once(nginx_before, old_route, new_route)
-        require(once(nginx_after, new_route, old_route) == nginx_before, "B_EXACT_PROFILE_ROUTE_INVERSE")
-        old_pin, new_pin = pin(nginx_before), pin(nginx_after)
-        after[nginx_key] = nginx_after
-        for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py", "ms4-initialize.php"):
-            key = "candidate/" + name
-            previous = after[key]
-            if name.endswith(".py"):
-                old_check = (f"'ms4-ui-nginx.conf','bytes':{old_pin['bytes']},\n"
-                             f"        'sha256':'{old_pin['sha256']}'").encode()
-                new_check = (f"'ms4-ui-nginx.conf','bytes':{new_pin['bytes']},\n"
-                             f"        'sha256':'{new_pin['sha256']}'").encode()
-            else:
-                old_check = (f"filesize('/run/ms4-prep/ms4-ui-nginx.conf') === {old_pin['bytes']}\n"
-                             f"        && hash_file('sha256', '/run/ms4-prep/ms4-ui-nginx.conf') === '{old_pin['sha256']}'").encode()
-                new_check = (f"filesize('/run/ms4-prep/ms4-ui-nginx.conf') === {new_pin['bytes']}\n"
-                             f"        && hash_file('sha256', '/run/ms4-prep/ms4-ui-nginx.conf') === '{new_pin['sha256']}'").encode()
-            after[key] = once(previous, old_check, new_check)
-            require(once(after[key], new_check, old_check) == previous, "B_GATEWAY_PIN_WHOLE_FILE_INVERSE")
-        compose_key = "candidate/compose.yml"
-        compose_before = after[compose_key]
-        mysql_command_end = b'NO_ENGINE_SUBSTITUTION"]\n    environment:\n      MYSQL_ROOT_PASSWORD_FILE:'
-        mysql_aio_off = b'NO_ENGINE_SUBSTITUTION", "--innodb-use-native-aio=OFF"]\n    environment:\n      MYSQL_ROOT_PASSWORD_FILE:'
-        after[compose_key] = once(compose_before, mysql_command_end, mysql_aio_off)
-        require(once(after[compose_key], mysql_aio_off, mysql_command_end) == compose_before,
-                "B_ONLY_ISOLATED_MYSQL_NATIVE_AIO_DISABLED")
-        gateway_logout = {"profile_route": "/pages/users/user_info/index", "nginx_before": old_pin,
-                          "nginx_after": new_pin, "native_aio": False,
-                          "whole_gateway_and_compose_inverses_exact": True}
-    browser_materials = _b_bind_browser_materials(after, materials, task2_login_projection=use_browser_runtime_successor)
+    gateway_logout = _b_runtime_successor(before, after)
+    browser_materials = _b_bind_browser_materials(after, materials, task2_login_projection=gateway_logout["task2_login_projection"])
     base = fixed["base_source"]
     require(set(base) == {"root", "PINS", "FINAL"}, "B_ORIGINAL_OBSERVER59_SOURCE_AUTHORITY")
     base_root = Path(base["root"])
@@ -6629,6 +6782,7 @@ def current_b_a_capture_failure_precondition():
                 "B_5B6_RAW_OUTER_COMPLETE_GENERATED_REVIEW_DISPATCH_INVERSE")
         author = stable_read(Path(__file__).resolve())
         review_runtime = _source_function(author, "_b_current_powershell_outer") + "\n\n" + current_review_runtime.decode()
+    review_runtime = _b_utc_review_runtime(review_runtime)
     interruption_runtime = ""
     if interrupted:
         review_runtime = _b_interrupted_review_runtime(review_runtime)
