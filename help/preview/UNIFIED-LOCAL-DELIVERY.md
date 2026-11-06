@@ -65,6 +65,8 @@
 
 同一订单 11 的顾客原包裹页已点击确认收货。顾客页面显示「收货结果已保存」，顾客、商家和平台读回发 1 件、收 1 件。标准装库存仍为 2，加量装仍为 7，商品总库存仍为 9。[同包裹收货实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-order11-standard-sku-received-20261106-110346.json)
 
+同一订单 11 的「标准装」已完成退货及 ¥13.40 测试退款。商家验收后标准装库存 2→3，加量装一直为 7，商品总库存 9→10。退款后库存未再次增加，三端读回同一退款完成状态。[同单退货退款实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-order11-standard-sku-return-20261106-111709.json)
+
 商家 3 的员工管理页面已读到原启用员工及其角色。角色管理的编辑弹窗显示同一角色已选 12 项权限，取消并刷新后与原接口一致。[员工与角色页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant3-employee-role-ui-20261106-110613.json)
 
 平台测试交易接口读回同一订单 6，唯一一笔 ¥20.15 的测试付款已应用，已确认退款及占用金额均为 ¥0.00。该单未选择费率版本，费用估算、渠道费、商家应收及结算金额均为空。[同一订单的平台测试流水](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order6-platform-test-ledger-20261105-r2.json)
