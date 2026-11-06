@@ -8,7 +8,6 @@ declare(strict_types=1);
  * This entry does not migrate saved legacy orders to V1 or test old write paths.
  */
 const NHECO_SCOPE = 'POST_READER_SYNTHETIC_OWNERSHIP_NORMAL_V1';
-const NHECO_APP_SOURCE = 'ae13dc8fa1e4e3dd259e5d917649715eec9f1567';
 const NHECO_IMAGE = 'sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
 const NHECO_ENTRY = '/run/post-reader/ms4-history-ownership-normal.php';
 const NHECO_ROOTS = ['store_product' => 'id', 'system_attachment' => 'att_id',
@@ -85,6 +84,11 @@ function nheco_memory(): void
 /** Independent fixed role; it never impersonates a Source3 registered reader. */
 function nheco_qualify(array $wanted, bool $http = false): array
 {
+    $expectedSource = getenv('AUDIT_SOURCE_SHA');
+    nheco_expect(is_string($expectedSource) && preg_match('/\A[a-f0-9]{40}\z/D', $expectedSource) === 1,
+        'NHECO_EXPLICIT_EXPECTED_APPLICATION_SOURCE_SHA');
+    if (!defined('NHECO_APP_SOURCE')) define('NHECO_APP_SOURCE', $expectedSource);
+    nheco_expect(NHECO_APP_SOURCE === $expectedSource, 'NHECO_EXPECTED_APPLICATION_SOURCE_UNCHANGED');
     nheco_expect(__FILE__ === NHECO_ENTRY && realpath(__FILE__) === __FILE__ && PHP_INT_SIZE === 8
         && PHP_VERSION_ID >= 80200 && PHP_VERSION_ID < 80300 && PHP_SAPI === ($http ? 'cli-server' : 'cli')
         && getcwd() === '/workspace/crmeb' && getenv('AUDIT_ISOLATED') === '1'
@@ -170,7 +174,8 @@ function nheco_qualify(array $wanted, bool $http = false): array
         && $created['labels']['com.docker.compose.service'] === $h['role']['service']
         && $created['labels']['tianli.audit'] === '1' && $created['labels']['tianli.audit.run'] === $h['run_id']
         && !$created['port_bindings'] && array_keys($created['networks']) === [$c['initial_network']['Name']], 'NHECO_OWN_REAL_FIXED_CONTAINER');
-    nheco_expect($prior['source_review']['schema'] === 1
+    nheco_expect($prior['source_pins']['source_sha'] === NHECO_APP_SOURCE
+        && $prior['source_review']['schema'] === 1
         && $prior['source_review']['status'] === 'PASS_CURRENT_HISTORY_SOURCE_REVIEW'
         && $prior['source_review']['source_sha'] === NHECO_APP_SOURCE
         && $prior['source_publication']['schema'] === 1
@@ -809,7 +814,7 @@ if (PHP_SAPI==='cli-server') {
 if (PHP_SAPI==='cli' && realpath($_SERVER['SCRIPT_FILENAME'] ?? '')===__FILE__) {
     ini_set('display_errors','0'); ini_set('log_errors','0'); ini_set('zend.exception_ignore_args','1'); umask(0077);
     if (array_slice($argv,1)===['--help']) {
-        echo "Usage: history_ownership_normal.py --history-source SOURCE3 --context ORIGINAL_CONTEXT --output NEW_EXTERNAL_DIRECTORY\n";
+        echo "Usage: history_ownership_normal.py --source APP_SOURCE_SHA --history-source SOURCE3 --context ORIGINAL_CONTEXT --output NEW_EXTERNAL_DIRECTORY\n";
         echo "Synthetic post-reader normal only; no retry, no automatic final-close, no old-order write acceptance.\n"; exit(0);
     }
     set_error_handler(static function (): never { throw new RuntimeException('NHECO_NATIVE_WARNING_STATE_PRESERVED'); });

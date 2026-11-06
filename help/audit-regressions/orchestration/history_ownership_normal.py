@@ -22,7 +22,6 @@ import sys
 
 
 SCOPE = "POST_READER_SYNTHETIC_OWNERSHIP_NORMAL_V1"
-APP_SOURCE = "ae13dc8fa1e4e3dd259e5d917649715eec9f1567"
 IMAGE = "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a"
 SERVICE = "audit-post-reader-ownership"
 PROOF = "post-reader-ownership"
@@ -132,6 +131,9 @@ def run_relative(root: Path, item: dict) -> tuple[Path, bytes]:
 
 
 def qualify(args) -> dict:
+    expected_source_sha = args.source
+    require(type(expected_source_sha) is str and re.fullmatch("[a-f0-9]{40}", expected_source_sha),
+            "EXPLICIT_EXPECTED_APPLICATION_SOURCE_SHA")
     source = ordinary(Path(args.history_source), True)
     profile = ordinary(source / "candidate", True)
     source_pins_raw = read(source / "SOURCE-PINS.json")
@@ -139,7 +141,7 @@ def qualify(args) -> dict:
     require(set(source_pins) == {"schema", "scope", "source_sha", "members"}
             and type(source_pins["schema"]) is int and source_pins["schema"] == 1
             and source_pins["scope"] == "CURRENT_HISTORY_SOURCE_CANDIDATE_NOT_RUNTIME"
-            and source_pins["source_sha"] == APP_SOURCE and type(source_pins["members"]) is dict
+            and source_pins["source_sha"] == expected_source_sha and type(source_pins["members"]) is dict
             and len(source_pins["members"]) == 37,
             "REVIEWED_CURRENT_HISTORY_SOURCE_ONLY")
     actual_files = {path.relative_to(source).as_posix() for path in source.rglob("*") if path.is_file()}
@@ -156,7 +158,7 @@ def qualify(args) -> dict:
     context_path = ordinary(Path(args.context))
     context_raw = read(context_path)
     context = module["current"](context_path, False)
-    require(context == object_(context_raw) and context["source_sha"] == APP_SOURCE
+    require(context == object_(context_raw) and context["source_sha"] == expected_source_sha
             and context["prep_dir"] == profile.as_posix()
             and re.fullmatch(r"\d{14}[a-f0-9]{6}", context["run_id"])
             and context["project"] == "tianli-audit-" + context["run_id"], "ORIGINAL_FIXED_HISTORY_CONTEXT")
@@ -166,13 +168,13 @@ def qualify(args) -> dict:
     freeze_raw = read(root / "preparation-source-binding.json")
     require(pin(freeze_raw)["sha256"] == context["freeze_sha256"], "ORIGINAL_FREEZE_SHA")
     freeze = object_(freeze_raw)
-    require(freeze["source_sha"] == APP_SOURCE and freeze["requested_repo_source"] == repo.as_posix()
+    require(freeze["source_sha"] == expected_source_sha and freeze["requested_repo_source"] == repo.as_posix()
             and freeze["status"] == "CLEAN_SOURCE_FROZEN_ONLY", "ORIGINAL_CLEAN_FREEZE")
     review_raw = read(root / "history-source-review.json")
     publication_raw = read(root / "history-source-publication.json")
     review, publication = object_(review_raw), object_(publication_raw)
-    require(review["status"] == "PASS_CURRENT_HISTORY_SOURCE_REVIEW" and review["source_sha"] == APP_SOURCE
-            and publication["scope"] == "CURRENT_HISTORY_SOURCE_PUBLICATION" and publication["source_sha"] == APP_SOURCE
+    require(review["status"] == "PASS_CURRENT_HISTORY_SOURCE_REVIEW" and review["source_sha"] == expected_source_sha
+            and publication["scope"] == "CURRENT_HISTORY_SOURCE_PUBLICATION" and publication["source_sha"] == expected_source_sha
             and same_json(publication["artifact_files"], freeze["artifact_files"]), "ORIGINAL_REVIEWED_SOURCE_PUBLICATION")
     artifacts = []
     require(len(freeze["artifact_files"]) == 14 and len({row["path"] for row in freeze["artifact_files"]}) == 14,
@@ -188,7 +190,7 @@ def qualify(args) -> dict:
     made, terminal, result, retired = map(object_, (made_raw, terminal_raw, result_raw, retired_raw))
     cid = made["id"]
     require(re.fullmatch("[a-f0-9]{64}", cid) and made["proof_name"] == "legacy-current-reader"
-            and made["run_id"] == context["run_id"] and made["source_sha"] == APP_SOURCE, "ORIGINAL_READER_CREATED")
+            and made["run_id"] == context["run_id"] and made["source_sha"] == expected_source_sha, "ORIGINAL_READER_CREATED")
     module["same_created"](made, terminal)
     module["owned"](context, terminal, "audit-legacy-current-reader")
     require(terminal["status"] == "exited" and terminal["pid"] == terminal["exit_code"] == terminal["restart_count"] == 0,
@@ -198,7 +200,7 @@ def qualify(args) -> dict:
     require(set(result) == result_keys and type(result["schema"]) is int and result["schema"] == 1
             and result["scope"] == "CURRENT_SOURCE_SINGLE_SELF_LEGACY_READS_ONLY"
             and result["status"] == "VERIFIED_CURRENT_LEGACY_HISTORY_READS_NORMAL_CLOSED"
-            and result["run_id"] == context["run_id"] and result["source_sha"] == APP_SOURCE
+            and result["run_id"] == context["run_id"] and result["source_sha"] == expected_source_sha
             and result["freeze_sha256"] == context["freeze_sha256"] and result["container_id"] == cid
             and type(result["entry_namespace_pid"]) is int and result["entry_namespace_pid"] > 0
             and result["files"] == "VERIFIED_CURRENT_SOURCE_NORMAL_CLOSE"
@@ -224,7 +226,7 @@ def qualify(args) -> dict:
                     "created", "terminal", "binding", "result", "normal_remove", "resource_after", "prerequisites"}
     require(set(retired) == retired_keys and type(retired["schema"]) is int and retired["schema"] == 1
             and retired["scope"] == "NONEMPTY_HISTORY_EXACT_NORMAL_ROLE_RETIRED"
-            and retired["run_id"] == context["run_id"] and retired["source_sha"] == APP_SOURCE
+            and retired["run_id"] == context["run_id"] and retired["source_sha"] == expected_source_sha
             and retired["freeze_sha256"] == context["freeze_sha256"] and retired["role"] == "audit-legacy-current-reader"
             and retired["proof_name"] == "legacy-current-reader" and retired["container_id"] == cid, "ORIGINAL_READER_RETIRE_RECEIPT")
     for key, leaf in [("created", "legacy-current-reader-created.json"), ("terminal", "legacy-current-reader-terminal.json"),
@@ -259,7 +261,7 @@ def qualify(args) -> dict:
     manifest_raw = read(root / "manifest.json")
     manifest = object_(manifest_raw)
     require(manifest["guard_mode"] == "read-only" and manifest["run_id"] == context["run_id"]
-            and manifest["commit_sha"] == APP_SOURCE and manifest["project"] == context["project"]
+            and manifest["commit_sha"] == expected_source_sha and manifest["project"] == context["project"]
             and manifest["network"]["id"] == context["network_id"] and manifest["network_internal"] is True
             and all(manifest["services"][role]["id"] == context["initial_service_ids"][role]
                     for role in ("audit-mysql", "audit-redis")), "ORIGINAL_MANIFEST_BASE_IDENTITIES")
@@ -285,13 +287,14 @@ def qualify(args) -> dict:
         "manifest": pointer(root / "manifest.json", "/run/audit/manifest.json", manifest_raw),
         "producer_result": pointer(evidence / "legacy-history-producer-result.json", "/run/audit/evidence/legacy-history-producer-result.json", producer_raw),
     }
-    handoff = {"schema": 1, "scope": SCOPE, "run_id": context["run_id"], "app_source_sha": APP_SOURCE,
+    handoff = {"schema": 1, "scope": SCOPE, "run_id": context["run_id"], "app_source_sha": expected_source_sha,
                "context": context, "predecessors": predecessors,
                "resources": {"services": context["initial_service_created"], "volumes": context["initial_volumes"], "network": context["initial_network"]},
                "self_mer_id": feature["self_operated_mer_id"],
                "actor": pointer(actor_path, "/run/post-reader/ms4-history-ownership-normal.php", actor_raw),
                "dependencies": dependencies, "history_artifacts": artifacts, "role": ROLE}
-    return {"source": source, "profile": profile, "root": root, "repo": repo, "module": module,
+    return {"expected_source_sha": expected_source_sha,
+            "source": source, "profile": profile, "root": root, "repo": repo, "module": module,
             "context": context, "handoff": handoff, "actor_raw": actor_raw, "source_pins_raw": source_pins_raw}
 
 
@@ -435,6 +438,7 @@ def actor_identity(context: dict, facts: dict) -> None:
 
 
 def normal_domains(q: dict, cid: str, handoff_raw: bytes, evidence: Path, result: dict) -> None:
+    expected_source_sha = q["expected_source_sha"]
     def complete_pin(value: dict, maximum: int = MAX_PUBLIC) -> None:
         require(type(value) is dict and set(value) == {"bytes", "sha256"}
                 and type(value["bytes"]) is int and 0 < value["bytes"] <= maximum
@@ -514,7 +518,7 @@ def normal_domains(q: dict, cid: str, handoff_raw: bytes, evidence: Path, result
             "full_nonowner_preserved", "old_saved_versions_preserved"}
             and ownership["five_roots"] == ["store_product", "system_attachment", "system_attachment_category", "shipping_templates", "store_product_rule"]
             and all(ownership[key] is True for key in ownership if key != "five_roots"), "ALL_FIVE_ROOTS_AND_OLD_VERSION_RESPONSIBILITIES")
-    require(same_json(result["app"], {"enabled": True, "self_operated_mer_id": self_id, "app_source_sha": APP_SOURCE,
+    require(same_json(result["app"], {"enabled": True, "self_operated_mer_id": self_id, "app_source_sha": expected_source_sha,
             "container_id": cid, "handoff_sha256": pin(handoff_raw)["sha256"]}), "ACTUAL_ENABLED_CURRENT_APPLICATION_PROFILE")
     require(same_json(result["requests"], [{"sequence": number, "step": step, "http": 200, "full_independent_oracle": True}
             for number, step in enumerate(STEPS, 1)]), "NINE_CURRENT_APPLICATION_FULL_INDEPENDENT_NORMAL_READS")
@@ -531,6 +535,7 @@ def normal_domains(q: dict, cid: str, handoff_raw: bytes, evidence: Path, result
 
 def execute(args) -> dict:
     q = qualify(args)
+    expected_source_sha = q["expected_source_sha"]
     output = Path(os.path.abspath(args.output))
     ordinary(output.parent, True)
     require(not output.exists(), "NEW_OUTPUT_ONLY_NO_RETRY")
@@ -563,7 +568,7 @@ def execute(args) -> dict:
                            "com.docker.compose.project": context["project"], "com.docker.compose.service": SERVICE}.items():
             argv += ["--label", key + "=" + value]
         for key, value in {"AUDIT_ISOLATED": "1", "AUDIT_RUN_ID": context["run_id"], "AUDIT_PROJECT": context["project"],
-                           "AUDIT_SOURCE_SHA": APP_SOURCE, "AUDIT_REPO_DIR": "/workspace", "AUDIT_RUN_DIR": "/run/audit",
+                           "AUDIT_SOURCE_SHA": expected_source_sha, "AUDIT_REPO_DIR": "/workspace", "AUDIT_RUN_DIR": "/run/audit",
                            "AUDIT_GUARD_MODE": "read-only", "MS4_PROOF_NAME": PROOF}.items():
             argv += ["--env", key + "=" + value]
         for host, destination, readonly in [(q["repo"], "/workspace", True), (q["repo"], "/source", True),
@@ -582,11 +587,11 @@ def execute(args) -> dict:
         actor_identity(context, made)
         require(made["status"] == "created" and made["pid"] == 0 and made["command"] == command, "ACTUAL_UNSTARTED_NEW_ACTOR")
         actor_mounts(q, source_dir, evidence, made)
-        made.update({"run_id": context["run_id"], "source_sha": APP_SOURCE, "proof_name": PROOF})
+        made.update({"run_id": context["run_id"], "source_sha": expected_source_sha, "proof_name": PROOF})
         made_raw = encode(made)
         new(source_dir / "created.json", made_raw)
         binding = {"schema": 1, "scope": "POST_READER_SYNTHETIC_OWNERSHIP_SOURCE_BOUND_V1", "run_id": context["run_id"],
-                   "app_source_sha": APP_SOURCE, "container_id": cid, "handoff": pin(handoff_raw), "created": pin(made_raw), "actor": pin(q["actor_raw"])}
+                   "app_source_sha": expected_source_sha, "container_id": cid, "handoff": pin(handoff_raw), "created": pin(made_raw), "actor": pin(q["actor_raw"])}
         new(source_dir / "source-binding.json", encode(binding))
         preserved(q)
         resource_gate(q, native, cid)
@@ -604,7 +609,7 @@ def execute(args) -> dict:
                                 "ms2", "ownership", "app", "requests", "normal_http_close", "preservation", "old_writes_tested", "full_acceptance"}
                 and type(result["schema"]) is int and result["schema"] == 1 and result["scope"] == SCOPE
                 and result["status"] == "VERIFIED_POST_READER_SYNTHETIC_OWNERSHIP_ENABLED_NORMAL_ONLY"
-                and result["run_id"] == context["run_id"] and result["app_source_sha"] == APP_SOURCE
+                and result["run_id"] == context["run_id"] and result["app_source_sha"] == expected_source_sha
                 and result["container_id"] == cid and result["actor_pin"] == pin(q["actor_raw"])
                 and result["handoff_pin"] == pin(handoff_raw) and result["old_writes_tested"] == "NOT RUN"
                 and result["full_acceptance"] == "INCOMPLETE", "ACTUAL_OWN_NORMAL_RESULT_NOT_FULL_ACCEPTANCE")
@@ -619,7 +624,7 @@ def execute(args) -> dict:
         require(cid not in after["global_ids"], "NEW_ACTOR_CID_ACTUALLY_ABSENT")
         preserved(q)
         receipt = {"schema": 1, "scope": SCOPE, "status": "VERIFIED_POST_READER_ACTOR_NORMAL_RETIRED_ONLY",
-                   "run_id": context["run_id"], "app_source_sha": APP_SOURCE, "container_id": cid,
+                   "run_id": context["run_id"], "app_source_sha": expected_source_sha, "container_id": cid,
                    "actor_result": {"path": (evidence / "RESULT.json").as_posix(), **pin(result_raw)},
                    "handoff": {"path": (source_dir / "HANDOFF.json").as_posix(), **pin(handoff_raw)},
                    "resource_after": after, "native_commands": native.sequence, "original_history_final_close": "NOT RUN",
@@ -636,6 +641,7 @@ def execute(args) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", required=True, help="Explicit expected application commit (40 lowercase hex characters).")
     parser.add_argument("--history-source", required=True)
     parser.add_argument("--context", required=True)
     parser.add_argument("--output", required=True)
