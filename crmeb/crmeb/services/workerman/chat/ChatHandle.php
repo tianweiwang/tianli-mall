@@ -359,15 +359,14 @@ class ChatHandle
                 $data['orderInfo'] = $order;
             }
         }
-        //给自己回复消息
-        $response->send('chat', $data);
-
         //用户向客服发送消息，判断当前客服是否在登录中
         /** @var StoreServiceRecordServices $serviceRecored */
         $serviceRecored = app()->make(StoreServiceRecordServices::class);
         $unMessagesCount = $logServices->getMessageNum(['uid' => $uid, 'to_uid' => $to_uid, 'type' => 0, 'is_tourist' => $isTourist ? 1 : 0]);
         //记录当前用户和他人聊天记录
         $data['recored'] = $serviceRecored->saveRecord($uid, $to_uid, $msn, $formType ?? 0, $msn_type, $unMessagesCount, $isTourist, $data['nickname'], $data['avatar']);
+        //记录保存后再回执；recored 始终是接收方视角，发送方只复用双方同写的摘要。
+        $response->send('chat', $data);
         //是否在线
         if ($online) {
             $response->connection($recipient)->send('reply', $data);

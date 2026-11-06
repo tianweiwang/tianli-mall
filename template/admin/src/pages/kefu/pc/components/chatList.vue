@@ -183,9 +183,21 @@ export default {
       return dayjs.unix(value).format('M月D日 HH:mm');
     },
   },
+  beforeDestroy() {
+    if (this._recordSocket) {
+      this._recordSocket.$off('reply', this._recordReply);
+      this._recordSocket.$off('chat', this._recordAck);
+    }
+  },
   mounted() {
     let that = this;
     Socket.then((ws) => {
+      if (this._isDestroyed) return;
+      this._recordSocket = ws;
+      this._recordReply = (data) => this.syncRecordSummary(data, false);
+      this._recordAck = (data) => this.syncRecordSummary(data, true);
+      ws.$on('reply', this._recordReply);
+      ws.$on('chat', this._recordAck);
       //用户转接
       ws.$on('transfer', (data) => {
         let status = false;
@@ -241,6 +253,26 @@ export default {
     this.getList();
   },
   methods: {
+    syncRecordSummary(data, outgoing) {
+      const record = data && data.recored;
+      const socket = this._recordSocket;
+      if (!record || !record.id || !socket || !socket.isAuthenticated('kefu')) return;
+      const owner = Number(socket.identity.uid);
+      const from = Number(data.uid);
+      const to = Number(data.to_uid);
+      const tourist = Number(data.is_tourist);
+      if (Number(record.user_id) !== to || Number(record.to_uid) !== from
+        || Number(record.is_tourist) !== tourist || (outgoing ? from : to) !== owner) return;
+      const index = this.userList.findIndex((row) => Number(row.user_id) === owner
+        && Number(row.to_uid) === (outgoing ? to : from) && Number(row.is_tourist) === tourist
+        && (outgoing || String(row.id) === String(record.id)));
+      if (index === -1) return;
+      // The receipt holds the recipient's row. Keep this list's own identity and unread state.
+      const row = { ...this.userList[index], message: record.message,
+        message_type: record.message_type, update_time: record.update_time };
+      this.userList.splice(index, 1);
+      this.userList.unshift(row);
+    },
     //切换
     changeTab(item) {
       if (this.hdTabCur == item.key) return;

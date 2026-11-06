@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 
-/** One planned local full-runtime service update. The caller stops FPM; this tool never claims to observe it. */
+/** One planned local full-runtime service update. The caller stops FPM and affected persistent workers. */
 const PRU_SERVICE_PATHS = [
     'app/services/marketplace/order/MarketplaceOrderReviewServices.php',
     'app/services/marketplace/order/MarketplaceOrderRefundFacts.php',
+    'crmeb/services/workerman/chat/ChatHandle.php',
 ];
 const PRU_ADDRESS_SCOPE = 'LOCAL_FULL_RUNTIME_USER_ADDRESS_UPDATE';
 const PRU_ADDRESS_PATHS = [
