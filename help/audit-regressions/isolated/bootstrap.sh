@@ -29,6 +29,37 @@ audit_collect_resources() {
         docker volume inspect --format '{"name":{{json .Name}},"created_at":{{json .CreatedAt}},"labels":{{json .Labels}}}' "$id" >> "$audit_run_path/volumes.jsonl"
     done < "$audit_run_path/volumes.txt"
 }
+audit_verify_resources_removed() {
+    # A successful Compose exit is not proof that optional-profile resources
+    # disappeared. Keep each real query and check both independent labels.
+    local evidence kind selector label result=0
+    local -a query
+    evidence="$(mktemp -d "$audit_run_path/cleanup-zero.XXXXXX")" || return 1
+    for kind in containers volumes networks; do
+        case "$kind" in
+            containers) query=(docker ps -aq --no-trunc) ;;
+            volumes) query=(docker volume ls -q) ;;
+            networks) query=(docker network ls -q --no-trunc) ;;
+        esac
+        for selector in project run; do
+            if [[ "$selector" == project ]]; then
+                label="com.docker.compose.project=$AUDIT_PROJECT"
+            else
+                label="tianli.audit.run=$AUDIT_RUN_ID"
+            fi
+            if "${query[@]}" --filter "label=$label" > "$evidence/$kind-$selector.txt" 2> "$evidence/$kind-$selector.stderr"; then
+                if [[ -s "$evidence/$kind-$selector.txt" ]]; then result=1; fi
+            else
+                result=1
+            fi
+        done
+    done
+    if [[ "$result" -ne 0 ]]; then
+        printf 'Cleanup incomplete or unverified; inspect %s\n' "$evidence" >&2
+        return 1
+    fi
+    printf '{"run_id":"%s","containers":0,"volumes":0,"networks":0,"queries":6}\n' "$AUDIT_RUN_ID" > "$evidence/RESULT.json"
+}
 audit_register() {
     audit_collect_resources
     audit_compose run --rm --no-deps -T audit-bootstrap help/audit-regressions/isolated/lib/harness.php __register

@@ -29,4 +29,5 @@ if [[ -e "$crud_probe" || -L "$crud_probe" ]]; then
         printf 'Preserved unrecognized or other-run CRUD probe; no source cleanup attempted\n'
     fi
 fi
-printf 'Cleaned only %s; evidence retained in %s\n' "$AUDIT_PROJECT" "$AUDIT_RUN_DIR"
+audit_verify_resources_removed
+printf 'Verified zero containers, volumes and networks for %s; evidence retained in %s\n' "$AUDIT_PROJECT" "$AUDIT_RUN_DIR"

@@ -43,6 +43,15 @@ AUDIT_PHASE=after bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audi
 bash help/audit-regressions/isolated/teardown.sh <RUN_ID>
 ```
 
+Finish each run, including failed runs, by retiring its owned resources after
+preserving the original results and confirming its host processes have ended.
+The maintained `teardown.sh` now checks containers, volumes and networks using
+both the Compose project and audit run labels. All six Docker queries must
+succeed and return empty results before cleanup is reported complete; the query
+outputs are retained in a new `cleanup-zero.*` directory. Frozen orchestration
+packages keep their original code and require their own exact resource
+retirement; this check does not add automatic failure cleanup to those packages.
+
 The bootstrap creates random credentials in this project's private Docker
 volumes. Bootstrap/root and migrator credentials are absent from the application
 and test containers. Application/test accounts receive only SELECT, INSERT,
