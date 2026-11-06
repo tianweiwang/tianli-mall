@@ -98,6 +98,14 @@ second project and compares the other audit container IDs before/after.
 Teardown checks current IDs and volumes against the manifest, then removes only
 that compose project. Run directories/evidence are retained, including on failure.
 
+Every temporary run needs a recorded resource closeout after its final result.
+Keep the host evidence and original failure status, then retire its containers,
+dedicated volumes and empty networks. Verify all three resource counts for that
+exact project before starting another audit. A failed orchestration that preserves
+its environment still requires this closeout once its processes have ended and
+diagnostic evidence has been saved. An active run remains under its original
+orchestrator until that run reaches a terminal result.
+
 Exit codes: 0 = all executed cases pass; 1 = test failure; 2 = invalid environment
 or invocation. Each subcase produces a JSONL result with an explicit test layer.
 UNIT-STUB counts do not establish HTTP/database/Redis behavior. WORKER, BROWSER
