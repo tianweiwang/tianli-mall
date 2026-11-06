@@ -6144,8 +6144,16 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                 "HISTORY_COMPLETE_MODULE_INVERSE")
         modules[path.name] = {"path": path.as_posix(), **pin(raw)}
         author_sources[path.name] = raw
-        if kind == "reader" and history_refund_readiness:
-            after[name] = _history_refund_reader_columns(after[name])
+        if kind == "reader":
+            if history_refund_readiness:
+                after[name] = _history_refund_reader_columns(after[name])
+            # The original actor omits phone and preserves the old empty-string default.
+            after[name] = once(
+                after[name],
+                b"        && is_string($row['phone']) && $row['phone'] !== '', "
+                b"'NHECR_REAL_ORIGINAL_RESET_CREDENTIALS_NORMAL_LOGIN_BRANCH');\n",
+                b"        && $row['phone'] === '', 'NHECR_REAL_ORIGINAL_RESET_CREDENTIALS_NORMAL_LOGIN_BRANCH');\n",
+            )
         if kind == "host":
             # Docker mount order is incidental. Normalize only the shared public snapshot.
             # The native inspect evidence and every runtime assertion remain exact.
