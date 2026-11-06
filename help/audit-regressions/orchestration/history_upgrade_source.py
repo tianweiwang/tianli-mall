@@ -1353,9 +1353,64 @@ function nhep_normal_history_publish_safe_bytes(string $raw): array
             (previous_tail, current_tail))
 
 
-def transform_producer_entry(raw: bytes, *, legacy_refund_anchors=False) -> bytes:
+def _producer_close_time_diagnostic_seams():
+    seams = (
+        (b"    #[SensitiveParameter] array $afterLog, #[SensitiveParameter] array $closed, array $channelWindow): array\n",
+         b"    #[SensitiveParameter] array $afterLog, #[SensitiveParameter] array $closed, array $channelWindow,\n"
+         b"    ?array &$closeTimeDiagnostic): array\n"),
+        (b"    $append = static function (array $old, array $observed, #[SensitiveParameter] string $expectedRaw)\n"
+         b"        use ($channelWindow): array {\n",
+         b"    $append = static function (string $leaf, array $old, array $observed, #[SensitiveParameter] string $expectedRaw)\n"
+         b"        use ($channelWindow, &$closeTimeDiagnostic): array {\n"),
+        (b"        foreach (['mtime', 'ctime'] as $key)\n"
+         b"            nhep_expect($observed['stat'][$key] >= $old['stat'][$key] && $observed['stat'][$key] >= $channelWindow[0]\n"
+         b"                && $observed['stat'][$key] <= $channelWindow[1], 'NHE_CLOSE_APPEND_NATIVE_TIMES_IN_ACTUAL_CHANNEL_TERM_WINDOW');\n",
+         b"        foreach (['mtime', 'ctime'] as $key) {\n"
+         b"            try {\n"
+         b"                nhep_expect($observed['stat'][$key] >= $old['stat'][$key] && $observed['stat'][$key] >= $channelWindow[0]\n"
+         b"                    && $observed['stat'][$key] <= $channelWindow[1], 'NHE_CLOSE_APPEND_NATIVE_TIMES_IN_ACTUAL_CHANNEL_TERM_WINDOW');\n"
+         b"            } catch (RuntimeException $error) {\n"
+         b"                if ($error->getMessage() === 'NHE_CLOSE_APPEND_NATIVE_TIMES_IN_ACTUAL_CHANNEL_TERM_WINDOW') {\n"
+         b"                    $closeTimeDiagnostic = ['leaf' => $leaf, 'field' => $key,\n"
+         b"                        'before' => $old['stat'][$key], 'after' => $observed['stat'][$key],\n"
+         b"                        'window_start' => $channelWindow[0], 'window_end' => $channelWindow[1]];\n"
+         b"                }\n"
+         b"                throw $error;\n"
+         b"            }\n"
+         b"        }\n"),
+        (b"$append($before['legacy-channel.stdout'],", b"$append('channel_stdout', $before['legacy-channel.stdout'],"),
+        (b"$append($before['legacy-channel.stderr'],", b"$append('channel_stderr', $before['legacy-channel.stderr'],"),
+        (b"$append($before['channel/workerman.log'],", b"$append('workerman_log', $before['channel/workerman.log'],"),
+        (b"    array &$children, #[SensitiveParameter] array $accepted37): array\n",
+         b"    array &$children, #[SensitiveParameter] array $accepted37, ?array &$closeTimeDiagnostic): array\n"),
+        (b"        $afterStreams, $afterLog, $closed, [$channelStarted, $channelEnded]);\n",
+         b"        $afterStreams, $afterLog, $closed, [$channelStarted, $channelEnded], $closeTimeDiagnostic);\n"),
+        (b"    array &$children, array $http, #[SensitiveParameter] array $fixture, #[SensitiveParameter] Closure $finish): array\n",
+         b"    array &$children, array $http, #[SensitiveParameter] array $fixture, #[SensitiveParameter] Closure $finish,\n"
+         b"    ?array &$closeTimeDiagnostic): array\n"),
+        (b"    $close = nhep_normal_close_writers($qualified, $observer, $redis, $children, $accepted37);\n",
+         b"    $close = nhep_normal_close_writers($qualified, $observer, $redis, $children, $accepted37, $closeTimeDiagnostic);\n"),
+        (b"    $children = []; $channel = null; $failure = null; $cleanup = [];\n",
+         b"    $children = []; $channel = null; $failure = null; $cleanup = [];\n"
+         b"    $closeTimeDiagnostic = null;\n"),
+        (b"            $prepared['fixture_receipt'], $oracles['finish']);\n",
+         b"            $prepared['fixture_receipt'], $oracles['finish'], $closeTimeDiagnostic);\n"),
+        (b"        fwrite(STDERR, json_encode(['status' => 'FAIL', 'code' => $code, 'class' => $class,\n"
+         b"            'normal_cleanup' => $cleanup, 'diagnostic' => $diagnostic],",
+         b"        if ($code === 'NHE_CLOSE_APPEND_NATIVE_TIMES_IN_ACTUAL_CHANNEL_TERM_WINDOW' && $closeTimeDiagnostic !== null) {\n"
+         b"            $diagnostic['close_time'] = $closeTimeDiagnostic;\n"
+         b"        }\n"
+         b"        fwrite(STDERR, json_encode(['status' => 'FAIL', 'code' => $code, 'class' => $class,\n"
+         b"            'normal_cleanup' => $cleanup, 'diagnostic' => $diagnostic],"),
+    )
+    return tuple((old.replace(b"\n", b"\r\n"), new.replace(b"\n", b"\r\n")) for old, new in seams)
+
+
+def transform_producer_entry(raw: bytes, *, legacy_refund_anchors=False, close_time_diagnostic=False) -> bytes:
     if type(legacy_refund_anchors) is not bool:
         raise ValueError("EXACT_HISTORY_LEGACY_ANCHOR_VARIANT_REQUIRED")
+    if type(close_time_diagnostic) is not bool:
+        raise ValueError("EXACT_HISTORY_CLOSE_TIME_DIAGNOSTIC_VARIANT_REQUIRED")
     _producer_entry_source(raw)
     observer_before = b"        $observer = audit_db(); $redis = audit_redis();\r\n"
     observer_after = (b"        $observer = audit_db();\r\n"
@@ -1381,14 +1436,23 @@ def transform_producer_entry(raw: bytes, *, legacy_refund_anchors=False) -> byte
             candidate = _refund_once(candidate, previous, current)
     for previous, current in _producer_publication_seams():
         candidate = _refund_once(candidate, previous, current)
-    if reverse_producer_entry(candidate, legacy_refund_anchors=legacy_refund_anchors) != raw:
+    if close_time_diagnostic:
+        for previous, current in _producer_close_time_diagnostic_seams():
+            candidate = _refund_once(candidate, previous, current)
+    if reverse_producer_entry(candidate, legacy_refund_anchors=legacy_refund_anchors,
+                              close_time_diagnostic=close_time_diagnostic) != raw:
         raise ValueError("HISTORY_PRODUCER_COMPLETE_ENTRY_REVERSE_REQUIRED")
     return candidate
 
 
-def reverse_producer_entry(candidate: bytes, *, legacy_refund_anchors=False) -> bytes:
+def reverse_producer_entry(candidate: bytes, *, legacy_refund_anchors=False, close_time_diagnostic=False) -> bytes:
     if type(legacy_refund_anchors) is not bool:
         raise ValueError("EXACT_HISTORY_LEGACY_ANCHOR_VARIANT_REQUIRED")
+    if type(close_time_diagnostic) is not bool:
+        raise ValueError("EXACT_HISTORY_CLOSE_TIME_DIAGNOSTIC_VARIANT_REQUIRED")
+    if close_time_diagnostic:
+        for previous, current in reversed(_producer_close_time_diagnostic_seams()):
+            candidate = _refund_once(candidate, current, previous)
     for previous, current in reversed(_producer_publication_seams()):
         candidate = _refund_once(candidate, current, previous)
     if legacy_refund_anchors:

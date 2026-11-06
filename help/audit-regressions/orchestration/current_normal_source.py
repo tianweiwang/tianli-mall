@@ -6086,7 +6086,8 @@ def _history_refund_reader_columns(raw: bytes) -> bytes:
 
 def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                          isolation_subnet: str | None = None, *,
-                         disable_mysql_native_aio: bool = False) -> dict[str, Any]:
+                         disable_mysql_native_aio: bool = False,
+                         close_time_diagnostic: bool = False) -> dict[str, Any]:
     """Compose fixed historical components; source-only output grants no runtime admission."""
     if isolation_subnet is not None:
         isolation_subnet = validate_isolation_subnet(isolation_subnet)
@@ -6244,10 +6245,11 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                     and namespace["reverse_files_bootstrap"](after["legacy-files-bootstrap.php"]) == before["legacy-files-bootstrap.php"],
                     "HISTORY_COMPLETE_FILES_BOOTSTRAP_BUDGET_INVERSE")
             after["legacy-history-producer.php"] = namespace["transform_producer_entry"](before["legacy-history-producer.php"],
-                legacy_refund_anchors=history_legacy_refund_anchors)
+                legacy_refund_anchors=history_legacy_refund_anchors, close_time_diagnostic=close_time_diagnostic)
             require(type(after["legacy-history-producer.php"]) is bytes
                     and namespace["reverse_producer_entry"](after["legacy-history-producer.php"],
-                        legacy_refund_anchors=history_legacy_refund_anchors) == before["legacy-history-producer.php"],
+                        legacy_refund_anchors=history_legacy_refund_anchors,
+                        close_time_diagnostic=close_time_diagnostic) == before["legacy-history-producer.php"],
                     "HISTORY_COMPLETE_PRODUCER_DIRECT_ENTRY_INVERSE")
             after["legacy-history-http.php"] = namespace["transform_history_http"](before["legacy-history-http.php"],
                 legacy_refund_anchors=history_legacy_refund_anchors)
@@ -6417,6 +6419,8 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
               "isolation_subnet_availability": "NOT_CHECKED_BY_AUTHOR"}
     if disable_mysql_native_aio:
         inputs["mysql_native_aio"] = False
+    if close_time_diagnostic:
+        inputs["history_close_time_diagnostic"] = True
     files = {"before/" + name: before[name] for name in HISTORY_NAMES}
     files.update({"candidate/" + name: after[name] for name in HISTORY_NAMES})
     files.update({"author-source/" + name: raw for name, raw in author_sources.items()})
@@ -6446,6 +6450,8 @@ def main() -> None:
     parser.add_argument("--isolation-subnet", help="Optional canonical RFC1918 IPv4 CIDR; only with --output or --history-source.")
     parser.add_argument("--disable-history-mysql-native-aio", action="store_true",
                         help="Use synchronous I/O for the isolated history MySQL only.")
+    parser.add_argument("--history-close-time-diagnostic", action="store_true",
+                        help="Include safe Channel append time details on its original history failure only.")
     parser.add_argument("--initializer-syntax-result", help="Actual successful current initializer syntax receipt, for normal18.")
     parser.add_argument("--authority-file", required=True)
     parser.add_argument("--authority-sha256", required=True)
@@ -6454,6 +6460,8 @@ def main() -> None:
             "ISOLATION_SUBNET_ONLY_FOR_PROFILE_OR_HISTORY_OUTPUT")
     require(not args.disable_history_mysql_native_aio or args.history_source is not None,
             "MYSQL_NATIVE_AIO_OPTION_ONLY_FOR_HISTORY_SOURCE")
+    require(not args.history_close_time_diagnostic or args.history_source is not None,
+            "CLOSE_TIME_DIAGNOSTIC_ONLY_FOR_HISTORY_SOURCE")
     require(args.post_a_history is not None or args.post_a_inputs_file is None and args.post_a_inputs_sha256 is None,
             "POST_A_INPUTS_ONLY_FOR_POST_A_HISTORY")
     require(re.fullmatch(r"[a-f0-9]{64}", args.authority_sha256) is not None, "FIXED_AUTHORITY_SHA256")
@@ -6465,7 +6473,8 @@ def main() -> None:
         require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None,
                 "HISTORY_SOURCE_HAS_NO_B_OR_INITIALIZER_INPUTS")
         result = build_history_source(args.history_source, pointer, isolation_subnet=args.isolation_subnet,
-                                      disable_mysql_native_aio=args.disable_history_mysql_native_aio)
+                                      disable_mysql_native_aio=args.disable_history_mysql_native_aio,
+                                      close_time_diagnostic=args.history_close_time_diagnostic)
     elif args.post_a_history:
         require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None
                 and args.post_a_inputs_file is not None and type(args.post_a_inputs_sha256) is str
