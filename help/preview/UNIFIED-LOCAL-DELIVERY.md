@@ -28,6 +28,7 @@
 
 | 样例 | 可核对的结果 |
 | --- | --- |
+| 根单21：cp641832596552024064（11月7日） | 同一商品10/SKU110已完成图片表单下单、19.90元测试支付、发货收货、退件验收及19.90元测试退款。三端原文字、数字0与图片保持一致，选填图片仍为空；平台仅1次已应用付款，退款占用0。商品与SKU库存3→2→3，商品已下架。[完整实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/order-form-image-paid-ui-20261107-r1/RESULT.json) · [商家订单](http://127.0.0.1:18212/merchant/#/orders/21) |
 | 根单20：cp641821419788828672（11月7日） | 商家原页面建立商品10/SKU110，配置文字、数字、必填图片及选填图片，正常入库、审核上架。顾客H5实际上传图片、下单一次并取消一次，应付19.90元、未支付。三端保存的四项资料完全一致，取消前后均可显示同一原图；商品与SKU库存3→2→3。商品已下架、购物车为空，三端会话及本轮后台浏览器已关闭。[图片表单正常流程](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/order-form-image-ui-20261107-r1/RESULT.json) |
 | 根单16：cp641697666434072576（11月6日） | 商品5、SKU104一件，测试实付20.15元、运费0，已发1/已收1；评价5已审核并回复，售后5已验收退件并测试退款20.15元、占用0元。商品与SKU库存95→94→95，退款后未再次回补。[付款与收货记录](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-5b6-three-role-test-pay-receive-20261106.json) · [评价及退款结果](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-5b6-order16-test-refund-final-20261106.json) |
 | 根单18：cp641715586673410048（11月6日） | 商品9、SKU109三件，测试实付64.45元（商品60.45元、运费4.00元）。未发取消1件，测试退款21.49元（商品20.15元、分摊运费1.34元）；其余2件已发已收，剩余权益42.96元、占用0元。商品与SKU库存10→7→8，商品已下架，购物车为空。[同单部分取消与履约记录](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/nonzero-postage-partial-refund-20261106-r1/RESULT.json) |
@@ -45,6 +46,8 @@
 以上数值是对应验证记录的保存结果。新增正常订单后，库存和金额应按新业务变化；现有样例保留用于对照。
 
 ## 当前版本和验收边界
+
+商家订单详情已补齐保存的退款摘要：有新版售后摘要的订单直接显示已确认退款、退款申请占用及剩余可申请金额；测试付款对应“已确认测试退款”。订单21显示19.90/0.00/0.00元，部分退款订单13显示20.15/0.00/20.15元，原有订单6与未付款订单20兼容展示已核对。桌面1440和窄屏390实际页面无横向溢出。已打开的商家页面刷新后生效。[商家构建与本机安装](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant-refund-summary-build-20261107-r1/INSTALL.json) · [实际页面结果](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/merchant-refund-summary-build-20261107-r1/UI-RESULT.json)
 
 18212 当前后端为 5b6e244a9198ef3316caee56f6ff7681fa575538，H5 和当前小程序包复用 378b37b0c 的同一份前端源码。商品规格、价格和库存仍复用原商城。平台暂停接单后，顾客仍可浏览商品及查看或移除已有购物车项，商品详情购买入口收起，混合购物车可继续结算另一家营业店铺。原平台开关的暂停、恢复和两条购物车接口已实测。 [实际预览验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-live-paused-merchant-sales-entry-20261106-163049.json) · [多规格页面实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/h5-multi-sku-positive-20261105-090619/RESULT.json) · [单规格复验](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/product-sku-web-wsl-r1/adjacent-single-sku-RESULT.json)
 

@@ -11,7 +11,12 @@
         <div><dt>订单状态</dt><dd>{{ status(order) }}</dd></div>
         <div><dt>支付状态</dt><dd>{{ paymentStatus(order) }}</dd></div>
         <div><dt>取消状态</dt><dd>{{ order.schema === 2 && order.fulfillment_summary.cancelled_unshipped === order.total_num ? '已取消全部未发货履约，保留付款记录' : order.is_cancel === 1 ? '已取消' : '未取消' }}</dd></div>
-        <div><dt>退款状态码</dt><dd>{{ order.refund_status }}</dd></div>
+        <div v-if="order.schema !== 2"><dt>退款状态码</dt><dd>{{ order.refund_status }}</dd></div>
+        <template v-else>
+          <div><dt>{{ testPayment(order) ? '已确认测试退款（元）' : '已确认退款（元）' }}</dt><dd>{{ order.aftersale.confirmed_amount }}</dd></div>
+          <div><dt>退款申请占用（元）</dt><dd>{{ order.aftersale.held_amount }}</dd></div>
+          <div><dt>剩余可申请金额（元）</dt><dd>{{ order.aftersale.available_amount }}</dd></div>
+        </template>
         <div><dt>配送方式</dt><dd>{{ shipping(order.shipping_type) }}</dd></div>
         <div><dt>商品数量</dt><dd>{{ order.total_num }}</dd></div>
         <div><dt>商品金额（元）</dt><dd>{{ order.total_price }}</dd></div>
