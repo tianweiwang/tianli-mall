@@ -5213,6 +5213,16 @@ def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, byte
               (b"original.size===2536", f"original.size==={counts['public']}".encode())]
     if task2_login_projection:
         edits += [
+            (b"'/pages/users/login/index',\n '/pages/store/index'",
+             b"'/pages/users/login/index','/pages/users/user_info/index',\n '/pages/store/index'"),
+            (b"     else response=safe(envelope(record));\n    }finally{raw.fill(0);}",
+             b"     else if(i===9&&q.method===task2Logout[captureRole][0]&&q.pathname===task2Logout[captureRole][1]){\n"
+             b"      const value=parse(raw),merchant=captureRole==='merchant';\n"
+             b"      keys(value,merchant?['status','msg','data']:['status','msg']);\n"
+             b"      need(value.status===200&&typeof value.msg==='string'&&(!merchant||"
+             b"(Array.isArray(value.data)&&value.data.length===0)),'TASK2_ACTUAL_LOGOUT_EMPTY_DATA_RESPONSE');\n"
+             b"      response=null;\n"
+             b"     }else response=safe(envelope(record));\n    }finally{raw.fill(0);}"),
             (b"function task2API(method,route){return (method==='GET'&&(startupPaths.has(route)",
              b"function task2API(method,route,path){return (method==='GET'&&(path==='/adminapi/login/info'||startupPaths.has(route)"),
             (b"function task2Request(record,q,index){",
@@ -5261,6 +5271,9 @@ def _b_bind_browser_materials(after: dict[str, bytes], materials: dict[str, byte
             "language_empty_body_GET": "/api/get_lang_json",
             "shared_language_source": "ONE_REAL_NETWORK_REQUEST_WILL_BE_SENT_EXTRA_INFO_WITH_EXPLICIT_NULLS",
             "native_oracle_and_response_body_pin": "UNCHANGED"}
+        proof["task2_profile_logout_projection"] = {"document": "/pages/users/user_info/index",
+            "customer_and_platform": "EXACT_SUCCESS_WITHOUT_DATA", "merchant": "EXACT_SUCCESS_WITH_EMPTY_LIST",
+            "public_value": None, "raw_response_and_native_session_checks": "UNCHANGED"}
     return proof
 
 
@@ -5477,6 +5490,41 @@ def current_b_a_capture_failure_precondition():
     artifacts = constant(before["root-source/root-ui-materialize-freeze.py"], "ARTIFACTS")
     require(len(artifacts) == 17, "B_ORIGINAL_COMPLETE_SEVENTEEN")
     for name, raw in materials.items(): after["candidate/" + name] = raw
+    gateway_logout = None
+    if qa_equivalence is not None:
+        nginx_key = "candidate/ms4-ui-nginx.conf"
+        nginx_before = after[nginx_key]
+        old_route = b"|users/login/index|store/index|"
+        new_route = b"|users/login/index|users/user_info/index|store/index|"
+        nginx_after = once(nginx_before, old_route, new_route)
+        require(once(nginx_after, new_route, old_route) == nginx_before, "B_EXACT_PROFILE_ROUTE_INVERSE")
+        old_pin, new_pin = pin(nginx_before), pin(nginx_after)
+        after[nginx_key] = nginx_after
+        for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py", "ms4-initialize.php"):
+            key = "candidate/" + name
+            previous = after[key]
+            if name.endswith(".py"):
+                old_check = (f"'ms4-ui-nginx.conf','bytes':{old_pin['bytes']},\n"
+                             f"        'sha256':'{old_pin['sha256']}'").encode()
+                new_check = (f"'ms4-ui-nginx.conf','bytes':{new_pin['bytes']},\n"
+                             f"        'sha256':'{new_pin['sha256']}'").encode()
+            else:
+                old_check = (f"filesize('/run/ms4-prep/ms4-ui-nginx.conf') === {old_pin['bytes']}\n"
+                             f"        && hash_file('sha256', '/run/ms4-prep/ms4-ui-nginx.conf') === '{old_pin['sha256']}'").encode()
+                new_check = (f"filesize('/run/ms4-prep/ms4-ui-nginx.conf') === {new_pin['bytes']}\n"
+                             f"        && hash_file('sha256', '/run/ms4-prep/ms4-ui-nginx.conf') === '{new_pin['sha256']}'").encode()
+            after[key] = once(previous, old_check, new_check)
+            require(once(after[key], new_check, old_check) == previous, "B_GATEWAY_PIN_WHOLE_FILE_INVERSE")
+        compose_key = "candidate/compose.yml"
+        compose_before = after[compose_key]
+        mysql_command_end = b'NO_ENGINE_SUBSTITUTION"]\n    environment:\n      MYSQL_ROOT_PASSWORD_FILE:'
+        mysql_aio_off = b'NO_ENGINE_SUBSTITUTION", "--innodb-use-native-aio=OFF"]\n    environment:\n      MYSQL_ROOT_PASSWORD_FILE:'
+        after[compose_key] = once(compose_before, mysql_command_end, mysql_aio_off)
+        require(once(after[compose_key], mysql_aio_off, mysql_command_end) == compose_before,
+                "B_ONLY_ISOLATED_MYSQL_NATIVE_AIO_DISABLED")
+        gateway_logout = {"profile_route": "/pages/users/user_info/index", "nginx_before": old_pin,
+                          "nginx_after": new_pin, "native_aio": False,
+                          "whole_gateway_and_compose_inverses_exact": True}
     browser_materials = _b_bind_browser_materials(after, materials, task2_login_projection=qa_equivalence is not None)
     base = fixed["base_source"]
     require(set(base) == {"root", "PINS", "FINAL"}, "B_ORIGINAL_OBSERVER59_SOURCE_AUTHORITY")
@@ -5784,6 +5832,7 @@ def current_b_a_capture_failure_precondition():
     if oracle_proof is not None:
         checks["ui_prepare_oracle_update"] = oracle_proof
     if qa_equivalence is not None:
+        checks["profile_logout_and_isolated_mysql"] = gateway_logout
         checks["qa_oracle_equivalence"] = qa_equivalence
         checks["qa_changed_python_bodies"] = B_QA_ROOT_BODIES
         for name in ("root-ui-materialize-freeze.py", "root-ui-start-to-ready.py"):
