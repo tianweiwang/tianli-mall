@@ -173,6 +173,20 @@ class HistoryRunnerNormalTests(unittest.TestCase):
         self.assertEqual({kind: len(values) for kind, values in expected.items()},
                          {"containers": 2, "volumes": 6, "networks": 1})
 
+    def test_actual_volume_name_sources_use_inspected_mountpoints(self):
+        record = ARTIFACTS / "history-5b6-normal-capture-r1/retirement/before.json"
+        if not record.is_file():
+            self.skipTest("Saved public Docker observations are required; no replacement is generated.")
+        snapshot = RUNNER.load(record)
+        unchanged = copy.deepcopy(snapshot)
+        named = [mount for row in snapshot["global"].values() for mount in row["mounts"]
+                 if mount["Type"] == "volume" and mount["Source"] == mount.get("Name")]
+        self.assertTrue(named)
+        for mount in named:
+            self.assertTrue(snapshot["global_volumes"][mount["Name"]]["mountpoint"].startswith("/"))
+        RUNNER.no_foreign_consumers(snapshot, set(snapshot["targets"]["containers"]))
+        self.assertEqual(snapshot, unchanged)
+
 
 if __name__ == "__main__":
     unittest.main()

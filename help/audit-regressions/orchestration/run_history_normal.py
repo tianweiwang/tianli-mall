@@ -630,6 +630,12 @@ def no_foreign_consumers(snapshot, allowed):
             require(mount.get("Type") in {"bind", "volume", "tmpfs"}, "RETIRE_KNOWN_GLOBAL_MOUNT_TYPE")
             if mount["Type"] != "tmpfs":
                 source = mount.get("Source", "")
+                # Docker may report a volume's name as Source. Resolve only an
+                # exact name against this same complete volume-inspect snapshot.
+                if mount["Type"] == "volume" and source == mount.get("Name"):
+                    volume = snapshot["global_volumes"].get(source)
+                    require(volume is not None and volume["name"] == source, "RETIRE_KNOWN_NAMED_VOLUME_IDENTITY")
+                    source = volume["mountpoint"]
                 require(isinstance(source, str) and (source.startswith("/") or re.match(r"[A-Za-z]:[/\\]", source)),
                         "RETIRE_KNOWN_GLOBAL_MOUNT_SOURCE")
                 source = source.rstrip("/") or "/"
@@ -643,9 +649,11 @@ def public_error(error):
     return value if isinstance(error, RuntimeError) and re.fullmatch("[A-Z0-9_]+", value) else type(error).__name__
 
 
-def retire_failed_run(failure):
+def retire_failed_run(failure, *, output=None):
     """Retain the original failure; best effort here can only report retirement."""
-    output = ARCHIVE / "retirement"
+    output = ARCHIVE / "retirement" if output is None else ordinary(output, False)
+    require(output.parent == ARCHIVE and re.fullmatch(r"retirement(?:-[a-z0-9-]+)?", output.name),
+            "RETIRE_NEW_CAPTURE_WITHIN_ORIGINAL_ARCHIVE")
     output.mkdir()
     result = {"status": "FAILED_RUN_RESOURCES_RETAINED", "native_exit": 1,
               "original_failure": digest(ARCHIVE / "FAILURE.json"), "removed": {"containers": [], "volumes": [], "networks": []},

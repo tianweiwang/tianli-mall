@@ -6,6 +6,8 @@
 
 运行失败先写原始 `FAILURE.json` 和实际阶段的进程、双流及终态，再尝试回收本次专用资源，结果单独写 `retirement/RESULT.json`；清理成功仍返回业务失败。删除前核对原记录、run/project 双标签、容器身份、挂载和全局消费者，正常停止后非强制删除，再核三类资源为零与预览保持。身份不明、仍有自有宿主子进程或共享消费者时，记录保留范围供接续处理，不按前缀猜测删除。
 
+Docker 卷挂载的 `Source` 也可能是卷名；仅当 `Type=volume`、`Source=Name` 且同次完整卷清单含该准确身份时，使用 `volume inspect` 的物理 `Mountpoint` 继续原共享引用检查。普通 bind、未知卷名和路径检查保持。接续已结束运行的收尾可向同一 `retire_failed_run` 显式传全新 `retirement-*` 子目录，保留原失败及首次回收记录；不能因此启动新的业务运行。
+
 宿主进程被强制结束或机器断电时，进程内回收代码无法执行；接续任务必须先读取已有记录、核对真实进程与资源并完成收尾，再启动新实例。旧冻结脚本和证据原样保留，不宣称它们均有自动回收。组件检查也不代替下一次实际运行的关闭结果。
 
 正常验收的分段记录沿用 `INTERRUPTED_A_WITH_INDEPENDENT_COMPLETION` 五键输入。新增的 `completion.kind=ORIGINAL_NORMAL_CONTINUATION` 形式要求八键：`kind/source/source_review/result/admission/supervisor/independent_zero/outer`。它只支持完整成功前缀、唯一未完成的观察、同容器同参数续观及原业务尾段；原记录保持各自序号，不能跳过未知的创建、启动或删除操作。独立审查明确记录实际审查时间；执行后读回只能核对原启动摘要，不倒签执行前审查。
