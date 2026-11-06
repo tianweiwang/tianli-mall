@@ -8,7 +8,7 @@ use InvalidArgumentException;
 /** Fixed consumer projections. Internal costing/pricing structures remain untouched. */
 final class PublicCatalogProjection
 {
-    private const PRODUCT=['id','mer_id','store_name','store_info','image','slider_image','small_image','image_base','price','ot_price','vip_price','unit_name','sales','fsales','stock','spec_type','is_postage','postage','is_vip','video_link','min_qty','limit_num','is_virtual','virtual_type','presale','presale_start_time','presale_end_time','presale_day','presale_pay_status','cart_button','cart_num','is_att','labels','label_list','activity','star','checkCoupon','cate_name'];
+    private const PRODUCT=['id','mer_id','store_name','store_info','image','slider_image','small_image','image_base','price','ot_price','vip_price','unit_name','sales','fsales','stock','spec_type','is_postage','postage','is_vip','video_link','min_qty','limit_num','is_virtual','virtual_type','presale','presale_start_time','presale_end_time','presale_day','presale_pay_status','cart_button','cart_num','is_att','labels','label_list','activity','star','checkCoupon','cate_name','merchant_accepting_orders'];
     // Native raw summary/cart roots have no final label or activity display conversion.
     private const ROOT_SUMMARY=['id','mer_id','store_name','store_info','image','slider_image','small_image','image_base','price','ot_price','vip_price','unit_name','sales','fsales','stock','spec_type','is_postage','postage','is_vip','video_link','min_qty','limit_num','is_virtual','virtual_type','presale','presale_start_time','presale_end_time','presale_day','presale_pay_status','cart_button','cart_num','is_att'];
     private const DETAIL=['description','default_sku','unique','params_list','protection_list','userCollect','userLike','command_word','wechat_code','attrPics','svip_economize_price','is_gift'];
@@ -59,7 +59,7 @@ final class PublicCatalogProjection
         }
         if($resource==='product'||$resource==='product-list')return self::PRODUCT;
         if($resource==='product-detail')return array_merge(array_diff(self::PRODUCT,['activity','star']),self::DETAIL);
-        if($resource==='product-sku-summary')return array_merge(self::ROOT_SUMMARY,['default_sku','unique']);
+        if($resource==='product-sku-summary')return array_merge(self::ROOT_SUMMARY,['default_sku','unique','merchant_accepting_orders']);
         if($resource==='cart-product')return array_merge(self::ROOT_SUMMARY,['limit_type','store_mention']);
         if(!isset(self::RESOURCES[$resource]))throw new InvalidArgumentException('Unknown public catalog resource');
         return self::RESOURCES[$resource];

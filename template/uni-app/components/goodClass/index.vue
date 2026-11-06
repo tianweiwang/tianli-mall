@@ -23,7 +23,7 @@
 						<view class="iconfont icon-gouwuche6 acea-row row-center-wrapper"
 							v-if="item.activity && (item.activity.type === '1' || item.activity.type === '2' || item.activity.type === '3')">
 						</view>
-						<view v-else>
+						<view v-else-if="item.merchant_accepting_orders !== false">
 							<!-- 多规格 -->
 							<view class="bnt acea-row row-center-wrapper" @click.stop="goCartDuo(item)"
 								v-if="item.spec_type">

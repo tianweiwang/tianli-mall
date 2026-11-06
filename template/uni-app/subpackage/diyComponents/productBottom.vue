@@ -78,7 +78,7 @@
               <view class="p_center">{{ $t(`分享`) }}</view>
             </view>
           </block>
-          <view v-if="is_gift" @click="goGift()" class="item">
+          <view v-if="is_gift && !merchantPaused" @click="goGift()" class="item">
             <image
               class="gift-icon"
               src="@/static/images/gift-icon.png"
@@ -109,7 +109,7 @@
             ></image>
             <view class="p_center">{{ item.name }}</view>
           </view>
-          <view v-if="is_gift" @click="goGift()" class="item">
+          <view v-if="is_gift && !merchantPaused" @click="goGift()" class="item">
             <image
               class="gift-icon"
               src="@/static/images/gift-icon.png"
@@ -127,6 +127,9 @@
             </button>
           </form>
         </view>
+      </view>
+      <view v-else-if="merchantPaused" class="merchant-order-status" role="status" aria-live="polite">
+        {{ $t(`店铺暂不接单`) }}
       </view>
       <view class="btn-box" v-else>
         <view v-if="!storeInfo.presale">
@@ -275,6 +278,9 @@ export default {
     },
   },
   computed: {
+    merchantPaused() {
+      return this.storeInfo.merchant_accepting_orders === false;
+    },
     bottomConfig() {
       if (!this.diyData || !this.diyData.value) return null;
       const values = Object.values(this.diyData.value);
@@ -529,6 +535,15 @@ export default {
 }
 .btn-box {
   flex: 1;
+}
+.merchant-order-status {
+  flex: 1;
+  min-width: 0;
+  color: #666;
+  font-size: 26rpx;
+  line-height: 1.4;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 .presale .bnts {
   width: 100%;

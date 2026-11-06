@@ -11,6 +11,13 @@ const PRU_ADDRESS_PATHS = [
     'app/api/controller/v1/user/UserAddressController.php',
     'app/services/user/UserAddressServices.php',
 ];
+const PRU_STOREFRONT_PAUSE_SCOPE = 'LOCAL_FULL_RUNTIME_STOREFRONT_PAUSE_CONTROLS_UPDATE';
+const PRU_STOREFRONT_PAUSE_PATHS = [
+    'app/api/controller/v2/store/StoreCartController.php',
+    'app/api/controller/v2/store/StoreProductController.php',
+    'app/services/marketplace/PublicCatalogServices.php',
+    'app/services/marketplace/publiccatalog/PublicCatalogProjection.php',
+];
 function pru_require(bool $ok, string $code): void
 {
     if (!$ok) throw new RuntimeException('RUNTIME_REVIEW_UPDATE_' . $code);
@@ -151,11 +158,16 @@ function pru_main(array $argv): int
         && scandir('/out') === ['.', '..'], 'NEW_EMPTY_OUTPUT'); $GLOBALS['pru_out_ready'] = true;
     $planRaw = pru_read('/plan.json'); $plan = json_decode($planRaw, true, 32, JSON_THROW_ON_ERROR);
     pru_require(is_array($plan), 'PLAN_OBJECT');
-    $address = ($plan['schema'] ?? null) === 2 && ($plan['scope'] ?? null) === PRU_ADDRESS_SCOPE;
+    $multiFilePaths = ($plan['schema'] ?? null) === 2 ? match ($plan['scope'] ?? null) {
+        PRU_ADDRESS_SCOPE => PRU_ADDRESS_PATHS,
+        PRU_STOREFRONT_PAUSE_SCOPE => PRU_STOREFRONT_PAUSE_PATHS,
+        default => null,
+    } : null;
     $planKeys = ['schema','scope','project','run_id','old_source_sha','baseline_source_sha','new_source_sha','old_ready'];
-    if ($address) {
+    if ($multiFilePaths !== null) {
         pru_keys($plan, [...$planKeys, 'files']);
-        pru_require(is_array($plan['files']) && array_keys($plan['files']) === PRU_ADDRESS_PATHS, 'FIXED_ADDRESS_PATHS');
+        pru_require(is_array($plan['files']) && array_keys($plan['files']) === $multiFilePaths,
+            $plan['scope'] === PRU_ADDRESS_SCOPE ? 'FIXED_ADDRESS_PATHS' : 'FIXED_STOREFRONT_PAUSE_PATHS');
     } else {
         pru_keys($plan, [...$planKeys, 'relative_path','before','after']);
         pru_require($plan['schema'] === 1 && $plan['scope'] === 'LOCAL_FULL_RUNTIME_REVIEW_SERVICE_UPDATE'
@@ -184,7 +196,7 @@ function pru_main(array $argv): int
         pru_stable_sources($state, $planRaw);
         $GLOBALS['pru_phase'] = 'create_only_public_backups';
         foreach ($state['oldBytes'] as $path => $bytes) {
-            $backup = $address ? basename($path, '.php') . '-before.php' : 'service-before.php';
+            $backup = $multiFilePaths !== null ? basename($path, '.php') . '-before.php' : 'service-before.php';
             preview_full_runtime_write('/out/' . $backup, $bytes);
         }
         preview_full_runtime_write('/out/ready-before.json', $state['ready'], 0600);
@@ -206,15 +218,21 @@ function pru_main(array $argv): int
     pru_stable_sources($state, $planRaw);
     preview_full_runtime_verify($argv[1] === 'apply' ? $state['new'] : $state['old'], $state['identity'],
         $argv[1] === 'apply' ? $state['newReceipt'] : $state['oldReceipt'], $state['ini']);
-    $checkStatus = $address ? 'VERIFIED_PLANNED_OLD_RUNTIME_AND_ADDRESS_CHANGES_ONLY'
-        : 'VERIFIED_PLANNED_OLD_RUNTIME_AND_SINGLE_SOURCE_CHANGE_ONLY';
+    $checkStatus = match ($plan['scope']) {
+        PRU_ADDRESS_SCOPE => 'VERIFIED_PLANNED_OLD_RUNTIME_AND_ADDRESS_CHANGES_ONLY',
+        PRU_STOREFRONT_PAUSE_SCOPE => 'VERIFIED_PLANNED_OLD_RUNTIME_AND_STOREFRONT_PAUSE_CONTROLS_CHANGES_ONLY',
+        default => 'VERIFIED_PLANNED_OLD_RUNTIME_AND_SINGLE_SOURCE_CHANGE_ONLY',
+    };
+    $applyStatus = $plan['scope'] === PRU_STOREFRONT_PAUSE_SCOPE
+        ? 'VERIFIED_PLANNED_STOREFRONT_PAUSE_CONTROLS_CODE_AND_READY_UPDATE_ONLY'
+        : 'VERIFIED_PLANNED_CODE_AND_READY_UPDATE_ONLY';
     $fileResult = ['files' => $plan['files']];
-    if (!$address) {
+    if ($multiFilePaths === null) {
         $path = $plan['relative_path'];
         $fileResult = ['relative_path' => $path] + $plan['files'][$path];
     }
     $result = ['schema' => $plan['schema'], 'scope' => $plan['scope'], 'mode' => $argv[1],
-        'status' => $argv[1] === 'apply' ? 'VERIFIED_PLANNED_CODE_AND_READY_UPDATE_ONLY' : $checkStatus,
+        'status' => $argv[1] === 'apply' ? $applyStatus : $checkStatus,
         'project' => $plan['project'], 'run_id' => $plan['run_id'], 'old_source_sha' => $plan['old_source_sha'],
         'baseline_source_sha' => $plan['baseline_source_sha'], 'new_source_sha' => $plan['new_source_sha']]
         + $fileResult + ['old_ready' => $plan['old_ready'], 'new_ready' => array_intersect_key($state['newReceipt'], array_flip(array_keys($plan['old_ready']))),
@@ -230,7 +248,7 @@ if (PHP_SAPI === 'cli' && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE
     try { exit(pru_main($_SERVER['argv'])); }
     catch (Throwable $error) {
         $scope = $GLOBALS['pru_scope'] ?? 'LOCAL_FULL_RUNTIME_REVIEW_SERVICE_UPDATE';
-        $failure = ['schema' => $scope === PRU_ADDRESS_SCOPE ? 2 : 1, 'scope' => $scope,
+        $failure = ['schema' => in_array($scope, [PRU_ADDRESS_SCOPE, PRU_STOREFRONT_PAUSE_SCOPE], true) ? 2 : 1, 'scope' => $scope,
             'status' => 'FAILED_STATE_PRESERVED_NO_RETRY_OR_ROLLBACK', 'phase' => $GLOBALS['pru_phase'],
             'code' => preg_match('/\ARUNTIME_REVIEW_UPDATE_[A-Z_]+\z/D', $error->getMessage()) === 1 ? $error->getMessage() : 'ORIGINAL_VERIFY_OR_OPERATION_REJECTED'];
         $raw = json_encode($failure, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";

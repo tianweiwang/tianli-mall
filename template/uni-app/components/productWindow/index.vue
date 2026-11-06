@@ -87,7 +87,7 @@
             </view>
           </view>
         </view>
-        <view class="cart acea-row row-between-wrapper" v-if="!is_virtual">
+        <view class="cart acea-row row-between-wrapper" v-if="!is_virtual && !merchantPaused">
           <view class="title">{{ $t(`数量`) }}</view>
           <view class="carnum acea-row row-left">
             <text class="stock" v-if="limitNum && !type"
@@ -177,9 +177,12 @@
       >
         {{ hasSelectedSku ? $t(`已售罄`) : $t(`请选择有效规格`) }}
       </view>
+      <view v-if="merchantPaused" class="stock-status" role="status" aria-live="polite">
+        {{ $t(`店铺暂不接单`) }}
+      </view>
       <view
         class="joinBnt bg-color"
-        v-if="iScart && hasSelectedSku && attr.productSelect.stock"
+        v-else-if="iScart && hasSelectedSku && attr.productSelect.stock"
         @click="goCat"
         >{{ $t(`确定`) }}</view
       >
@@ -205,6 +208,7 @@ export default {
   mixins: [colors],
   props: {
     salePriceOnly: Boolean,
+    merchantPaused: Boolean,
     attr: {
       type: Object,
       default: () => {},
@@ -278,7 +282,7 @@ export default {
       });
     },
     goCat: function () {
-      if (!this.hasSelectedSku) return;
+      if (this.merchantPaused || !this.hasSelectedSku) return;
       this.$emit("goCat");
     },
     /**

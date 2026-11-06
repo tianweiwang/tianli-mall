@@ -39,10 +39,11 @@
               <view class="store-header">
                 <view class="store-title">
                   <text class="store-name">{{ group.store.name }}</text>
-                  <text v-if="footerswitch && isCheckoutStore(group)" class="store-selected">{{ $t(`当前结算店铺`) }}</text>
+                  <text v-if="group.merchant_accepting_orders === false" class="store-selected">{{ $t(`店铺暂不接单`) }}</text>
+                  <text v-else-if="footerswitch && isCheckoutStore(group)" class="store-selected">{{ $t(`当前结算店铺`) }}</text>
                 </view>
                 <button
-                  v-if="footerswitch && !isCheckoutStore(group)"
+                  v-if="footerswitch && group.merchant_accepting_orders !== false && !isCheckoutStore(group)"
                   class="store-select"
                   :disabled="!canCheckoutStore(group)"
                   @click="selectCheckoutStore(group)"
@@ -54,7 +55,7 @@
                   <checkbox
                     :value="entry.item.id.toString()"
                     :checked="entry.item.checked"
-                    :disabled="!entry.item.attrStatus && footerswitch"
+                    :disabled="footerswitch && (!entry.item.attrStatus || group.merchant_accepting_orders === false)"
                   />
                   <!-- <checkbox :value="(entry.item.id).toString()" :checked="entry.item.checked" :disabled="entry.item.attrStatus?false:true" /> -->
                   <!-- #endif -->
@@ -62,7 +63,7 @@
                   <checkbox
                     :value="entry.item.id"
                     :checked="entry.item.checked"
-                    :disabled="!entry.item.attrStatus && footerswitch"
+                    :disabled="footerswitch && (!entry.item.attrStatus || group.merchant_accepting_orders === false)"
                   />
                   <!-- #endif -->
                   <navigator
@@ -94,7 +95,7 @@
                       >
                       <view
                         class="reElection acea-row row-between-wrapper"
-                        v-else
+                        v-else-if="group.merchant_accepting_orders !== false"
                       >
                         <view class="title">{{ $t(`请重新选择商品规格`) }}</view>
                         <view
@@ -106,7 +107,7 @@
                     </view>
                     <view
                       class="carnum acea-row row-center-wrapper"
-                      v-if="entry.item.attrStatus"
+                      v-if="entry.item.attrStatus && group.merchant_accepting_orders !== false"
                     >
                       <view class="reduce" @click.stop="subCart(entry.index)">-</view>
                       <!-- <view class='num'>{{entry.item.cart_num}}</view> -->
@@ -126,6 +127,7 @@
                         >+</view
                       >
                     </view>
+                    <text v-else-if="entry.item.attrStatus">×{{ entry.item.cart_num }}</text>
                   </navigator>
                 </view>
               </block>
@@ -213,7 +215,7 @@
       >
         <view>
           <checkbox-group @change="checkboxAllChange">
-            <checkbox value="all" :checked="!!isAllSelect" />
+            <checkbox value="all" :checked="!!isAllSelect" :disabled="footerswitch && !checkoutGroup" />
             <text class="checkAll"
               >{{ footerswitch ? $t(`本店全选`) : $t(`全选`) }}({{ selectValue.length }})</text
             >
@@ -221,7 +223,7 @@
         </view>
         <view class="money acea-row row-middle" v-if="footerswitch == true">
           <text class="font-color">{{ $t(`￥`) }}{{ selectCountPrice }}</text>
-          <form @submit="subOrder">
+          <form v-if="checkoutGroup" @submit="subOrder">
             <button class="placeOrder bg-color" formType="submit">
               {{ $t(`立即下单`) }}
             </button>
@@ -244,6 +246,7 @@
       :isShow="1"
       :iSplus="1"
       :iScart="1"
+      :merchant-paused="storeInfo.merchant_accepting_orders === false"
       @myevent="onMyEvent"
       @ChangeAttr="ChangeAttr"
       @ChangeCartNum="ChangeCartNum"
@@ -364,11 +367,12 @@ export default {
       return this.serverGroups.map((group) => ({
         mer_id: group.mer_id,
         store: group.store,
+        merchant_accepting_orders: group.merchant_accepting_orders,
         entries: group.cart_refs.map((reference) => byReference[String(reference)]).filter(Boolean),
       })).filter((group) => group.entries.length > 0);
     },
     checkoutGroup() {
-      return this.cartGroups.find((group) => this.isCheckoutStore(group));
+      return this.cartGroups.find((group) => this.isCheckoutStore(group) && this.canCheckoutStore(group));
     },
     componentStyle() {
       if (this.btmNum) {
@@ -457,10 +461,16 @@ export default {
       groups.forEach((incoming) => {
         let group = this.serverGroups.find((current) => String(current.mer_id) === String(incoming.mer_id));
         if (!group) {
-          group = { mer_id: incoming.mer_id, store: incoming.store, cart_refs: [] };
+          group = {
+            mer_id: incoming.mer_id,
+            store: incoming.store,
+            merchant_accepting_orders: incoming.merchant_accepting_orders,
+            cart_refs: [],
+          };
           this.serverGroups.push(group);
         } else {
           group.store = incoming.store;
+          group.merchant_accepting_orders = incoming.merchant_accepting_orders;
         }
         incoming.cart_refs.forEach((reference) => {
           if (!this.inArray(reference, group.cart_refs)) group.cart_refs.push(reference);
@@ -485,7 +495,7 @@ export default {
       return this.selectedMerId !== null && String(group.mer_id) === String(this.selectedMerId);
     },
     canCheckoutStore(group) {
-      return group.entries.some((entry) => entry.item.attrStatus);
+      return group.merchant_accepting_orders !== false && group.entries.some((entry) => entry.item.attrStatus);
     },
     selectCheckoutStore(group) {
       if (!this.footerswitch || !this.canCheckoutStore(group)) return;
@@ -514,6 +524,7 @@ export default {
     },
     // 修改购物车
     reGoCat: function () {
+      if (this.storeInfo.merchant_accepting_orders === false) return;
       let that = this,
         productSelect = that.productValue[this.attrValue];
       //如果有属性,没有选择,提示用户选择
@@ -572,12 +583,20 @@ export default {
       getProductDetail(item.product_id)
         .then((res) => {
           uni.hideLoading();
-          that.attr.cartAttr = true;
-          let storeInfo = res.data.storeInfo;
+          if (String(that.cartId) !== String(item.id)) return;
+          const storeInfo = res.data.storeInfo;
           that.$set(that, "storeInfo", storeInfo);
+          if (storeInfo.merchant_accepting_orders === false) {
+            const group = that.serverGroups.find((candidate) => that.inArray(item.id, candidate.cart_refs));
+            if (group) group.merchant_accepting_orders = false;
+            that.attr.cartAttr = false;
+            if (that.footerswitch) that.restoreCheckoutStore();
+            return;
+          }
           that.$set(that.attr, "productAttr", res.data.productAttr);
           that.$set(that, "productValue", res.data.productValue);
           that.DefaultSelect();
+          that.attr.cartAttr = true;
         })
         .catch((err) => {
           uni.hideLoading();
@@ -792,7 +811,7 @@ export default {
       let value = event.detail.value;
       if (this.footerswitch) {
         const added = value.find((reference) => !this.inArray(reference, this.selectValue));
-        const nextGroup = this.cartGroups.find((group) => group.entries.some((entry) =>
+        const nextGroup = this.cartGroups.find((group) => this.canCheckoutStore(group) && group.entries.some((entry) =>
           entry.item.attrStatus && String(entry.item.id) === String(added)));
         if (nextGroup) this.selectedMerId = nextGroup.mer_id;
         const references = this.checkoutGroup

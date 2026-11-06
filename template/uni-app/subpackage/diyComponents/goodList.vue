@@ -79,7 +79,7 @@
                   weight
                   :color="priceColor"
                 ></baseMoney>
-                <view @tap.stop="addCartChange(item, index)" v-if="!showBtn">
+                <view @tap.stop="addCartChange(item, index)" v-if="showProductAction(item)">
                   <view
                     class="w-96 h-56 rd-28rpx flex-center fs-24 text--w111-fff"
                     v-if="btnStyle == 0"
@@ -150,7 +150,7 @@
                   <view
                     class="absolute right-0 bottom-0"
                     @tap.stop="addCartChange(item, index)"
-                    v-if="!showBtn"
+                    v-if="showProductAction(item)"
                   >
                     <view
                       class="w-96 h-56 rd-28rpx flex-center fs-24 text--w111-fff"
@@ -246,7 +246,7 @@
                     ></baseMoney>
                     <view
                       @tap.stop="addCartChange(item, index)"
-                      v-if="!showBtn"
+                      v-if="showProductAction(item)"
                     >
                       <view
                         class="rd-24rpx w-44 h-44"
@@ -308,7 +308,7 @@
                       >
                       <view
                         @tap.stop="addCartChange(item, index)"
-                        v-if="!showBtn"
+                        v-if="showProductAction(item)"
                       >
                         <view
                           class="rd-24rpx w-44 h-44"
@@ -399,7 +399,7 @@
                     ></baseMoney>
                     <view
                       @tap.stop="addCartChange(item, index)"
-                      v-if="!showBtn"
+                      v-if="showProductAction(item)"
                     >
                       <view
                         class="rd-24rpx w-44 h-44"
@@ -461,7 +461,7 @@
                       >
                       <view
                         @tap.stop="addCartChange(item, index)"
-                        v-if="!showBtn"
+                        v-if="showProductAction(item)"
                       >
                         <view
                           class="rd-24rpx w-44 h-44"
@@ -578,7 +578,7 @@
                   :color="priceColor"
                   v-if="checkboxInfo.includes(2)"
                 ></baseMoney>
-                <view @tap.stop="addCartChange(item, index)" v-if="!showBtn">
+                <view @tap.stop="addCartChange(item, index)" v-if="showProductAction(item)">
                   <view
                     class="rd-24rpx w-44 h-44"
                     :style="[btnTextColor]"
@@ -657,7 +657,7 @@
                   weight
                   :color="priceColor"
                 ></baseMoney>
-                <view @tap.stop="addCartChange(item, index)" v-if="!showBtn">
+                <view @tap.stop="addCartChange(item, index)" v-if="showProductAction(item)">
                   <view
                     class="w-96 h-56 rd-28rpx flex-center fs-24 text--w111-fff"
                     v-if="btnStyle == 0"
@@ -725,7 +725,7 @@
                       >{{ $t(`评分`) }}{{ item.star || 0 }}</text
                     >
                   </view>
-                  <view @tap.stop="addCartChange(item, index)" v-if="!showBtn">
+                  <view @tap.stop="addCartChange(item, index)" v-if="showProductAction(item)">
                     <view
                       class="w-96 h-56 rd-28rpx flex-center fs-24 text--w111-fff"
                       v-if="btnStyle == 0"
@@ -803,7 +803,7 @@
                   :color="priceColor"
                   v-if="checkboxInfo.includes(2)"
                 ></baseMoney>
-                <view @tap.stop="addCartChange(item, index)" v-if="!showBtn">
+                <view @tap.stop="addCartChange(item, index)" v-if="showProductAction(item)">
                   <view
                     class="rd-24rpx w-44 h-44"
                     :style="[btnTextColor]"
@@ -834,6 +834,7 @@
       :isShow="1"
       :iSplus="1"
       :iScart="1"
+      :merchant-paused="storeInfo.merchant_accepting_orders === false"
       :fangda="false"
       type="2"
       :limitNum="storeInfo.limit_num"
@@ -1276,13 +1277,24 @@ export default {
     getAttrs(id) {
       let that = this;
       getAttr(id, 0).then((res) => {
+        if (String(that.id) !== String(id)) return;
         that.$set(that.attr, "productAttr", res.data.productAttr);
         that.$set(that, "productValue", res.data.productValue);
         that.$set(that, "storeInfo", res.data.storeInfo);
+        const product = that.tempArr.find((item) => String(item.id) === String(id));
+        if (product && res.data.storeInfo.merchant_accepting_orders === false) {
+          that.$set(product, "merchant_accepting_orders", false);
+        }
         that.DefaultSelect();
+        that.$set(that.attr, "cartAttr", true);
       });
     },
+    showProductAction(item) {
+      const addsToCart = this.bntConfig == 1 && item.cart_button != 0;
+      return !this.showBtn && (!addsToCart || item.merchant_accepting_orders !== false);
+    },
     addCartChange(item, index) {
+      if (!this.showProductAction(item)) return;
       if (this.bntConfig == 1) {
         if (item.spec_type) {
           this.goCartDuo(item);

@@ -111,6 +111,7 @@
         :isShow="1"
         :iSplus="1"
         :iScart="1"
+        :merchant-paused="storeInfo.merchant_accepting_orders === false"
         :limitNum="storeInfo.limit_num"
         :minQty="storeInfo.min_qty"
         :unitName="storeInfo.unit_name"
@@ -1264,6 +1265,7 @@ export default {
      * 加入购物车
      */
     goCat(news) {
+      if (this.storeInfo.merchant_accepting_orders === false) return;
       const selectedUnique = this.attr.productSelect && this.attr.productSelect.unique;
       if (!/^[A-Za-z0-9]{8}$/.test(selectedUnique || '')) return this.$util.Tips({ title: this.$t(`请选择有效的商品规格`) });
       this.productWindowIntent = news === true ? "buy" : "cart";
@@ -1367,6 +1369,7 @@ export default {
       }
     },
     goGift() {
+      if (this.storeInfo.merchant_accepting_orders === false) return;
       this.isGiftOrder = 1;
       this.goBuy();
     },

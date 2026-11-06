@@ -146,6 +146,7 @@
       :isShow="1"
       :iSplus="1"
       :iScart="1"
+      :merchant-paused="storeInfo.merchant_accepting_orders === false"
       @myevent="onMyEvent"
       @ChangeAttr="ChangeAttr"
       @ChangeCartNum="ChangeCartNumDuo"
@@ -625,6 +626,7 @@ export default {
     ChangeCartList(changeValue, index) {
       let list = this.cartData.cartList;
       let num = list[index];
+      if (!num || num.merchant_accepting_orders === false) return;
       let stock = list[index].trueStock;
       if (
         changeValue &&
@@ -722,6 +724,10 @@ export default {
      * 加入购物车
      */
     goCat: function (duo, id, type, cart, unique, data) {
+      if (type === 1) {
+        const product = duo ? this.storeInfo : this.tempArr.find((item) => String(item.id) === String(id));
+        if (product && product.merchant_accepting_orders === false) return;
+      }
       let that = this;
       if (duo) {
         let productSelect = that.productValue[this.attrValue];
@@ -779,6 +785,7 @@ export default {
     },
     // 点击默认单属性购物车
     goCartDan(item, index) {
+      if (item.merchant_accepting_orders === false) return;
       if (!this.isLogin) {
         this.getIsLogin();
       } else {
@@ -798,6 +805,7 @@ export default {
       }
     },
     goCartDuo(item) {
+      if (item.merchant_accepting_orders === false) return;
       if (!this.isLogin) {
         this.getIsLogin();
       } else {
@@ -814,9 +822,8 @@ export default {
         });
 
         this.storeName = item.store_name;
-        this.getAttrs(item.id);
         this.$set(this, "id", item.id);
-        this.$set(this.attr, "cartAttr", true);
+        this.getAttrs(item.id);
       }
     },
     getIsLogin() {
@@ -827,11 +834,17 @@ export default {
       let that = this;
       getAttr(id, 0).then((res) => {
         uni.hideLoading();
+        if (String(that.id) !== String(id)) return;
         that.$set(that.attr, "productAttr", res.data.productAttr);
         that.$set(that, "productValue", res.data.productValue);
         that.$set(that, "is_vip", res.data.storeInfo.is_vip);
         that.$set(that, "storeInfo", res.data.storeInfo);
+        const product = that.tempArr.find((item) => String(item.id) === String(id));
+        if (product && res.data.storeInfo.merchant_accepting_orders === false) {
+          that.$set(product, "merchant_accepting_orders", false);
+        }
         that.DefaultSelect();
+        that.$set(that.attr, "cartAttr", true);
       });
     },
     // 去详情页

@@ -964,8 +964,9 @@ function m4ch_storefront_expected(array $facts,array $advance,array $oracle): ar
             'M4C_H5_STOREFRONT_NATIVE_PUBLIC_REFERENCE_VALUES');
         m4c_expect(is_int($row['sort'])||(is_string($row['sort'])&&preg_match('/\A-?(?:0|[1-9][0-9]*)\z/D',$row['sort'])===1),
             'M4C_H5_STOREFRONT_NATIVE_SORT');
+        m4c_expect(in_array($merchant['accept_orders']??null,[0,1,'0','1'],true),'M4C_H5_STOREFRONT_NATIVE_ACCEPT_ORDERS');
         $published[]=['product_id'=>$pid,'mer_id'=>$owner,'store_name'=>$row['store_name'],'image'=>$row['image'],
-            'price'=>$row['price'],'sort'=>(int)$row['sort']];
+            'price'=>$row['price'],'sort'=>(int)$row['sort'],'merchant_accepting_orders'=>(int)$merchant['accept_orders']===1];
     }
     usort($published,static fn(array$x,array$y):int=>$x['mer_id']<=>$y['mer_id']?:$y['sort']<=>$x['sort']?:$y['product_id']<=>$x['product_id']);
     foreach($owners as$id)m4c_expect(array_filter($published,static fn(array$row):bool=>$row['mer_id']===$id)!==[],
@@ -1015,13 +1016,15 @@ function m4ch_storefront_public_product(array $value,?array $native,bool $detail
     $fields=['id','mer_id','store_name','store_info','image','slider_image','small_image','image_base','price','ot_price','vip_price','unit_name',
         'sales','fsales','stock','spec_type','is_postage','postage','is_vip','video_link','min_qty','limit_num','is_virtual','virtual_type',
         'presale','presale_start_time','presale_end_time','presale_day','presale_pay_status','cart_button','cart_num','is_att','labels','label_list',
-        'activity','star','checkCoupon','cate_name'];
+        'activity','star','checkCoupon','cate_name','merchant_accepting_orders'];
     if($detail)$fields=[...array_diff($fields,['activity','star']),'description','default_sku','unique','params_list','protection_list','userCollect',
         'userLike','command_word','wechat_code','attrPics','svip_economize_price','is_gift'];
     m4ch_storefront_fields($value,$fields);m4ch_storefront_no_cost($value);
+    m4c_expect(is_bool($value['merchant_accepting_orders']??null),'M4C_H5_STOREFRONT_PUBLIC_ACCEPT_ORDERS_BOOLEAN');
     if($native!==null){m4c_expect(($value['id']??null)===$native['product_id']&&($value['mer_id']??null)===$native['mer_id']
             &&($value['store_name']??null)===$native['store_name']&&($value['image']??null)===$native['image'],
             'M4C_H5_STOREFRONT_PUBLIC_PRODUCT_EXACT_NATIVE_ID_OWNER_TITLE_IMAGE');
+        m4c_expect($value['merchant_accepting_orders']===$native['merchant_accepting_orders'],'M4C_H5_STOREFRONT_PUBLIC_ACCEPT_ORDERS_MATCHES_OWNER');
         if(!$detail)m4cb_public_money($value,'price',$native['price']);}
     foreach(['labels','label_list']as$key)if(isset($value[$key])){m4c_expect(is_array($value[$key])&&array_is_list($value[$key]),
         'M4C_H5_STOREFRONT_PUBLIC_LABEL_LIST');foreach($value[$key]as$row)m4ch_storefront_fields($row,['name','font_color','bg_color','border_color','image']);}
@@ -1442,6 +1445,9 @@ function m4ch_stage_carts(array $snapshot,array $stages,array $oracle,array $run
                 (int)$oracle['second_store']['merchant']['mer_id']],true)&&!isset($merchants[$mer])
                 &&(int)($group['store']['mer_id']??0)===$mer&&($group['store']['name']??null)===$fixture['merchants'][$mer]['name']
                 &&is_array($group['cart_refs']??null)&&is_array($group['rows']??null),'M4C_H5_STAGE_TWO_REAL_PUBLIC_STORE_GROUPS');
+            $acceptOrders=$fixture['merchants'][$mer]['accept_orders']??null;
+            m4c_expect(in_array($acceptOrders,[0,1,'0','1'],true)&&($group['merchant_accepting_orders']??null)===((int)$acceptOrders===1),
+                'M4C_H5_STAGE_PUBLIC_CART_GROUP_ACCEPT_ORDERS_MATCHES_OWNER');
             $rowRefs=[];foreach($group['rows']as$row){$ref=m4ch_stage_ref($row['id']??null);
                 m4c_expect(isset($expected[$ref])&&$expected[$ref]['mer_id']===$mer&&!isset($rowRefs[$ref]),
                     'M4C_H5_STAGE_PUBLIC_GROUP_ROW_REAL_OWNER');$rowRefs[$ref]=true;}

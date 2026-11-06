@@ -23,15 +23,18 @@
 							<view class="bottom acea-row row-between-wrapper">
 								<view class="money">{{$t(`￥`)}}<text class="num">{{item.truePrice}}</text></view>
 								<view class="cartNum acea-row row-middle">
-									<view class="reduce iconfont icon-jianhao1" @click="leaveCart(index)"></view>
+									<view v-if="item.merchant_accepting_orders !== false" class="reduce iconfont icon-jianhao1" @click="leaveCart(index)"></view>
 									<view class="num">{{item.cart_num}}</view>
-									<view class="plus iconfont icon-jiahao1" @click="joinCart(index)"></view>
+									<view v-if="item.merchant_accepting_orders !== false" class="plus iconfont icon-jiahao1" @click="joinCart(index)"></view>
 								</view>
+							</view>
+							<view v-if="item.merchant_accepting_orders === false" class="merchant-order-note" role="status">
+								{{$t(`店铺暂不接单`)}}
 							</view>
 						</view>
 						<view class="noBnt" v-else-if="!item.attrStatus">{{$t(`已售罄`)}}</view>
 						<view class="noBnt" v-else-if="!item.status">{{$t(`已下架`)}}</view>
-						<view class="delTxt acea-row row-right" v-if="!item.status || !item.attrStatus"><text
+						<view class="delTxt acea-row row-right" v-if="!item.status || !item.attrStatus || item.merchant_accepting_orders === false"><text
 								@click="oneDel(item.id,index)">{{$t(`删除`)}}</text></view>
 					</view>
 				</view>
@@ -171,6 +174,13 @@
 						font-size: 24rpx;
 						color: #A3A3A3;
 						margin-top: 10rpx;
+					}
+
+					.merchant-order-note {
+						margin-top: 10rpx;
+						color: #666;
+						font-size: 24rpx;
+						line-height: 1.4;
 					}
 
 					.delTxt {

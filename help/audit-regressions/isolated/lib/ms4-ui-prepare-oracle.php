@@ -1760,6 +1760,9 @@ function m4uws_product(array &$plan,array $r,int $uid,bool $extras=true):array
  if(isset($r['is_vip'],$r['vip_price'])&&!m4uws_vip($plan,(bool)$r['is_vip']))$r['vip_price']=0;
  $fields=['id','mer_id','store_name','store_info','image','slider_image','small_image','image_base','price','ot_price','vip_price','unit_name','sales','fsales','stock','spec_type','is_postage','postage','is_vip','video_link','min_qty','limit_num','is_virtual','virtual_type','presale','presale_start_time','presale_end_time','presale_day','presale_pay_status','cart_button','cart_num','is_att','labels','label_list','activity','star','checkCoupon','cate_name'];
  $out=array_intersect_key($r,array_fill_keys($fields,true));$out['id']=$id;$out['mer_id']=(int)$r['mer_id'];$out['stock']=$stock;m4uib_assert($stock>=0&&$stock<=16777215,'OBS_NATIVE_PUBLIC_ACTIVE_SKU_STOCK_BOUNDS');
+ $merchant=m4ar_one(m4uws_rows($plan,'eb_marketplace_merchant'),'mer_id',$out['mer_id']);
+ m4uib_assert(in_array($merchant['accept_orders']??null,[0,1,'0','1'],true),'OBS_NATIVE_MERCHANT_ACCEPT_ORDERS_FLAG');
+ $out['merchant_accepting_orders']=(int)$merchant['accept_orders']===1;
  foreach(['labels','label_list']as$k)if(array_key_exists($k,$out))$out[$k]=m4uws_labels($plan,$out[$k]);
  if(array_key_exists('star',$out))m4uib_assert(is_string($out['star'])&&preg_match('/\A-?(?:0|[1-9][0-9]*)\.[0-9]\z/D',$out['star'])===1,'OBS_SOURCE_FINAL_PRODUCT_STAR_TYPE');return $out;
 }
@@ -1934,7 +1937,7 @@ function m4uws_products_read(array &$plan,array $q,int $uid):void
   if($r['label_list']!=='')foreach(explode(',',$r['label_list'])as$labelId){$found=[];foreach(m4uws_rows($plan,'eb_store_product_label')as$l)if((string)$l['id']===$labelId&&(int)$l['status']===1&&(int)$l['is_show']===1)$found[]=$l;
    m4uib_assert(count($found)<=1,'OBS_NATIVE_UNIQUE_LABEL');$labelRows[]=$found===[]?[]:array_intersect_key($found[0],array_fill_keys(['name','font_color','bg_color','border_color','image'],true));}
   $r['label_list']=$labelRows;$r['sales']=(int)($r['sales']??0)+(int)($r['ficti']??0);$row=m4uws_product($plan,$r,$uid,false);
-  $fields=['id','mer_id','store_name','image','sales','price','stock','activity','ot_price','spec_type','unit_name','is_vip','vip_price','is_virtual','presale','virtual_type','min_qty','label_list','cart_button','star','checkCoupon'];
+  $fields=['id','mer_id','store_name','image','sales','price','stock','activity','ot_price','spec_type','unit_name','is_vip','vip_price','is_virtual','presale','virtual_type','min_qty','label_list','cart_button','star','checkCoupon','merchant_accepting_orders'];
   $out[]=array_intersect_key($row,array_fill_keys($fields,true));
  }
  m4uib_assert(!m4uws_config($plan,'image_thumb_status',0),'OBS_ENABLED_THUMBNAILS_REQUIRE_THEIR_PRECISE_NORMAL_UPLOAD_SOURCE_MODEL');

@@ -20,11 +20,11 @@
 				<view v-if="item.stock > 0">
 					<view
 						class="bnt"
-						v-if="(item.activity && (item.activity.type === '1' || item.activity.type === '2' || item.activity.type === '3')) || item.is_virtual || !item.cart_button"
+						v-if="(item.activity && (item.activity.type === '1' || item.activity.type === '2' || item.activity.type === '3')) || (item.merchant_accepting_orders !== false && (item.is_virtual || !item.cart_button))"
 					>
 						{{ $t(`立即购买`) }}
 					</view>
-					<view v-else>
+					<view v-else-if="item.merchant_accepting_orders !== false">
 						<view class="bnt" v-if="!item.spec_type && !item.cart_num" @click.stop="goCartDan(item, index)">
 							{{ $t(`加入购物车`) }}
 						</view>

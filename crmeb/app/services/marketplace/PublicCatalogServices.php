@@ -188,19 +188,40 @@ final class PublicCatalogServices
         foreach($ids as$id)PublicCatalogQuery::positive($id,8388607);
         return Db::name('store_product_attr_value')->whereIn('product_id',$ids)->where('type',0)->where('is_show',1)->group('product_id')->column('SUM(stock)','product_id');
     }
+    /** Read the current switch for already-qualified public product owners. */
+    private function acceptingOrdersByOwner(array $owners):array
+    {
+        if(!$owners)return [];
+        $owners=array_unique(array_map(static fn($owner):int=>PublicCatalogQuery::positive($owner),$owners));
+        $flags=Db::name('marketplace_merchant')->whereIn('mer_id',$owners)->column('accept_orders','mer_id');
+        $result=[];
+        foreach($owners as$owner){
+            $flag=$flags[$owner]??null;
+            if(!in_array($flag,[0,1,'0','1'],true))throw new AuthUnavailableException();
+            $result[$owner]=$flag===1||$flag==='1';
+        }
+        return $result;
+    }
+    public function merchantAcceptingOrders(int $owner):bool
+    {
+        return $this->acceptingOrdersByOwner([$owner])[$owner];
+    }
     public function listOutput(array $list):array
     {
         $stocks=$this->activeStocks(array_column($list,'id'));
+        $acceptingOrders=$this->acceptingOrdersByOwner(array_column($list,'mer_id'));
         foreach($list as&$row){
             if(isset($row['is_vip'],$row['vip_price'])&&!app()->make(StoreProductServices::class)->vipIsOpen((bool)$row['is_vip']))$row['vip_price']=0;
+            $row['merchant_accepting_orders']=$acceptingOrders[PublicCatalogQuery::positive($row['mer_id']??null)];
             $row=Projection::product($row,(int)($stocks[$row['id']]??0));
         }unset($row);
         return $list;
     }
     public function detailOutput(array $data,array $definition):array
     {
-        $root=$definition['root'];$data['storeInfo']=Projection::detail($data['storeInfo'],$definition['stock']);
-        $data['mer_id']=PublicCatalogQuery::positive($root['mer_id']);$data['store']=Projection::store($root);
+        $root=$definition['root'];$data['mer_id']=PublicCatalogQuery::positive($root['mer_id']);
+        $data['storeInfo']['merchant_accepting_orders']=$this->merchantAcceptingOrders($data['mer_id']);
+        $data['storeInfo']=Projection::detail($data['storeInfo'],$definition['stock']);$data['store']=Projection::store($root);
         $data['productAttr']=Projection::attributes($data['productAttr']);$data['productValue']=Projection::values($data['productValue']);
         $data['activity']=Projection::activityLinks($data['activity']);
         if(is_array($data['reply']??null))$data['reply']=Projection::take($data['reply'],'reply');
@@ -276,6 +297,20 @@ final class PublicCatalogServices
     {
         foreach($rows as&$row)$row=$this->cartOutput($row,$uid);unset($row);return $rows;
     }
+    /** Only the category quick cart adds the current switch to valid ordinary rows. */
+    public function quickCartRows(array $rows,int $uid):array
+    {
+        $rows=$this->cartRows($rows,$uid);
+        $owners=[];
+        foreach($rows as$index=>$row){
+            if(($row['is_valid']??null)===1&&in_array($row['type']??null,[0,'0'],true)&&isset($row['productInfo']['mer_id'])){
+                $owners[$index]=$row['productInfo']['mer_id'];
+            }
+        }
+        $acceptingOrders=$this->acceptingOrdersByOwner($owners);
+        foreach($owners as$index=>$owner)$rows[$index]['merchant_accepting_orders']=$acceptingOrders[$owner];
+        return $rows;
+    }
     /** Preserve database BIGINT references through JSON without floating-point conversion. */
     private static function cartReference(mixed $reference):string
     {
@@ -307,6 +342,9 @@ final class PublicCatalogServices
             $groups[$index]['cart_refs'][]=$row['id'];$groups[$index]['rows'][]=$row;
             $rows[]=$row;
         }
+        $acceptingOrders=$this->acceptingOrdersByOwner(array_keys($groupIndexes));
+        foreach($groups as&$group)$group['merchant_accepting_orders']=$acceptingOrders[$group['mer_id']];
+        unset($group);
         return ['valid'=>$rows,'invalid'=>$invalidRows,'groups'=>$groups];
     }
     public function quoteIdentity(array $cartInfo,int $uid):void

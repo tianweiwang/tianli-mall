@@ -12,6 +12,7 @@
 namespace app\api\controller\v2\store;
 
 use app\Request;
+use app\services\marketplace\publiccatalog\PublicCatalogQuery;
 use app\services\product\product\StoreProductServices;
 use app\services\product\sku\StoreProductAttrServices;
 
@@ -45,6 +46,10 @@ class StoreProductController
         $storeInfo=$catalog->displayRoot($definition['root']);
         $storeInfo['default_sku']=$definition['default_sku'];
         if(!$this->services->vipIsOpen((bool)$storeInfo['is_vip']))$storeInfo['vip_price']=0;
+        if((int)$type===0){
+            $owner=PublicCatalogQuery::positive($definition['root']['mer_id']??null);
+            $storeInfo['merchant_accepting_orders']=$catalog->merchantAcceptingOrders($owner);
+        }
         $data['storeInfo']=$projection::skuSummary($storeInfo,$definition['stock']);
         $data['productAttr']=$projection::attributes($data['productAttr']);
         $data['productValue']=$projection::values($data['productValue']);

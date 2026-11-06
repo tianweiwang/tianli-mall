@@ -275,6 +275,9 @@ export default {
 		 */
 		goCat: function(duo, id, type, cart, unique) {
 			let that = this;
+			const product = this.tempArr.find((item) => String(item.id) === String(id));
+			const selection = duo ? this.storeInfo : product;
+			if (type === 1 && selection && selection.merchant_accepting_orders === false) return;
 
 			if (duo) {
 				let productSelect = that.productValue[this.attrValue];
@@ -301,6 +304,10 @@ export default {
                     return getAttr(id, 0).then(res => {
                         const values = Object.values(res.data.productValue || {});
                         const root = res.data.storeInfo || {};
+                        if (Number(root.id) === Number(id) && root.merchant_accepting_orders === false) {
+                            if (product) that.$set(product, 'merchant_accepting_orders', false);
+                            return that.$util.Tips({ title: that.$t(`店铺暂不接单`) });
+                        }
                         if (Number(root.id) !== Number(id) || Number(root.spec_type) !== 0 || values.length !== 1 || Number(values[0].product_id) !== Number(id) || Number(values[0].type) !== 0 || !/^[A-Za-z0-9]{8}$/.test(values[0].unique || '')) {
                             return that.$util.Tips({ title: "请选择有效的商品规格" });
                         }
@@ -331,6 +338,7 @@ export default {
 					
 					that.getCartNum();
 					if (!cart) {
+						if (!duo && product) product.cart_num = 1;
 						that.getCartList(1);
 					}
 				})
@@ -358,10 +366,10 @@ export default {
 						})
 					}
 				}else{
+					if (item.merchant_accepting_orders === false) return;
 					this.storeName = item.store_name;
-					this.getAttrs(item.id);
 					this.$set(this, 'id', item.id);
-					this.$set(this.attr, 'cartAttr', true);
+					this.getAttrs(item.id);
 				}
 			}
 		},
@@ -381,12 +389,7 @@ export default {
 						})
 					}
 				}else{
-					this.tempArr[index].cart_num = 1;
-					// num表示从门店过来的；
-					// if(num){
-					// 	this.$store.commit('indexData/setCartNum', parseInt(this.cartNum)+1)
-					// }
-					this.$set(this, 'tempArr', this.tempArr);
+					if (item.merchant_accepting_orders === false) return;
 					this.goCat(0, item.id, 1);
 				}
 			}
