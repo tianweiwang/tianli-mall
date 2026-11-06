@@ -61,6 +61,8 @@
 
 合成订单 10 可在顾客 H5、商家和平台查看同一笔多规格取消单。三端实际页面都显示已取消、非默认「标准装」1 件，金额 ¥13.40。三端保存状态均为未支付。顾客可重新打开原单，商家 3 可直接查看详情，平台在订单管理按 cp641522857993568256 查询，再打开详情的「商品信息」。标准装库存 3→2→3，加量装一直为 7，商品恢复原下架状态。[顾客详情](http://127.0.0.1:18212/pages/goods/order_details/index?order_id=cp641522857993568256) · [商家详情](http://127.0.0.1:18212/merchant/#/orders/10) · [平台订单管理](http://127.0.0.1:18212/admin/order/list) · [顾客实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-h5-sku-cancelled-order10-readback-20261106-r1.json) · [商家实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order10-merchant-sku-ui-20261106-r1.json) · [平台实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order10-platform-sku-ui-20261106-r1.json)
 
+合成订单 11 使用非默认「标准装」1 件，H5 原结算应付 ¥13.40，原收银台测试付款后由商家 3 发货。顾客、商家和平台实际页面读回同一规格、数量和测试金额，顾客与商家均显示同一包裹已发 1 件。商品库存 10→9，标准装 3→2，加量装保持 7，付款和发货未重复扣库存。[订单与包裹实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order11-paid-shipped-nondefault-sku-20261106-r1.json)
+
 平台测试交易接口读回同一订单 6，唯一一笔 ¥20.15 的测试付款已应用，已确认退款及占用金额均为 ¥0.00。该单未选择费率版本，费用估算、渠道费、商家应收及结算金额均为空。[同一订单的平台测试流水](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order6-platform-test-ledger-20261105-r2.json)
 
 - 已验：本机平台/商家/H5的入驻上架、店铺发现、双店购物车选择、下单及测试支付、发收货、仅退款、单件退货退款、评价和原平台客服上述正常流程。三端订单金额/状态及对应商品、SKU库存已核对。
