@@ -1282,6 +1282,31 @@ def aftersale_review_image_profile_changes(host: bytes) -> tuple[bytes, bytes, b
     }
 
 
+def normal_environment_projection_profile_changes(host: bytes) -> tuple[bytes, bytes, bytes, dict[str, Any]]:
+    """Construct this projection from one freshly verified public environment."""
+    original = functions(host)["environment_projection_matches"]
+    require(pin(original) == {"bytes": 606,
+            "sha256": "a04e9ca4808ac2ef65b7b7c3c0df82c1d7dbbc51d0495f1869281da7f359e67e"},
+            "EXACT_ORIGINAL_NORMAL_ENVIRONMENT_PROJECTION")
+    previous = b"    lines = [json.dumps(name + '=' + public_environment(context)[name]).encode() for name in ENV_NAMES]\n"
+    current = (b"    environment = public_environment(context)\n"
+               b"    lines = [json.dumps(name + '=' + environment[name]).encode() for name in ENV_NAMES]\n")
+    candidate = once(original, previous, current)
+    require(once(candidate, current, previous) == original,
+            "NORMAL_ENVIRONMENT_PROJECTION_FUNCTION_EXACT_INVERSE")
+    result = once(host, original, candidate)
+    require(once(result, candidate, original) == host,
+            "NORMAL_ENVIRONMENT_PROJECTION_WHOLE_HOST_EXACT_INVERSE")
+    compile(result, 'derived-ms4-host-environment-projection.py', 'exec')
+    return result, original, candidate, {
+        "function": "environment_projection_matches", "before": pin(original), "after": pin(candidate),
+        "whole_host_inverse_exact": True, "public_environment_calls_per_six_field_projection": 1,
+        "one_fresh_environment_per_call": True, "customer_form_branch_unchanged": True,
+        "all_six_fields_permutations_newlines_and_digest_checks_retained": True,
+        "cross_call_or_cli_cache": False, "native_observation_functions_and_business_assertions_changed": False,
+    }
+
+
 def normal_source_read_profile_changes(host: bytes) -> tuple[bytes, bytes, bytes, dict[str, Any]]:
     """Reuse only this verification's complete read, then read the full tree again."""
     original = functions(host)["verify_freeze"]
@@ -1735,6 +1760,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         after["ms4-host.py"])
     after["ms4-host.py"], source_parent_before, source_parent_after, source_parent_proof = normal_source_parent_profile_changes(
         after["ms4-host.py"])
+    after["ms4-host.py"], environment_before, environment_after, environment_proof = normal_environment_projection_profile_changes(
+        after["ms4-host.py"])
     after["ms4-host.py"], review_image_before, review_image_after, review_image_proof = aftersale_review_image_profile_changes(
         after["ms4-host.py"])
     after["verify-zero-ms4-fulfillment.py"], zero_review_image_before, zero_review_image_after, zero_review_image_proof = aftersale_review_image_profile_changes(
@@ -1771,10 +1798,11 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "paid_current_successor_entry_pair_changed": True,
         "all_original_python_function_bodies_exact": False,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "verify_aftersale_review_business"],
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "environment_projection_matches", "verify_aftersale_review_business"],
             "verify-zero-ms4-fulfillment.py": ["verify_aftersale_review_business"]},
         "normal_source_read_reuse": source_read_proof,
         "normal_source_parent_reuse": source_parent_proof,
+        "normal_environment_projection_reuse": environment_proof,
         "aftersale_review_image_consumer": review_image_proof,
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
@@ -1839,6 +1867,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                                                        b"    verify_finance_bootstrap(context, result)\n", b"")
             observed["verify_freeze"] = once(observed["verify_freeze"], source_read_after, source_read_before)
             observed["source_tree_manifest"] = once(observed["source_tree_manifest"], source_parent_after, source_parent_before)
+            observed["environment_projection_matches"] = once(
+                observed["environment_projection_matches"], environment_after, environment_before)
             observed["verify_aftersale_review_business"] = once(
                 observed["verify_aftersale_review_business"], review_image_after, review_image_before)
         elif name == "verify-zero-ms4-fulfillment.py":
@@ -1860,10 +1890,11 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "changed": [name for name in NAMES if before[name] != after[name]],
         "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "verify_aftersale_review_business"],
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "environment_projection_matches", "verify_aftersale_review_business"],
             "verify-zero-ms4-fulfillment.py": ["verify_aftersale_review_business"]},
         "normal_source_read_reuse": source_read_proof,
         "normal_source_parent_reuse": source_parent_proof,
+        "normal_environment_projection_reuse": environment_proof,
         "aftersale_review_image_consumer": review_image_proof,
         "all_other_original_python_function_bodies_exact": True,
         "active_profile_updates": updates, "interface_only_declared_active_rows": True,
