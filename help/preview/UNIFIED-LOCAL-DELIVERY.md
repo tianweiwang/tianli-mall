@@ -85,4 +85,6 @@
 
 18212 安装现行后端 `5b6e244a9` 后，PHP 和 MySQL 容器最近五次健康探针均成功，原四个容器重启计数均为零。PHP 探针覆盖应用监听、启动结构检查、MySQL 与 Redis。平台、商家、顾客和客服入口均返回 HTTP 200。 [本机健康记录](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/native-runtime-health-20261106-5b6.json)
 
+现行 5b6 在 18212 通过真实接口完成一笔合成未付款订单。商家 2 的商品 5 与 SKU104 各保留原售价 20.15 元，运费 0。顾客、商家、平台三端读回订单 15 金额一致，顾客正常取消后均为未支付、已取消，商品和 SKU 库存由 95 扣至 94 后恢复 95。 [下单与取消实证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-5b6-three-role-order-create-cancel-20261106.json)
+
 详细操作与运行来源见 [原本机预览说明](H:/天俪商城/worktrees/mall-history-reader-count/help/preview/README.md)。验证记录包括 [正常交易](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NORMAL-TRADE.json)、[单件退货退款](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/RETURN-ONE-RESULT-r2.json)、[订单布局](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/ORDER-LAYOUT-VERIFICATION-r2.json)、[原平台客服](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/CUSTOMER-SERVICE.json)、[小程序后台验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-BACKGROUND-VERIFICATION.json)、[退款订单评价验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-REVIEW-VERIFICATION.json)及[小程序测试订单验证](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/NATIVE-ORDER-VERIFICATION.json)。最新进度统一看原 [PROGRESS.md](H:/天俪商城/artifacts/project-organization-20261023/current20261025-business-progress-r1/PROGRESS.md)。
