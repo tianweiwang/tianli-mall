@@ -119,7 +119,7 @@ function m4cf_public_http_failure():?array
 {
     $row=$GLOBALS['m4cf_normal_http_first_failure']??null;
     if(!is_array($row)||array_keys($row)!==['kind','method','http','json_error','response_bytes','response_sha256'])return null;
-    if(!in_array($row['kind'],['login','user','computed','upload','ticket','content','view'],true)
+    if(!in_array($row['kind'],['login','user','computed','upload','ticket','content','view','create'],true)
         ||!in_array($row['method'],['GET','POST'],true)||!is_int($row['http'])||$row['http']<0||$row['http']>599
         ||!($row['json_error']===null||(is_int($row['json_error'])&&$row['json_error']>=0&&$row['json_error']<=11))
         ||!is_int($row['response_bytes'])||$row['response_bytes']<0||$row['response_bytes']>52428800
@@ -662,6 +662,7 @@ function m4cfk_guard(array $source):array
     if($proof==='paid-producer')m5pc_full_source($source);
     elseif($proof==='aftersale-review-normal')m4ar_full_source($source);
     elseif($proof==='customer')m4c_entry_full_source($source);
+    elseif($proof==='ui-prepare')m4up_full_source($source);
     else m4c_expect(false,'M4C_FORM_KNOWN_ORIGINAL_CALLER_SOURCE');
     $out=[];
     foreach(['run_id','source_sha','container_id','freeze_sha256','source_binding_sha256','environment_sha256','native_created_sha256']as$key){
@@ -672,7 +673,7 @@ function m4cfk_guard(array $source):array
 
 function m4cfk_source():array
 {
-    foreach(['m4ar_source'=>'aftersale-review-normal','m5pc_source'=>'paid-producer','m4c_entry_source'=>'customer']as$name=>$proof){
+    foreach(['m4ar_source'=>'aftersale-review-normal','m5pc_source'=>'paid-producer','m4c_entry_source'=>'customer','m4up_source'=>'ui-prepare']as$name=>$proof){
         $source=$GLOBALS[$name]??null;
         if(is_array($source)&&($source['rule']['proof']??null)===$proof){m4cfk_guard($source);return $source;}
     }
@@ -707,6 +708,7 @@ function m4cfk_route(string $method,string $path):string
         &&!str_contains($path,'?')&&!str_contains($path,'#')&&!str_contains($path,'\\')
         &&!str_contains($path,'..')&&!preg_match('/[\x00-\x20\x7f]/',$path),'M4C_FORM_FINITE_NORMAL_ROUTE_WIRE');
     if($method==='POST'&&preg_match('~\A/api/order/computed/([^/]+)\z~D',$path,$m)===1){m4cfk_key($m[1]);return 'computed';}
+    if($method==='POST'&&preg_match('~\A/api/order/create/([^/]+)\z~D',$path,$m)===1){m4cfk_key($m[1]);return 'create';}
     if($method==='POST'&&$path==='/api/login')return 'login';
     if($method==='GET'&&$path==='/api/user')return 'user';
     if(preg_match('~\A/api/order/confirm/([^/]+)/forms/([1-9][0-9]{0,6})/([0-9])/files\z~D',$path,$m)===1){
@@ -738,6 +740,21 @@ function m4cf_transport(string $method,string $path,?string $token=null,mixed $b
         m4c_expect($keys===['account','agent_id','password','spread']&&is_string($body['account'])&&$body['account']!==''
             &&is_string($body['password'])&&$body['password']!==''&&$body['agent_id']===0&&$body['spread']===0,'M4C_FORM_ORIGINAL_FIXTURE_LOGIN_BODY');
     }else{m4c_expect(is_string($token),'M4C_FORM_ACTUAL_AUTHENTICATED_CALL');m4cfk_token($token);}
+    if($kind==='create'){
+        m4c_expect(($source['rule']['proof']??null)==='ui-prepare'&&is_array($body)&&$multipart===null,
+            'M4C_FORM_ONLY_UI_PREPARER_NORMAL_CREATE');
+        m4c_entry_keys($body,['cartId','mer_id','new','idem_key','addressId','invoice_id','payType','mark','gift_mark',
+            'real_name','phone','shipping_type','is_gift','store_id','couponId','useIntegral','combinationId','pinkId',
+            'seckill_id','bargainId','advanceId','custom_form']);
+        m4c_expect($body['new']===0&&$body['payType']===''&&$body['shipping_type']===1&&$body['is_gift']===0
+            &&$body['store_id']===0&&$body['couponId']===0&&$body['useIntegral']===false&&$body['combinationId']===0
+            &&$body['pinkId']===0&&$body['seckill_id']===0&&$body['bargainId']===0&&$body['advanceId']===0
+            &&$body['real_name']===''&&$body['phone']===''&&$body['mark']==='普通页面下单'&&$body['gift_mark']==='普通页面文本'
+            &&is_int($body['mer_id'])&&$body['mer_id']>0&&is_int($body['addressId'])&&$body['addressId']>0
+            &&is_int($body['invoice_id'])&&$body['invoice_id']>0&&is_string($body['cartId'])&&$body['cartId']!==''
+            &&is_array($body['custom_form'])&&$body['idem_key']==='confirm:'.m4cfk_key(substr($path,strlen('/api/order/create/'))),
+            'M4C_FORM_ORIGINAL_UI_TARGET_CREATE_BODY');
+    }
     if($kind==='computed')m4c_expect(is_array($body)&&array_keys($body)===['addressId','shipping_type','payType','mer_id','couponId','useIntegral']
         &&is_int($body['addressId'])&&$body['addressId']>0&&is_int($body['mer_id'])&&$body['mer_id']>0
         &&$body['shipping_type']===1&&$body['payType']===''&&$body['couponId']===0&&$body['useIntegral']===0&&$multipart===null,'M4C_FORM_ORIGINAL_NORMAL_REPRICE_BODY');
@@ -855,15 +872,18 @@ function m4cf_multipart(string $path,string $token,string $bytes,string $name='n
     return m4cf_transport('POST',$path,$token,$raw,$boundary);
 }
 
-/** Independent paid upload child; AR deliberately keeps its already-existing child and real customer token. */
+/** Independent paid/UI upload child; AR keeps its existing child and real customer token. */
 function m4cf_child_start(array $source):array
 {
     $binding=m4cfk_guard($source);
-    m4c_expect(($source['rule']['proof']??null)==='paid-producer'&&!isset($GLOBALS['m4cf_child_started'])
+    $ui=($source['rule']['proof']??null)==='ui-prepare';
+    m4c_expect(in_array($source['rule']['proof']??null,['paid-producer','ui-prepare'],true)&&!isset($GLOBALS['m4cf_child_started'])
         &&!audit_app_listener_open(),'M4C_FORM_ONE_NEW_PAID_CHILD_AFTER_ORIGINAL_OWNER_CHILD_CLOSED');
+    if($ui)m4c_expect(($GLOBALS['m4ar_child_proof']['stopped']??null)===true
+        &&!is_resource($GLOBALS['m4ar_http_process']??null),'M4C_FORM_UI_ORIGINAL_ACTOR_CHILD_ALREADY_CLOSED');
     $GLOBALS['m4cf_child_started']=true;$supervisor=audit_app_proc_stat(getmypid());
     m4c_expect($supervisor!==null,'M4C_FORM_ACTUAL_UPLOAD_SUPERVISOR');
-    $stem='/workspace/crmeb/runtime/customer-form-upload-'.bin2hex(random_bytes(16));
+    $stem=($ui?'/tmp/audit-ui-form-http-':'/workspace/crmeb/runtime/customer-form-upload-').bin2hex(random_bytes(16));
     $handle=['schema'=>1,'source'=>$source,'binding'=>$binding,'supervisor'=>$supervisor,'process'=>null,'group'=>null,
         'term_sent'=>false,'term_attempted'=>false,'stdout'=>$stem.'.stdout','stderr'=>$stem.'.stderr','proof'=>null];
     $GLOBALS['m4cf_child_handle']=$handle;

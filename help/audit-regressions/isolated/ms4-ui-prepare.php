@@ -464,8 +464,9 @@ function m4up_run():int
   $task2=m5pt_prepare($db,$app,$s,$owner,$actors,$final);$final['after']=$task2['after'];
  }
  $sourceOracle=m4fn_source_oracle($owner['saved']);m4fn_inputs_unchanged($owner['inputs']);
- m4up_expect(m4cf_files()===$cuPrivateBefore,'UI_CU_COMPLETE_ORIGINAL_PRIVATE_TREE_NATIVE_BEFORE_FINAL_UNCHANGED');
- m4up_expect(m4upo_tree(M4CF_ROOT)===$cuTreeBefore,'UI_CU_ORIGINAL_PRIVATE_ROOT_DIRECTORIES_FILES_NATIVE_BEFORE_FINAL_UNCHANGED');
+ $cuExpected=m5pt_private_growth($cuPrivateBefore,$cuTreeBefore,$task2['image_assets']??[]);
+ m4up_expect(m4cf_files()===$cuExpected['files'],'UI_CU_COMPLETE_ORIGINAL_AND_PROVEN_NEW_PRIVATE_FILES');
+ m4up_expect(m4upo_tree(M4CF_ROOT)===$cuExpected['tree'],'UI_CU_COMPLETE_ORIGINAL_AND_PROVEN_NEW_PRIVATE_TREE');
  m4up_phase('final_source');m4up_full_source($s);m4up_expect(m4up_source(false)===$s,'UI_CURRENT_SAME_SOURCE_ENV_NATIVE_PREDECESSORS');
  m4cb_guard_readonly();
  $business=['prepared_only'=>true,'paid_order_id'=>(int)$owner['root']['id'],'paid_order_no'=>$owner['root']['order_id'],

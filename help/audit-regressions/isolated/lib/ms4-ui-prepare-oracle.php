@@ -2151,18 +2151,89 @@ function m5pt_cart(PDO $db,\think\App $app,array $before,int $uid,array $product
  m4ar_redis_delta($before,$after);m4up_expect($after['tag_members']===$before['tag_members'],'TASK2_CART_ALL_TAG_MEMBERS_UNCHANGED');m5pt_files_unchanged($before,$after);
  $again=m4upo_snapshot($db);m5pt_same_window($after,$again);return ['reference'=>$ref,'row'=>$cart,'snapshot'=>$after];
 }
-function m5pt_forms(array $product,string $ref):array
+function m5pt_forms(array $product,string $ref,array $imageAnswers=[]):array
 {
- $raw=json_decode($product['custom_form'],true,32,JSON_THROW_ON_ERROR);m4up_expect(is_array($raw)&&array_is_list($raw)&&count($raw)===2,'TASK2_CURRENT_C3_TWO_FORM_FIELDS');
- $fields=$values=[];foreach($raw as$i=>$field){m4c_entry_keys($field,['title','label','value','status']);
-  m4up_expect(is_string($field['title'])&&is_bool($field['status'])&&is_string($field['value'])
-   &&in_array($field['label'],['text','number'],true),'TASK2_INDEPENDENT_ORDINARY_FORM_DOMAIN');
-  $fields[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$field['label']==='number'?'0':'普通页面填写'.$product['store_name']];
+ $raw=json_decode($product['custom_form'],true,32,JSON_THROW_ON_ERROR);
+ m4up_expect(is_array($raw)&&array_is_list($raw)&&in_array(count($raw),[2,4],true),'TASK2_ORIGINAL_OR_IMAGE_C3_FORM_FIELDS');
+ $current=count($raw)===4;$labels=['text','number','img','img'];$statuses=[true,false,true,false];
+ $fields=$values=$imageFields=[];foreach($raw as$i=>$field){m4c_entry_keys($field,['title','label','value','status']);
+  m4up_expect(is_string($field['title'])&&is_bool($field['status'])
+   &&($current?($field['label']===$labels[$i]&&$field['status']===$statuses[$i]):in_array($field['label'],['text','number'],true)),
+   'TASK2_INDEPENDENT_ORDINARY_FORM_DOMAIN');
+  if($field['label']==='img'){
+   m4up_expect($field['value']===''||$field['value']===[],'TASK2_ORIGINAL_EMPTY_IMAGE_DEFINITION');$field['value']=[];$imageFields[]=$i;
+   $value=$imageAnswers[$i]??[];m4up_expect(is_array($value)&&array_is_list($value)&&count($value)<=8,'TASK2_IMAGE_ANSWER_LIST');
+   foreach($value as$reference)m4up_expect(is_string($reference)&&preg_match('/\Amp-form:v1:[1-9][0-9]{0,19}\z/D',$reference)===1,'TASK2_REAL_IMAGE_REFERENCE_DOMAIN');
+  }else{m4up_expect(is_string($field['value']),'TASK2_ORIGINAL_TEXT_DEFINITION');$value=$field['label']==='number'?'0':'普通页面填写'.$product['store_name'];}
+  $fields[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$value];
  }
+ m4up_expect(array_diff(array_keys($imageAnswers),$imageFields)===[],'TASK2_NO_UNKNOWN_IMAGE_ANSWER_FIELDS');
  $productId=m5pcp_int($product['id'],1,8388607);$hash=hash('sha256',\app\services\marketplace\order\MarketplaceOrderInput::canonical(['product_id'=>$productId,'fields'=>$fields]));
  $definition=['product_id'=>$productId,'product_name'=>$product['store_name'],'cart_refs'=>[$ref],'definition_sha256'=>$hash,'fields'=>$fields];
  $saved=$definition;foreach($saved['fields']as$i=>&$field)$field['value']=$values[$i]['value'];unset($field);
- return ['answers'=>[['product_id'=>$productId,'definition_sha256'=>$hash,'values'=>$values]],'saved'=>[$saved]];
+ return ['definitions'=>[$definition],'answers'=>[['product_id'=>$productId,'definition_sha256'=>$hash,'values'=>$values]],'saved'=>[$saved]];
+}
+
+/** Reuse the real upload oracle; retain the original confirmation and all unrelated state. */
+function m5pt_image_stage(PDO $db,array $before,array $product,string $ref,int $uid,string $key,array $forms,array $actor):array
+{
+ $cached=\crmeb\services\CacheService::get('user_order_'.$uid.$key);
+ m4up_expect(is_array($cached),'TASK2_REAL_IMAGE_CONFIRMATION_FRAME');
+ $frame=\app\services\marketplace\order\MarketplaceCartSelection::frame($cached,$uid);
+ m4up_expect($frame['marketplace_uid']===$uid&&$frame['source_kind']==='persistent'&&$frame['cart_refs']===[$ref]
+  &&$frame['custom_form']===$forms['definitions'],'TASK2_INDEPENDENT_IMAGE_DEFINITION_EQUALS_FROZEN_FRAME');
+ $confirmation=m4cf_confirmation($uid,$key,$frame);$confirmed=m4upo_snapshot($db);
+ m4ar_database_delta($before,$confirmed,[]);m5pt_files_unchanged($before,$confirmed);
+ $raw=$confirmation['physical'];$tag='c:CRMEB:'.md5('crmeb');$members=$before['tag_members'];
+ m4up_expect(!isset($before['redis']['keys'][hash('sha256',$raw)])&&!in_array($raw,$members[$tag],true),'TASK2_NEW_IMAGE_CONFIRMATION_IDENTITY');
+ $members[$tag][]=$raw;sort($members[$tag],SORT_STRING);m4up_expect($members===$confirmed['tag_members'],'TASK2_IMAGE_CONFIRMATION_ONLY_OWN_TAG_APPEND');
+ $tagRow=['type'=>'set','sha256'=>hash('sha256',"set\0".serialize($members[$tag])),'expires'=>-1];
+ m4up_expect($confirmed['redis']['keys'][hash('sha256',$tag)]===$tagRow,'TASK2_IMAGE_CONFIRMATION_PERMANENT_TAG');
+ m4ar_redis_delta($before,$confirmed,[$raw=>$confirmed['redis']['keys'][hash('sha256',$raw)],$tag=>$tagRow]);
+ $images=m4cf_fixture_images();$assets=$answers=$selected=[];
+ foreach($forms['definitions'][0]['fields']as$field)if($field['label']==='img'&&$field['status']){
+  $asset=m4cf_upload($db,$frame,$uid,$key,(int)$product['id'],$field['field_index'],$images[1],$actor);
+  $id=m5pcp_u64($asset['row']['id']);$assets[$id]=$asset;$selected[]=$id;$answers[$field['field_index']]=[$asset['reference']];
+ }
+ m4up_expect(count($assets)===1&&count($selected)===1,'TASK2_ONE_REQUIRED_IMAGE_OPTIONAL_IMAGE_EMPTY');
+ m4cf_same_confirmation($uid,$key,$frame,$confirmation);$after=m4cf_snapshot($db);$snapshot=m4upo_snapshot($db);
+ m4up_expect($after['database']===$snapshot['database'],'TASK2_UPLOAD_COMPLETE_DATABASE_WINDOW_JOIN');
+ m4up_expect(array_keys($after['rows'])===m4ar_tables(),'TASK2_UPLOAD_COMPLETE_FINITE_ROW_DOMAIN');
+ foreach($after['rows']as$table=>$rows)m4up_expect(array_key_exists($table,$snapshot['rows'])
+  &&$rows===$snapshot['rows'][$table],'TASK2_UPLOAD_SAME_TABLE_ROWS_WINDOW_JOIN');
+ m4up_expect($after['redis']['keys']===$snapshot['redis']['keys'],'TASK2_UPLOAD_COMPLETE_REDIS_WINDOW_JOIN');
+ m5pt_files_unchanged($confirmed,$snapshot);
+ return ['assets'=>$assets,'selected'=>$selected,'uid'=>$uid,'key'=>$key,'after'=>$after,'snapshot'=>$snapshot,
+  'confirmation'=>$confirmation,'forms'=>m5pt_forms($product,$ref,$answers)];
+}
+
+/** Old private leaves stay exact; additions are only actual uploaded originals and their parents. */
+function m5pt_private_growth(array $beforeFiles,array $beforeTree,array $assets):array
+{
+ $files=$beforeFiles;$newDirectories=[];$newFiles=[];
+ foreach($assets as$asset){$row=$asset['row'];$name=$row['object_key'];
+  m4up_expect(!isset($files[$name]),'TASK2_NEW_DISTINCT_PRIVATE_IMAGE_PATH');
+  $files[$name]=['bytes'=>strlen($asset['bytes']),'sha256'=>hash('sha256',$asset['bytes']),'mode'=>0600,'uid'=>posix_geteuid(),'nlink'=>1];
+  $newFiles[$name]=$files[$name];$parent=dirname($name);
+  while($parent!=='.'){if(!isset($beforeTree[$parent]))$newDirectories[$parent]=true;$parent=dirname($parent);}
+ }
+ ksort($files,SORT_STRING);$actualFiles=m4cf_files();$tree=m4upo_tree(M4CF_ROOT);
+ m4up_expect($actualFiles===$files&&is_array($tree),'TASK2_EXACT_COMPLETE_PRIVATE_IMAGE_FILES');
+ $names=array_unique([...array_keys($beforeTree),...array_keys($newDirectories),...array_keys($newFiles)]);sort($names,SORT_STRING);
+ m4up_expect(array_keys($tree)===$names,'TASK2_ONLY_EXPECTED_PRIVATE_IMAGE_PARENTS_AND_LEAVES');
+ foreach($beforeTree as$name=>$old){$wanted=$old;
+  if($old['kind']==='directory')foreach($newDirectories as$directory=>$_)if((dirname($directory)==='.'?'':dirname($directory))===$name)$wanted['nlink']++;
+  m4up_expect($tree[$name]===$wanted,'TASK2_ORIGINAL_PRIVATE_NATIVE_IDENTITIES_PRESERVED');
+ }
+ foreach($newDirectories as$name=>$_){$row=$tree[$name];$children=0;
+  foreach($newDirectories as$child=>$_value)if(dirname($child)===$name)$children++;
+  m4up_expect($row['kind']==='directory'&&$row['mode']===0700&&$row['uid']===posix_geteuid()
+   &&$row['gid']===$beforeTree['']['gid']&&$row['nlink']===2+$children,'TASK2_NEW_PRIVATE_PARENT_NATIVE_DOMAIN');
+ }
+ foreach($newFiles as$name=>$wanted){$row=$tree[$name];m4up_expect($row['kind']==='file'&&$row['gid']===$beforeTree['']['gid'],'TASK2_NEW_PRIVATE_ORIGINAL_NATIVE_FILE');
+  foreach($wanted as$key=>$value)m4up_expect($row[$key]===$value,'TASK2_NEW_PRIVATE_ORIGINAL_FULL_BYTES_AND_MODE');
+ }
+ return ['files'=>$actualFiles,'tree'=>$tree];
 }
 function m5pt_saved_cart(array $before,array $cart,array $product,array $sku,array $merchant,string $reserve):array
 {
@@ -2217,7 +2288,7 @@ function m5pt_created_redis(array $before,array $after,int $uid,string $key):voi
  $expected[$tagHash]=['type'=>'set','sha256'=>hash('sha256',"set\0".serialize($members[$tag])),'expires'=>-1];ksort($expected,SORT_STRING);
  m4up_expect($after['redis']['keys']===$expected,'TASK2_ALL_OTHER_REDIS_VALUES_TYPES_AND_ABSOLUTE_EXPIRIES_UNCHANGED');
 }
-function m5pt_create(PDO $db,\think\App $app,array $before,array $fixture,int $uid,int $mer):array
+function m5pt_create(PDO $db,\think\App $app,array $before,array $fixture,int $uid,int $mer,?array $actor=null):array
 {
  $selected=$fixture['selected'][0];$product=m5pt_match($before['rows']['eb_store_product'],'id',m5pcp_int($selected['product_id'],1,8388607));
  $sku=m5pt_match($before['rows']['eb_store_product_attr_value'],'id',m5pcp_int($selected['sku_id'],1));
@@ -2248,11 +2319,23 @@ function m5pt_create(PDO $db,\think\App $app,array $before,array $fixture,int $u
  $user=$app->make(\app\services\user\UserServices::class)->getUserInfo($uid);m4up_expect($user!==null&&m5pcp_int($user->getData('uid'),1)===$uid,'TASK2_SAME_REAL_AUTHENTICATED_BUYER');
  $confirmation=$app->make(\app\services\order\StoreOrderServices::class)->getOrderConfirmData($user->toArray(),$ref,false,$addressId,1,0,$choice);
  $key=\app\services\marketplace\order\MarketplaceOrderInput::confirmationKey($confirmation['orderKey']);unset($confirmation);
+ $cartSnapshot=$cartBefore;$imageStage=null;$createdReply=null;
+ if(count($forms['definitions'][0]['fields'])===4){
+  m4up_expect(is_array($actor)&&($actor['app']??null)==='api'&&($actor['id']??null)===$uid,'TASK2_REAL_ORIGINAL_CUSTOMER_FOR_IMAGE_UPLOAD');
+  $imageStage=m5pt_image_stage($db,$cartBefore,$product,$ref,$uid,$key,$forms,$actor);
+  $cartBefore=$imageStage['snapshot'];$forms=$imageStage['forms'];
+ }
  $raw=['cartId'=>$ref,'mer_id'=>$mer,'new'=>0,'idem_key'=>'confirm:'.$key,'addressId'=>$addressId,'invoice_id'=>m5pcp_int($invoice['id'],1),
   'payType'=>'','mark'=>'普通页面下单','gift_mark'=>'普通页面文本','real_name'=>'','phone'=>'','shipping_type'=>1,'is_gift'=>0,'store_id'=>0,
   'couponId'=>0,'useIntegral'=>false,'combinationId'=>0,'pinkId'=>0,'seckill_id'=>0,'bargainId'=>0,'advanceId'=>0,'custom_form'=>$forms['answers']];
  $input=\app\services\marketplace\order\MarketplaceOrderInput::create($uid,$key,$raw);
- $created=$app->make(\app\services\marketplace\order\MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);
+ if($imageStage===null)$created=$app->make(\app\services\marketplace\order\MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);
+ else{
+  $createdReply=m4cf_transport('POST','/api/order/create/'.rawurlencode($key),$actor['token'],$raw);$data=m4cf_json($createdReply);
+  m4c_entry_keys($data,['status','result']);m4c_entry_keys($data['result'],['orderId','key']);
+  m4up_expect($data['status']==='SUCCESS','TASK2_REAL_HTTP_CREATE_SUCCESS');
+  $created=['order_id'=>$data['result']['orderId'],'key'=>$data['result']['key']];
+ }
  m4up_expect(is_string($created['order_id']??null)&&($created['key']??null)===$key,'TASK2_REAL_SERVICE_RETURNED_ORDER_IDENTITY');
  $number=$created['order_id'];$ended=time();$sequence=m5pt_sequence($db,$number);$after=m4upo_snapshot($db);
  $id=m5pcp_int(m5pt_next($cartBefore,'eb_store_order'),1);$actual=m5pt_match($after['rows']['eb_store_order'],'id',$id);$stamp=m4upo_time($actual['add_time'],[$started,$ended]);
@@ -2304,12 +2387,22 @@ function m5pt_create(PDO $db,\think\App $app,array $before,array $fixture,int $u
   'eb_store_product_attr_value'=>m4ar_replaced($cartBefore['rows']['eb_store_product_attr_value'],'id',$sku['id'],$skuAfter),
   'eb_store_cart'=>$before['rows']['eb_store_cart']];
  $counts=[];foreach(['eb_store_order','eb_marketplace_stock_movement','eb_store_order_cart_info','eb_store_order_invoice','eb_store_product_log']as$table)$counts[$table]=1;
- m4ar_database_delta($cartBefore,$after,$expected,$counts);m5pt_created_redis($cartBefore,$after,$uid,$key);m5pt_files_unchanged($cartBefore,$after);
+ if($imageStage!==null){
+  $bound=m4cf_bound($db,$imageStage,$root,$createdReply,$actor);
+  $expected['eb_marketplace_customer_asset']=$bound['rows'];
+  m4ar_auth_delta($cartBefore,$after,$actor,$createdReply['actual_interval'],$expected);
+  m4ar_redis_delta($cartBefore,$after,[$imageStage['confirmation']['physical']=>null]);
+  m4up_expect($cartBefore['tag_members']===$after['tag_members'],'TASK2_IMAGE_CREATE_PRESERVES_ALL_TAG_MEMBERS');
+ }else m5pt_created_redis($cartBefore,$after,$uid,$key);
+ m4ar_database_delta($cartBefore,$after,$expected,$counts);m5pt_files_unchanged($cartBefore,$after);
  $again=m4upo_snapshot($db);m5pt_same_window($after,$again);
- return ['root'=>$root,'item'=>$item,'reserve'=>$move,'snapshot'=>$after,
+ return ['root'=>$root,'item'=>$item,'reserve'=>$move,'snapshot'=>$after,'image_assets'=>$imageStage['assets']??[],
   'proof'=>['target'=>m5pt_target($root),'source_fingerprint'=>hash('sha256',serialize([$root,$item,$ledger,$registry,$move,$invoiceRow])),
    'cart_reference_sha256'=>hash('sha256',$ref),'request_sha256'=>hash('sha256',\app\services\marketplace\order\MarketplaceOrderInput::canonical($input['request'])),
-   'before'=>m4upo_descriptor($before),'cart'=>m4upo_descriptor($cartBefore),'after'=>m4upo_descriptor($after),'verified_after'=>m4upo_descriptor($again),
+   'before'=>m4upo_descriptor($before),'cart'=>m4upo_descriptor($cartSnapshot),'create_before'=>m4upo_descriptor($cartBefore),
+   'image_assets'=>array_map(static fn(array $asset):array=>['id'=>(string)$asset['row']['id'],'bytes'=>strlen($asset['bytes']),
+    'sha256'=>hash('sha256',$asset['bytes'])],array_values($imageStage['assets']??[])),
+   'after'=>m4upo_descriptor($after),'verified_after'=>m4upo_descriptor($again),
    'payment_generation'=>0,'payment_attempt_count'=>0,'sequence'=>$sequence]];
 }
 function m5pt_cancel(PDO $db,\think\App $app,array $created):array
@@ -2351,8 +2444,18 @@ function m5pt_prepare(PDO $db,\think\App $app,array $source,array $owner,array $
  m5pt_component_join($original['after'],m4upo_descriptor($before));$ids=m5pt_actors($actors);$uid=m5pcp_int($owner['uid'],1);$mer=m5pcp_int($owner['root']['mer_id'],1,4294967295);
  m4up_expect($ids['customer']['id']===$uid&&$ids['merchant']['mer_id']===$mer&&($GLOBALS['m4ar_child_proof']['stopped']??false)===true
   &&!is_resource($GLOBALS['m4ar_http_process']??null),'TASK2_ORIGINAL_ACTORS_SINGLE_HANDOFF_AND_CLOSED_CHILD');
- m4up_phase('task2_normal_unpaid_target');$unpaid=m5pt_create($db,$app,$before,$owner['fixture'],$uid,$mer);
- m4up_phase('task2_normal_cancellation_target');$toCancel=m5pt_create($db,$app,$unpaid['snapshot'],$owner['fixture'],$uid,$mer);
+ $product=m5pt_match($before['rows']['eb_store_product'],'id',m5pcp_int($owner['fixture']['selected'][0]['product_id'],1,8388607));
+ $definition=json_decode($product['custom_form'],true,32,JSON_THROW_ON_ERROR);$withImages=false;
+ foreach($definition as$field)if(($field['label']??null)==='img')$withImages=true;
+ $imageChild=null;$imageChildProof=null;$failure=null;
+ try{
+  if($withImages)$imageChild=m4cf_child_start($source);
+  m4up_phase('task2_normal_unpaid_target');$unpaid=m5pt_create($db,$app,$before,$owner['fixture'],$uid,$mer,$actors['customer']);
+  m4up_phase('task2_normal_cancellation_target');$toCancel=m5pt_create($db,$app,$unpaid['snapshot'],$owner['fixture'],$uid,$mer,$actors['customer']);
+ }catch(Throwable $error){$failure=$error;}
+ finally{if($imageChild!==null){try{$imageChildProof=m4cf_child_close($imageChild);}
+  catch(Throwable $close){$GLOBALS['m4up_cleanup_failure']=m4up_diagnostic($close);if($failure===null)$failure=$close;}}}
+ if($failure!==null)throw $failure;
  m4up_expect($unpaid['root']['id']!==$toCancel['root']['id']&&$unpaid['root']['order_id']!==$toCancel['root']['order_id']
   &&$unpaid['item']['cart_id']!==$toCancel['item']['cart_id'],'TASK2_TWO_REAL_DISTINCT_TARGET_IDENTITIES');
  $cancelled=m5pt_cancel($db,$app,$toCancel);$after=$cancelled['snapshot'];
@@ -2372,6 +2475,7 @@ function m5pt_prepare(PDO $db,\think\App $app,array $source,array $owner,array $
    'after'=>$descriptor,'verified_after'=>m4upo_descriptor($again)],
   'preservation'=>['database_tables'=>count($after['database']['names']),'old_paid_source_fingerprint'=>$paid['source_fingerprint'],
    'original_files_sha256'=>m4upo_descriptor($before)['files_sha256'],'final_files_sha256'=>$descriptor['files_sha256'],
-   'all_non_targets_verified'=>true,'source_unchanged'=>true,'single_private_handoff'=>true,'no_new_child_or_listener'=>true,'observer_copy_sha256'=>m5pt_copy_receipt($source,$tools)],'diagnostic'=>null];
- return ['after'=>$descriptor,'public'=>$public];
+   'all_non_targets_verified'=>true,'source_unchanged'=>true,'single_private_handoff'=>true,'no_new_child_or_listener'=>!$withImages,
+   'image_http_child'=>$imageChildProof,'observer_copy_sha256'=>m5pt_copy_receipt($source,$tools)],'diagnostic'=>null];
+ return ['after'=>$descriptor,'public'=>$public,'image_assets'=>[...array_values($unpaid['image_assets']),...array_values($toCancel['image_assets'])]];
 }
