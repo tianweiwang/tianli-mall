@@ -57,7 +57,7 @@
 
 合成订单 9 可用于核对多规格订单取消后的保存明细。商家 3 打开[订单 9](http://127.0.0.1:18212/merchant/#/orders/9)，平台在[订单管理](http://127.0.0.1:18212/admin/order/list)按订单号 cp641330815669633024 查询，再进入详情的「商品信息」。两端实际显示已取消、未支付，标准装 2 件、单价 ¥13.40，订单金额 ¥26.80。[商家实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order9-merchant-sku-ui-20261106-r1.json) · [平台实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order9-platform-sku-ui-20261106-r3.json)
 
-合成订单 10 是本机 H5 的多规格取消样例。顾客选择商家 3 商品 8 的非默认「标准装」，立即购买 1 件，未付款即取消。重新打开原单后显示「订单已取消」、标准装 1 件、订单金额 ¥13.40，付款和取消入口消失。商家、平台读取同一保存订单一致。标准装库存 3→2→3，加量装一直为 7，商品恢复原下架状态。[顾客页面及三端核对](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-h5-sku-cancelled-order10-readback-20261106-r1.json)
+合成订单 10 可在顾客 H5、商家和平台查看同一笔多规格取消单。三端实际页面都显示已取消、非默认「标准装」1 件，金额 ¥13.40。三端保存状态均为未支付。顾客可重新打开原单，商家 3 可直接查看详情，平台在订单管理按 cp641522857993568256 查询，再打开详情的「商品信息」。标准装库存 3→2→3，加量装一直为 7，商品恢复原下架状态。[顾客详情](http://127.0.0.1:18212/pages/goods/order_details/index?order_id=cp641522857993568256) · [商家详情](http://127.0.0.1:18212/merchant/#/orders/10) · [平台订单管理](http://127.0.0.1:18212/admin/order/list) · [顾客实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-h5-sku-cancelled-order10-readback-20261106-r1.json) · [商家实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order10-merchant-sku-ui-20261106-r1.json) · [平台实测](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order10-platform-sku-ui-20261106-r1.json)
 
 平台测试交易接口读回同一订单 6，唯一一笔 ¥20.15 的测试付款已应用，已确认退款及占用金额均为 ¥0.00。该单未选择费率版本，费用估算、渠道费、商家应收及结算金额均为空。[同一订单的平台测试流水](H:/天俪商城/artifacts/unified-local-delivery-20261104-r1/current-order6-platform-test-ledger-20261105-r2.json)
 
