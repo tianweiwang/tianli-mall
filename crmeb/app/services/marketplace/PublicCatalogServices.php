@@ -356,7 +356,7 @@ final class PublicCatalogServices
         }
     }
     /** Refresh private calculation input from current root/native and exact active SKU. */
-    public function freshCart(array $cart,int $uid,bool $purchase=false):?array
+    public function freshCart(array $cart,int $uid,bool $purchase=false,bool $publicCartDisplay=false):?array
     {
         $identity=$this->cartIdentity($cart,$uid,$purchase);
         if($identity===null)return null;
@@ -405,7 +405,16 @@ final class PublicCatalogServices
             $sku['price']=$state['bargain_price_min'];
         }
         $product['attrInfo']=$sku;$cart['productInfo']=$product;$cart['attrInfo']=$sku;
-        if(!$purchase&&($this->currentNewSaleRoot($root)===null||(int)($type===0?$sku['stock']:$sku['quota'])<(int)($cart['cart_num']??0)))$cart['status']=0;
+        if(!$purchase){
+            if($publicCartDisplay&&$type===0){
+                // A paused shop may display an existing cart row, subject to current public qualification.
+                $id=PublicCatalogQuery::positive($root['id']??null,8388607);
+                $owner=PublicCatalogQuery::positive($root['mer_id']??null);
+                $current=$this->query->detail($id);
+                if($current!==null&&PublicCatalogQuery::positive($current['mer_id']??null)!==$owner)throw new AuthUnavailableException();
+            }else $current=$this->currentNewSaleRoot($root);
+            if($current===null||(int)($type===0?$sku['stock']:$sku['quota'])<(int)($cart['cart_num']??0))$cart['status']=0;
+        }
         return $cart;
     }
     /** Called only by the current-UID namespaced confirmation cache loader. */

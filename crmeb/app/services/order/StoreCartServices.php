@@ -481,7 +481,7 @@ class StoreCartServices extends BaseServices
         $list = $this->dao->getCartList(['uid' => $uid, 'status' => $status, 'id' => $cartIds], $page, $limit, ['productInfo', 'attrInfo' => function ($query) {
             $query->where('type', 0);
         }]);
-        [$list, $valid, $invalid] = $this->handleCartList($uid, $list);
+        [$list, $valid, $invalid] = $this->handleCartList($uid, $list, publicCartDisplay: $status === 1);
         $seckillIds = array_unique(array_column($list, 'seckill_id'));
         $bargainIds = array_unique(array_column($list, 'bargain_id'));
         $combinationId = array_unique(array_column($list, 'combination_id'));
@@ -695,12 +695,12 @@ class StoreCartServices extends BaseServices
      * @email 442384644@qq.com
      * @date 2023/02/16
      */
-    public function handleCartList(int $uid, array $cartList, array $addr = [], int $shipping_type = 1, bool $marketplace = false)
+    public function handleCartList(int $uid, array $cartList, array $addr = [], int $shipping_type = 1, bool $marketplace = false, bool $publicCartDisplay = false)
     {
         if (!$cartList) return [$cartList, [], []];
         $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);$unavailable=[];$originalOrder=array_keys($cartList);
         foreach($cartList as$key=>$row){
-            $fresh=$catalog->freshCart($row,$uid);
+            $fresh=$catalog->freshCart($row,$uid,publicCartDisplay:$publicCartDisplay);
             if($fresh===null){$row['status']=0;$row['attrStatus']=false;$row['is_valid']=0;$unavailable[$key]=\app\services\marketplace\publiccatalog\PublicCatalogProjection::invalidCart($row);unset($cartList[$key]);}
             else $cartList[$key]=$fresh;
         }
