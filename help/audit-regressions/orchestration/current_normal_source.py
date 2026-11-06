@@ -2917,6 +2917,8 @@ B_QA_ORACLE_SOURCE = "16895f1e1be0eb0cd3e6c32af156cd74c56d57af"
 B_QA_ORACLE_PATH = "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php"
 B_QA_ORACLE_ORIGINAL = {"bytes": 254827, "sha256": "ed6b7d24f195c096218126c9ae604012c169cb5f7084b4c16c2fac7dc66b06c4"}
 B_QA_ORACLE_CURRENT = {"bytes": 256327, "sha256": "965091fda39308f73e43f51fb6b913ff3fe467840405974ede28b868dfe3ae0c"}
+B_STOREFRONT_PAUSE_SOURCE = "5b6e244a9198ef3316caee56f6ff7681fa575538"
+B_STOREFRONT_PAUSE_ORACLE = {"bytes": 256636, "sha256": "e0224705eb42f7ddc0171a34489e6d7ba2cbdec91b91a2ec65855cd1a7aa5495"}
 B_QA_ORACLE_A_AUTHORITY = {
     "path": "H:/天俪商城/artifacts/multi-merchant-final-normal-20261104-r101/current-source-ae13/CURRENT-SOURCE-TECHNICAL-AUTHORITY.json",
     "bytes": 1120, "sha256": "69aa34946326af7c27167d63de92d4c649180336218748b2de07eb1b85c3462f"}
@@ -3070,7 +3072,10 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     oracle_current = inventory[oracle_path]
     oracle_update = None
     if oracle_current != oracle_before:
-        allowed_oracle = B_QA_ORACLE_CURRENT if authority["source_sha"] == B_QA_ORACLE_SOURCE else B_QA_ORACLE_ORIGINAL
+        allowed_oracle = {
+            B_QA_ORACLE_SOURCE: B_QA_ORACLE_CURRENT,
+            B_STOREFRONT_PAUSE_SOURCE: B_STOREFRONT_PAUSE_ORACLE,
+        }.get(authority["source_sha"], B_QA_ORACLE_ORIGINAL)
         require(oracle_current == {"path": oracle_path, **allowed_oracle}, "B_FIXED_CURRENT_UI_PREPARE_ORACLE_BYTES")
         oracle_update = {"before": oracle_before, "after": oracle_current}
         delta = source_review.get("semantic_delta")
