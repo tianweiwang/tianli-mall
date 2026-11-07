@@ -11,8 +11,9 @@
         <h2 id="bill-import-heading">导入账单</h2>
         <el-form label-position="top" @submit.native.prevent="submit">
           <div class="bill-grid">
-            <el-form-item label="商家编号">
-              <el-input-number v-model="merchant" :min="1" :max="4294967295" :precision="0" :disabled="busy" controls-position="right" @change="merchantChanged" />
+            <el-form-item label="商家编号" for="finance-bill-merchant" :error="merchant && !merchantId ? '请输入有效的商家编号' : ''">
+              <el-input id="finance-bill-merchant" v-model.trim="merchant" inputmode="numeric" maxlength="10"
+                :disabled="busy" @input="merchantChanged" />
             </el-form-item>
             <el-form-item label="原收款账户">
               <el-select v-model="anchor" placeholder="先填写商家编号并读取账户" :disabled="busy || !accountRows.length" @change="sourceChanged">
@@ -28,7 +29,7 @@
             </el-form-item>
           </div>
           <div class="marketplace-actions">
-            <el-button :disabled="busy || !merchant || !can('read')" @click="loadAccounts">读取原付款账户</el-button>
+            <el-button :disabled="busy || !merchantId || !can('read')" @click="loadAccounts">读取原付款账户</el-button>
             <el-button :disabled="busy || !scopeReady || !can('read')" @click="loadMovements">查看期间本地流水</el-button>
             <el-button :disabled="busy" @click="downloadTemplate">下载标准 CSV 模板</el-button>
           </div>
@@ -115,10 +116,17 @@ function today() {
 }
 export default {
   name: 'MarketplaceFinanceBills',
-  data: () => ({ alive: true, context: null, contextRoute: '', busy: false, sending: '', error: '', notice: '', merchant: undefined,
+  data: () => ({ alive: true, context: null, contextRoute: '', busy: false, sending: '', error: '', notice: '', merchant: '',
     anchor: '', accountRows: [], dateFrom: today(), dateTo: today(), csv: '', filename: '', fileJob: 0, localRows: null,
     bills: [], nextBefore: null, record: null, resultChoice: '', fieldLabels: api.fieldLabels }),
-  computed: { scopeReady() { return !!this.anchor && !!this.dateFrom && !!this.dateTo; } },
+  computed: {
+    merchantId() {
+      if (!/^[1-9]\d{0,9}$/.test(this.merchant)) return null;
+      const id = Number(this.merchant);
+      return id <= 4294967295 ? id : null;
+    },
+    scopeReady() { return !!this.anchor && !!this.dateFrom && !!this.dateTo; },
+  },
   created() {
     this.unsubscribe = this.$store.subscribe(() => this.syncIdentity()); this.unsubscribeEpoch = subscribePlatformAuthEpoch(() => this.syncIdentity());
     window.addEventListener('focus', this.syncIdentity); window.addEventListener('storage', this.syncIdentity); this.reset();
@@ -159,7 +167,7 @@ export default {
     },
     merchantChanged() { this.accountRows = []; this.anchor = ''; this.sourceChanged(); },
     sourceChanged() { this.localRows = null; this.clearFile(); },
-    loadAccounts() { this.perform(context => api.accounts(context, this.merchant), value => { this.accountRows = value.accounts; this.anchor = ''; this.sourceChanged(); if (!value.accounts.length) this.notice = '该商家尚无已保存的测试付款账户。'; }); },
+    loadAccounts() { this.perform(context => api.accounts(context, this.merchantId), value => { this.accountRows = value.accounts; this.anchor = ''; this.sourceChanged(); if (!value.accounts.length) this.notice = '该商家尚无已保存的测试付款账户。'; }); },
     loadMovements() { this.perform(context => api.movements(context, this.period()), value => { if (!value.movements || !Array.isArray(value.movements.rows)) throw new Error('本地流水响应未确认'); this.localRows = value.movements.rows; }); },
     period() { return { anchor_attempt_id: this.anchor, date_from: this.dateFrom, date_to: this.dateTo }; },
     async chooseFile(event) {
@@ -201,7 +209,7 @@ export default {
 .finance-bills h3 { font-size: 15px; margin: 20px 0 10px; }
 .bill-section { margin-top: 26px; padding-top: 24px; border-top: 1px solid #ebeef5; min-width: 0; }
 .bill-grid, .bill-summary, .comparison-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; }
-.bill-grid .el-select, .bill-grid .el-input-number, .bill-grid .el-date-editor { width: 100%; min-width: 0; max-width: 100%; }
+.bill-grid .el-select, .bill-grid .el-input, .bill-grid .el-date-editor { width: 100%; min-width: 0; max-width: 100%; }
 .bill-grid >>> .el-form-item { margin-bottom: 4px; }
 .marketplace-actions { align-items: center; margin: 16px 0; }
 .note { margin: 8px 0; color: #606266; line-height: 1.7; overflow-wrap: anywhere; }
