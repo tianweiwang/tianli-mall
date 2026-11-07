@@ -8,6 +8,12 @@ use app\adminapi\middleware\MarketplaceScopeMiddleware;
 use app\http\middleware\AllowOriginMiddleware;
 
 Route::group('marketplace', function () {
+    Route::get('finance-bills', 'v1.marketplace.FinanceBills/read')->name('marketplace-finance-bills-read')
+        ->option(['marketplace_permission'=>'marketplace-finance-bills-read']);
+    Route::post('finance-bills', 'v1.marketplace.FinanceBills/import')->name('marketplace-finance-bills-import')
+        ->option(['marketplace_permission'=>'marketplace-finance-bills-import']);
+    Route::post('finance-bills/reconcile', 'v1.marketplace.FinanceBills/reconcile')->name('marketplace-finance-bills-reconcile')
+        ->option(['marketplace_permission'=>'marketplace-finance-bills-reconcile']);
     Route::get('finance-transactions', 'v1.marketplace.FinanceTransactions/read')->name('marketplace-finance-transactions-read')
         ->option(['marketplace_permission'=>'marketplace-finance-transactions-read']);
     Route::get('finance-settings', 'v1.marketplace.FinanceSettings/read')->name('marketplace-finance-settings-read')

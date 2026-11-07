@@ -239,11 +239,16 @@ final class AuditLogServices
     public function recordFinanceSettingsScope(PlatformScope $scope,PDO $pdo): void
     {
         try {
-            $methods=['marketplace-finance-settings-read'=>'GET','marketplace-finance-settings-write'=>'PUT','marketplace-finance-transactions-read'=>'GET'];
-            $path=$scope->permission==='marketplace-finance-transactions-read'?'marketplace/finance-transactions':'marketplace/finance-settings';
+            $routes=['marketplace-finance-settings-read'=>['GET','marketplace/finance-settings'],
+                'marketplace-finance-settings-write'=>['PUT','marketplace/finance-settings'],
+                'marketplace-finance-transactions-read'=>['GET','marketplace/finance-transactions'],
+                'marketplace-finance-bills-read'=>['GET','marketplace/finance-bills'],
+                'marketplace-finance-bills-import'=>['POST','marketplace/finance-bills'],
+                'marketplace-finance-bills-reconcile'=>['POST','marketplace/finance-bills/reconcile']];
+            [$method,$path]=$routes[$scope->permission]??[null,null];
             $request=app()->request;$connection=Db::connect();
-            if (!isset($methods[$scope->permission])||$scope->targetMerId!==null||!$request instanceof Request
-                ||app('http')->getName()!=='adminapi'||$request->method()!==$methods[$scope->permission]
+            if ($method===null||$scope->targetMerId!==null||!$request instanceof Request
+                ||app('http')->getName()!=='adminapi'||$request->method()!==$method
                 ||$request->platformScope()!==$scope||$request->isAdminLogin()!==true
                 ||(string)$request->adminId()!==(string)$scope->adminId||$connection->getPdo()!==$pdo||!$pdo->inTransaction())
                 throw new AuthUnavailableException();

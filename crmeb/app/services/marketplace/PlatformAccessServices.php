@@ -22,6 +22,9 @@ use think\Model;
 final class PlatformAccessServices
 {
     public const ACTIONS = [
+        'marketplace-finance-bills-read' => ['GET', 'marketplace/finance-bills', false],
+        'marketplace-finance-bills-import' => ['POST', 'marketplace/finance-bills', false],
+        'marketplace-finance-bills-reconcile' => ['POST', 'marketplace/finance-bills/reconcile', false],
         'marketplace-finance-settings-read' => ['GET', 'marketplace/finance-settings', false],
         'marketplace-finance-settings-write' => ['PUT', 'marketplace/finance-settings', false],
         'marketplace-finance-transactions-read' => ['GET', 'marketplace/finance-transactions', false],
@@ -88,6 +91,15 @@ final class PlatformAccessServices
         } catch (\Throwable $error) {
             throw new AuthUnavailableException();
         }
+    }
+
+    /** Bill mutations return saved financial detail and therefore also require the read grant. */
+    public function financeBillReadForMutation(PlatformScope $scope):void
+    {
+        if(!in_array($scope->permission,['marketplace-finance-bills-import','marketplace-finance-bills-reconcile'],true))
+            throw new HttpException(403,'没有权限访问');
+        $this->authorizeScope($scope,$scope->permission);
+        $this->authorizeCurrent($scope->adminId,'marketplace-finance-bills-read');
     }
 
     public function authorizeScope(PlatformScope $scope, string $permission): void

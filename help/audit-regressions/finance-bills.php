@@ -7,6 +7,7 @@ require_once __DIR__.'/../../crmeb/vendor/autoload.php';
 use app\services\marketplace\finance\FinanceBillReconciliation as Bills;
 use app\services\marketplace\finance\FinanceSettlementCalculation as Fees;
 use app\services\marketplace\finance\FinanceSettingsInput;
+use app\services\marketplace\finance\FinanceBillInput;
 
 $checks=[];
 function billExpect(bool $ok,string $name):void
@@ -60,6 +61,14 @@ billExpect(Bills::refundIncrements([['action_id'=>'18','applied_at'=>1794015000,
     'SINGLE_FULL_REFUND_APPLICATION_COUNTS_ONCE');
 billExpect(Bills::parse($header."\n")['rows']===[]&&Bills::reconcile([],[])['counts']===['matched'=>0,'differences'=>0],
     'EMPTY_COMPARISON_HAS_ZERO_ROWS_ONLY');
+$period=FinanceBillInput::period(['anchor_attempt_id'=>'11','date_from'=>'2026-11-01','date_to'=>'2026-11-30']);
+billExpect($period['period_end']-$period['period_start']===30*86400
+    &&gmdate('Y-m-d H:i:s',$period['period_start'])==='2026-10-31 16:00:00',
+    'INCLUSIVE_CALENDAR_PERIOD_USES_EXPLICIT_SHANGHAI_BOUNDARIES');
+$import=FinanceBillInput::import(['anchor_attempt_id'=>'11','date_from'=>'2026-11-07','date_to'=>'2026-11-07',
+    'filename'=>'本机合成账单.csv','csv'=>"\xef\xbb\xbf".$csv]);
+billExpect($import['csv']==="\xef\xbb\xbf".$csv&&$import['parsed']===$bill&&$import['filename']==='本机合成账单.csv'
+    &&$import['period_end']-$import['period_start']===86400,'IMPORT_PRESERVES_ORIGINAL_BYTES_WITH_EXPLICIT_ACCOUNT_AND_PERIOD');
 
 $draft=array_replace(FinanceSettingsInput::emptyDraft(),['platform_fee_enabled'=>true,'platform_fee_payer'=>'merchant',
     'channel_fee_payer'=>'merchant','platform_fee_basis'=>'goods_paid','platform_fee_rate'=>'2.50','refund_platform_fee'=>'proportional']);

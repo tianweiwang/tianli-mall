@@ -291,6 +291,9 @@ final class MarketplaceRefundServices
                 ||$saved['refund']['held_amount']!=='0.00')self::fail();
         }
     }
+    /** @internal Validates caller-owned complete read facts only; supplies neither authorization nor a snapshot. */
+    public function assertSavedBindingForRead(array $row,array $saved):void
+    {$this->savedBinding($row,$saved);}
     private function savedProgressBinding(array $row,array $saved):void
     {
         $e=$row['evidence'];$facts=[];foreach($e['observations'] as $fact)$facts[$fact['key']]=$fact;

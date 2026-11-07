@@ -9,6 +9,7 @@ import { captureContext, currentContext, closeContext, currentPermissions } from
 import { refreshPermissions as refreshReviewPermissions } from '@/api/marketplace-review';
 import { refreshPermissions as refreshFinancePermissions } from '@/api/marketplace-finance-settings';
 import { refreshPermissions as refreshFinanceTransactionPermissions } from '@/api/marketplace-finance-transactions';
+import { refreshPermissions as refreshFinanceBillPermissions } from '@/api/marketplace-finance-bills';
 
 function currentPermission(permission) {
   return async (to, from, next) => {
@@ -74,7 +75,7 @@ function financePermission(permission = 'marketplace-finance-settings-read', ref
 }
 export default {
   path: setting.routePre + '/marketplace', name: 'marketplace', header: 'marketplace', component: LayoutMain,
-  meta: { title: '经营商家', auth: ['marketplace-merchants-list', 'marketplace-products-list', 'marketplace-aftersales-list', 'marketplace-aftersales-read', 'marketplace-aftersales-approve', 'marketplace-aftersales-reject', 'marketplace-aftersales-return-accept', 'marketplace-aftersale-files-ticket', 'marketplace-aftersale-files-read', 'marketplace-reviews-list', 'marketplace-reviews-read', 'marketplace-reviews-moderate', 'marketplace-finance-settings-read', 'marketplace-finance-settings-write', 'marketplace-finance-transactions-read'] },
+  meta: { title: '经营商家', auth: ['marketplace-merchants-list', 'marketplace-products-list', 'marketplace-aftersales-list', 'marketplace-aftersales-read', 'marketplace-aftersales-approve', 'marketplace-aftersales-reject', 'marketplace-aftersales-return-accept', 'marketplace-aftersale-files-ticket', 'marketplace-aftersale-files-read', 'marketplace-reviews-list', 'marketplace-reviews-read', 'marketplace-reviews-moderate', 'marketplace-finance-settings-read', 'marketplace-finance-settings-write', 'marketplace-finance-transactions-read', 'marketplace-finance-bills-read', 'marketplace-finance-bills-import', 'marketplace-finance-bills-reconcile'] },
   children: [
     { path: 'merchants', name: 'marketplace_merchants', meta: { title: '入驻商家', auth: ['marketplace-merchants-list'] }, beforeEnter: currentPermission('marketplace-merchants-list'), component: () => import('@/pages/marketplace/merchant/index.vue') },
     { path: 'products', name: 'marketplace_products', meta: { title: '商品审核', auth: ['marketplace-products-list'] }, beforeEnter: currentPermission('marketplace-products-list'), component: () => import('@/pages/marketplace/productReview/index.vue') },
@@ -84,5 +85,6 @@ export default {
     { path: 'reviews/:id', name: 'marketplace_review_detail', meta: { title: '评价详情', auth: ['marketplace-reviews-read'] }, beforeEnter: reviewPermission('marketplace-reviews-read'), component: () => import('@/pages/marketplace/review/index.vue') },
     { path: 'finance-settings', name: 'marketplace_finance_settings', meta: { title: '资金设置', auth: ['marketplace-finance-settings-read'] }, beforeEnter: financePermission(), component: () => import('@/pages/marketplace/financeSettings/index.vue') },
     { path: 'finance-transactions', name: 'marketplace_finance_transactions', meta: { title: '测试交易', auth: ['marketplace-finance-transactions-read'] }, beforeEnter: financePermission('marketplace-finance-transactions-read', refreshFinanceTransactionPermissions, '测试交易'), component: () => import('@/pages/marketplace/financeTransactions/index.vue') },
+    { path: 'finance-bills', name: 'marketplace_finance_bills', meta: { title: '测试账单对账', auth: ['marketplace-finance-bills-read'] }, beforeEnter: financePermission('marketplace-finance-bills-read', refreshFinanceBillPermissions, '测试账单对账'), component: () => import('@/pages/marketplace/financeBills/index.vue') },
   ],
 };

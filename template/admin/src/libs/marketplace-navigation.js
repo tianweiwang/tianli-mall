@@ -11,11 +11,12 @@ export function withMarketplaceMenus(menuList, grants) {
     { permission: 'marketplace-reviews-list', path: rootPath + '/reviews', title: '商品评价' },
     { permission: 'marketplace-finance-settings-read', path: rootPath + '/finance-settings', title: '资金设置' },
     { permission: 'marketplace-finance-transactions-read', path: rootPath + '/finance-transactions', title: '测试交易' },
+    { permission: 'marketplace-finance-bills-read', path: rootPath + '/finance-bills', title: '测试账单对账' },
   ].filter((item) => grants.includes(item.permission)).map((item) => ({ path: item.path, title: item.title, icon: '', header: 'marketplace', is_header: 0, is_show: 1 }));
   const existing = list.find((item) => item.path === rootPath);
   if (existing) {
     if (existing.children !== undefined && !Array.isArray(existing.children)) throw new Error('经营商家菜单返回不完整');
-    const paths = ['/merchants', '/products', '/aftersales', '/reviews', '/finance-settings', '/finance-transactions'].map((path) => rootPath + path);
+    const paths = ['/merchants', '/products', '/aftersales', '/reviews', '/finance-settings', '/finance-transactions', '/finance-bills'].map((path) => rootPath + path);
     existing.children = (existing.children || []).filter((item) => !paths.includes(item.path)).concat(children);
   } else if (children.length) list.push({ path: rootPath, title: '经营商家', icon: 'office-building', header: 'marketplace', is_header: 1, is_show: 1, marketplaceProjection: true, children });
   return list;
