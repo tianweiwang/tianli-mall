@@ -25,6 +25,30 @@ const PRU_PAUSED_CART_PATHS = [
     'app/services/marketplace/PublicCatalogServices.php',
     'app/services/order/StoreCartServices.php',
 ];
+const PRU_FINANCE_SCOPE = 'LOCAL_FULL_RUNTIME_FINANCE_UPDATE';
+const PRU_FINANCE_BASELINE = 'd10a84f2cc619474316a8b3ea64cc97b2ff20f37';
+// True means a new file, absent from both the complete baseline and the running application.
+const PRU_FINANCE_FILES = [
+    'app/adminapi/controller/v1/marketplace/FinanceBillNotes.php' => true,
+    'app/adminapi/controller/v1/marketplace/FinanceBills.php' => true,
+    'app/adminapi/controller/v1/marketplace/FinanceStatements.php' => true,
+    'app/adminapi/route/marketplace.php' => false,
+    'app/merchantapi/controller/FinanceStatements.php' => true,
+    'app/merchantapi/route/route.php' => false,
+    'app/services/marketplace/AuditLogServices.php' => false,
+    'app/services/marketplace/MerchantPermissions.php' => false,
+    'app/services/marketplace/PlatformAccessServices.php' => false,
+    'app/services/marketplace/finance/FinanceBillInput.php' => true,
+    'app/services/marketplace/finance/FinanceBillNoteStore.php' => true,
+    'app/services/marketplace/finance/FinanceBillReconciliation.php' => true,
+    'app/services/marketplace/finance/FinanceBillSource.php' => true,
+    'app/services/marketplace/finance/FinanceBillStore.php' => true,
+    'app/services/marketplace/finance/FinanceBillsServices.php' => true,
+    'app/services/marketplace/finance/FinanceSettlementCalculation.php' => true,
+    'app/services/marketplace/finance/FinanceStatementProjection.php' => true,
+    'app/services/marketplace/finance/FinanceStatementStore.php' => true,
+    'app/services/marketplace/payment/MarketplaceRefundServices.php' => false,
+];
 function pru_require(bool $ok, string $code): void
 {
     if (!$ok) throw new RuntimeException('RUNTIME_REVIEW_UPDATE_' . $code);
@@ -92,21 +116,38 @@ function pru_precheck(array $plan): array
     $GLOBALS['pru_phase'] = 'complete_old_and_new_deployment_source';
     $files = $plan['files'];
     $old = pru_manifest('/baseline/crmeb'); $new = pru_manifest('/source/crmeb');
-    pru_require(array_keys($old) === array_keys($new), 'SAME_COMPLETE_SOURCE_NAMESPACE'); $changes = [];
-    foreach ($old as $path => $row) if ($row !== $new[$path]) $changes[] = $path;
+    $finance = $plan['scope'] === PRU_FINANCE_SCOPE;
+    if ($finance) {
+        pru_require(array_diff_key($old, $new) === [], 'NO_DELETED_SOURCE_PATH');
+        $directories = static fn(array $manifest): array => array_keys(array_filter($manifest,
+            static fn(array $row): bool => $row['type'] === 'directory'));
+        pru_require($directories($old) === $directories($new), 'SAME_COMPLETE_SOURCE_DIRECTORIES');
+    } else pru_require(array_keys($old) === array_keys($new), 'SAME_COMPLETE_SOURCE_NAMESPACE');
+    $changes = [];
+    foreach ($new as $path => $row) if (!isset($old[$path]) || $row !== $old[$path]) $changes[] = $path;
     pru_require($changes === array_keys($files), 'ONLY_APPROVED_SOURCE_PATH_CHANGED');
     $oldBytes = []; $newBytes = [];
     foreach ($files as $path => $pins) {
-        foreach (['before' => $old, 'after' => $new] as $key => $manifest)
-            pru_require($manifest[$path] === ['type' => 'file', 'size' => $pins[$key]['bytes'],
+        $added = $pins['before'] === null;
+        if ($added) {
+            pru_require($finance && PRU_FINANCE_FILES[$path] && !isset($old[$path]), 'FIXED_NEW_SOURCE_ABSENT');
+            pru_absent('/baseline/crmeb/' . $path, 'NEW_BASELINE_PATH_ABSENT');
+        }
+        foreach (['before' => $old, 'after' => $new] as $key => $manifest) {
+            if ($key === 'before' && $added) continue;
+            pru_require(($manifest[$path] ?? null) === ['type' => 'file', 'size' => $pins[$key]['bytes'],
                 'sha256' => $pins[$key]['sha256']], 'EXACT_PLANNED_SOURCE_PIN');
-        $oldBytes[$path] = pru_read('/baseline/crmeb/' . $path);
+        }
+        $oldBytes[$path] = $added ? null : pru_read('/baseline/crmeb/' . $path);
         $newBytes[$path] = pru_read('/source/crmeb/' . $path);
-        pru_require(pru_pin($oldBytes[$path]) === $pins['before'] && pru_pin($newBytes[$path]) === $pins['after'],
+        pru_require(($added || pru_pin($oldBytes[$path]) === $pins['before']) && pru_pin($newBytes[$path]) === $pins['after'],
             'PLANNED_COMPLETE_SERVICE_BYTES');
         $live = '/runtime-app/' . $path;
-        pru_file_mode($live, 0644);
-        pru_require(pru_read($live) === $oldBytes[$path], 'ACTUAL_OLD_SERVICE_AND_READY');
+        if ($added) pru_absent($live, 'NEW_RUNTIME_PATH_ABSENT');
+        else {
+            pru_file_mode($live, 0644);
+            pru_require(pru_read($live) === $oldBytes[$path], 'ACTUAL_OLD_SERVICE_AND_READY');
+        }
     }
     $identity = ['project' => $plan['project'], 'run_id' => $plan['run_id'], 'feature' => 'full-runtime-v1'];
     $oldReceipt = pru_receipt($identity, $old); $newReceipt = pru_receipt($identity, $new);
@@ -124,26 +165,44 @@ function pru_stable_sources(array $state, string $planRaw): void
         && pru_manifest('/baseline/crmeb') === $state['old']
         && pru_manifest('/source/crmeb') === $state['new'], 'COMPLETE_SOURCES_AND_PLAN_RECHECK');
 }
-function pru_stage(string $path, string $before, string $after, int $mode): string
+function pru_absent(string $path, string $code): void
+{
+    clearstatcache(true, $path);
+    pru_require(!file_exists($path) && !is_link($path), $code);
+    pru_require(realpath(dirname($path)) === dirname($path), 'EXISTING_REAL_PARENT');
+}
+function pru_stage(string $path, ?string $before, string $after, int $mode): string
 {
     $temporary = $path . '.preview-review-update.tmp';
-    pru_require(!file_exists($temporary) && !is_link($temporary), 'NEW_ATOMIC_TEMPORARY_ONLY');
-    pru_file_mode($path, $mode); pru_require(pru_read($path) === $before, 'UNCHANGED_ATOMIC_TARGET');
+    pru_absent($temporary, 'NEW_ATOMIC_TEMPORARY_ONLY');
+    if ($before === null) pru_absent($path, 'NEW_RUNTIME_PATH_ABSENT');
+    else {
+        pru_file_mode($path, $mode); pru_require(pru_read($path) === $before, 'UNCHANGED_ATOMIC_TARGET');
+    }
     preview_full_runtime_write($temporary, $after, $mode);
     pru_file_mode($temporary, $mode); pru_require(pru_read($temporary) === $after, 'COMPLETE_ATOMIC_TEMPORARY');
     return $temporary;
 }
-function pru_promote(string $path, string $temporary, string $before, string $after, int $mode): void
+function pru_promote(string $path, string $temporary, ?string $before, string $after, int $mode): void
 {
     pru_file_mode($temporary, $mode); pru_require(pru_read($temporary) === $after, 'COMPLETE_ATOMIC_TEMPORARY');
-    pru_require(pru_read($path) === $before, 'ATOMIC_TARGET_RECHECK'); pru_file_mode($path, $mode);
-    pru_require(rename($temporary, $path), 'ATOMIC_RENAME');
+    if ($before === null) {
+        pru_absent($path, 'NEW_RUNTIME_PATH_ABSENT');
+        // link publishes the complete staged inode atomically and never replaces an existing path.
+        pru_require(link($temporary, $path), 'ATOMIC_NEW_FILE_LINK');
+        pru_require(unlink($temporary), 'REMOVE_NEW_FILE_STAGING_LINK');
+    } else {
+        pru_require(pru_read($path) === $before, 'ATOMIC_TARGET_RECHECK'); pru_file_mode($path, $mode);
+        pru_require(rename($temporary, $path), 'ATOMIC_RENAME');
+    }
     pru_file_mode($path, $mode); pru_require(pru_read($path) === $after, 'ATOMIC_REPLACEMENT_READBACK');
 }
-function pru_file_pins(array $pins): array
+function pru_file_pins(array $pins, bool $added = false): array
 {
     pru_keys($pins, ['before','after']);
+    pru_require(($pins['before'] === null) === $added, 'FIXED_NEW_FILE_BEFORE_PIN');
     foreach ($pins as $key => $pin) {
+        if ($key === 'before' && $added) continue;
         pru_require(is_array($pin), 'PLAN_FILE_PIN'); pru_keys($pin, ['bytes','sha256']);
         pru_require(is_int($pin['bytes']) && $pin['bytes'] > 0 && $pin['bytes'] <= 1048576
             && is_string($pin['sha256']) && preg_match('/\A[a-f0-9]{64}\z/D', $pin['sha256']) === 1, 'TYPED_PLAN_FILE_PIN');
@@ -165,10 +224,12 @@ function pru_main(array $argv): int
         && scandir('/out') === ['.', '..'], 'NEW_EMPTY_OUTPUT'); $GLOBALS['pru_out_ready'] = true;
     $planRaw = pru_read('/plan.json'); $plan = json_decode($planRaw, true, 32, JSON_THROW_ON_ERROR);
     pru_require(is_array($plan), 'PLAN_OBJECT');
+    if (($plan['schema'] ?? null) === 2 && ($plan['scope'] ?? null) === PRU_FINANCE_SCOPE) $GLOBALS['pru_scope'] = PRU_FINANCE_SCOPE;
     $multiFilePaths = ($plan['schema'] ?? null) === 2 ? match ($plan['scope'] ?? null) {
         PRU_ADDRESS_SCOPE => PRU_ADDRESS_PATHS,
         PRU_STOREFRONT_PAUSE_SCOPE => PRU_STOREFRONT_PAUSE_PATHS,
         PRU_PAUSED_CART_SCOPE => PRU_PAUSED_CART_PATHS,
+        PRU_FINANCE_SCOPE => array_keys(PRU_FINANCE_FILES),
         default => null,
     } : null;
     $planKeys = ['schema','scope','project','run_id','old_source_sha','baseline_source_sha','new_source_sha','old_ready'];
@@ -178,6 +239,7 @@ function pru_main(array $argv): int
             PRU_ADDRESS_SCOPE => 'FIXED_ADDRESS_PATHS',
             PRU_STOREFRONT_PAUSE_SCOPE => 'FIXED_STOREFRONT_PAUSE_PATHS',
             PRU_PAUSED_CART_SCOPE => 'FIXED_PAUSED_CART_PATHS',
+            PRU_FINANCE_SCOPE => 'FIXED_FINANCE_PATHS',
         };
         pru_require(is_array($plan['files']) && array_keys($plan['files']) === $multiFilePaths, $pathError);
     } else {
@@ -190,10 +252,14 @@ function pru_main(array $argv): int
         && $plan['project'] === 'mall-preview-' . $plan['run_id'], 'FIXED_PLAN_INSTANCE_AND_PATH');
     foreach (['old_source_sha','baseline_source_sha','new_source_sha'] as $key)
         pru_require(is_string($plan[$key]) && preg_match('/\A[a-f0-9]{40}\z/D', $plan[$key]) === 1, 'PLAN_COMMIT_ID');
+    if ($plan['scope'] === PRU_FINANCE_SCOPE) {
+        pru_require($plan['old_source_sha'] === PRU_FINANCE_BASELINE && $plan['baseline_source_sha'] === PRU_FINANCE_BASELINE,
+            'FIXED_FINANCE_BASELINE');
+    }
     pru_require($plan['new_source_sha'] !== $plan['old_source_sha'] && $plan['new_source_sha'] !== $plan['baseline_source_sha'], 'NEW_DECLARED_SOURCE');
     foreach ($plan['files'] as $path => $pins) {
         pru_require(is_array($pins), 'PLAN_FILE_PIN');
-        $plan['files'][$path] = pru_file_pins($pins);
+        $plan['files'][$path] = pru_file_pins($pins, $plan['scope'] === PRU_FINANCE_SCOPE && PRU_FINANCE_FILES[$path]);
     }
     pru_require(is_array($plan['old_ready']), 'CHANGED_SERVICE_AND_OLD_READY');
     $GLOBALS['pru_scope'] = $plan['scope'];
@@ -208,7 +274,9 @@ function pru_main(array $argv): int
         pru_stable_sources($state, $planRaw);
         $GLOBALS['pru_phase'] = 'create_only_public_backups';
         foreach ($state['oldBytes'] as $path => $bytes) {
-            $backup = $multiFilePaths !== null ? basename($path, '.php') . '-before.php' : 'service-before.php';
+            if ($bytes === null) continue;
+            $backup = $plan['scope'] === PRU_FINANCE_SCOPE ? rawurlencode($path) . '.before'
+                : ($multiFilePaths !== null ? basename($path, '.php') . '-before.php' : 'service-before.php');
             preview_full_runtime_write('/out/' . $backup, $bytes);
         }
         preview_full_runtime_write('/out/ready-before.json', $state['ready'], 0600);
@@ -234,11 +302,13 @@ function pru_main(array $argv): int
         PRU_ADDRESS_SCOPE => 'VERIFIED_PLANNED_OLD_RUNTIME_AND_ADDRESS_CHANGES_ONLY',
         PRU_STOREFRONT_PAUSE_SCOPE => 'VERIFIED_PLANNED_OLD_RUNTIME_AND_STOREFRONT_PAUSE_CONTROLS_CHANGES_ONLY',
         PRU_PAUSED_CART_SCOPE => 'VERIFIED_PLANNED_OLD_RUNTIME_AND_PAUSED_CART_DISPLAY_CHANGES_ONLY',
+        PRU_FINANCE_SCOPE => 'VERIFIED_PLANNED_OLD_RUNTIME_AND_FINANCE_ADDITIONS_ONLY',
         default => 'VERIFIED_PLANNED_OLD_RUNTIME_AND_SINGLE_SOURCE_CHANGE_ONLY',
     };
     $applyStatus = match ($plan['scope']) {
         PRU_STOREFRONT_PAUSE_SCOPE => 'VERIFIED_PLANNED_STOREFRONT_PAUSE_CONTROLS_CODE_AND_READY_UPDATE_ONLY',
         PRU_PAUSED_CART_SCOPE => 'VERIFIED_PLANNED_PAUSED_CART_DISPLAY_CODE_AND_READY_UPDATE_ONLY',
+        PRU_FINANCE_SCOPE => 'VERIFIED_PLANNED_FINANCE_CODE_AND_READY_UPDATE_ONLY',
         default => 'VERIFIED_PLANNED_CODE_AND_READY_UPDATE_ONLY',
     };
     $fileResult = ['files' => $plan['files']];
@@ -263,7 +333,7 @@ if (PHP_SAPI === 'cli' && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE
     try { exit(pru_main($_SERVER['argv'])); }
     catch (Throwable $error) {
         $scope = $GLOBALS['pru_scope'] ?? 'LOCAL_FULL_RUNTIME_REVIEW_SERVICE_UPDATE';
-        $failure = ['schema' => in_array($scope, [PRU_ADDRESS_SCOPE, PRU_STOREFRONT_PAUSE_SCOPE, PRU_PAUSED_CART_SCOPE], true) ? 2 : 1, 'scope' => $scope,
+        $failure = ['schema' => in_array($scope, [PRU_ADDRESS_SCOPE, PRU_STOREFRONT_PAUSE_SCOPE, PRU_PAUSED_CART_SCOPE, PRU_FINANCE_SCOPE], true) ? 2 : 1, 'scope' => $scope,
             'status' => 'FAILED_STATE_PRESERVED_NO_RETRY_OR_ROLLBACK', 'phase' => $GLOBALS['pru_phase'],
             'code' => preg_match('/\ARUNTIME_REVIEW_UPDATE_[A-Z_]+\z/D', $error->getMessage()) === 1 ? $error->getMessage() : 'ORIGINAL_VERIFY_OR_OPERATION_REJECTED'];
         $raw = json_encode($failure, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
