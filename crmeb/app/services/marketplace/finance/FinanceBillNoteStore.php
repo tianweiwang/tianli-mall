@@ -93,7 +93,7 @@ final class FinanceBillNoteStore
         if ($replay !== null) return ['record' => $replay, 'reused_note' => true];
 
         $statement = $this->pdo->prepare('INSERT INTO ' . $this->table()
-            . ' (version,bill_id,result_id,row_number,row_sha,note,request_key,body_sha,created_by,created_at) VALUES (1,?,?,?,?,?,?,?,?,?)');
+            . ' (`version`,`bill_id`,`result_id`,`row_number`,`row_sha`,`note`,`request_key`,`body_sha`,`created_by`,`created_at`) VALUES (1,?,?,?,?,?,?,?,?,?)');
         try {
             $statement->execute([$input['bill_id'], $input['result_id'], $input['row_number'], $rowSha, $input['note'],
                 $input['request_key'], self::bodyDigest($input), $actor, time()]);
