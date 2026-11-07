@@ -9,6 +9,7 @@ use app\services\marketplace\finance\FinanceSettlementCalculation as Fees;
 use app\services\marketplace\finance\FinanceSettingsInput;
 use app\services\marketplace\finance\FinanceBillInput;
 use app\services\marketplace\finance\FinanceStatementProjection as Statements;
+use app\services\marketplace\finance\FinanceBillNoteStore as Notes;
 use app\services\marketplace\payment\MarketplaceRefundEvidence;
 
 $checks=[];
@@ -173,6 +174,19 @@ $refundOnly = Statements::build($refundBill, $refundEvidence, $draft);
 billExpect($refundOnly['reasons'] === ['ORIGINAL_SALE_RULE_UNKNOWN'] && $refundOnly['totals']['refund_amount'] === '20.15'
     && $refundOnly['totals']['channel_fee_amount'] === '-0.12' && $refundOnly['totals']['merchant_receivable'] === null,
     'REFUND_ONLY_WITHOUT_ORIGINAL_RULE_DOES_NOT_BORROW_SELECTED_CURRENT_RULE');
+
+$note = Notes::input(['bill_id' => '1', 'result_id' => '2', 'row_number' => 1,
+    'note' => "  已联系机构\n等待退款凭证  ", 'request_key' => 'bill-note:' . str_repeat('a', 32)]);
+billExpect($note['note'] === "已联系机构\n等待退款凭证" && $note['row_number'] === 1,
+    'FOLLOW_UP_NORMALIZES_OUTER_SPACE_AND_PRESERVES_MULTILINE_TEXT');
+$longNote = Notes::input(array_replace($note, ['note' => str_repeat('核', 1000)]));
+billExpect(mb_strlen($longNote['note'], 'UTF-8') === 1000, 'FOLLOW_UP_SUPPORTS_1000_UNICODE_CHARACTERS');
+$noteDetail = $statementBill + ['id' => '1', 'result_id' => '2'];
+$noteDetail['comparison']['rows'][] = $noteDetail['comparison']['rows'][0];
+$noteBefore = $noteDetail;
+billExpect(Notes::rowDigest($noteDetail, 1) !== Notes::rowDigest($noteDetail, 3)
+    && Notes::rowDigest($noteDetail, 0) !== Notes::rowDigest($noteDetail, 1) && $noteDetail === $noteBefore,
+    'FOLLOW_UP_BINDS_DUPLICATE_ROWS_BY_SAVED_POSITION_WITHOUT_MUTATING_COMPARISON');
 
 echo json_encode(['status'=>'PASS_NORMAL_FINANCE_COMPONENTS_ONLY','count'=>count($checks),'checks'=>$checks,
     'database'=>'NOT_RUN','http'=>'NOT_RUN','ui'=>'NOT_RUN','real_funds'=>'NOT_RUN'],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";

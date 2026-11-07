@@ -22,6 +22,8 @@ use think\Model;
 final class PlatformAccessServices
 {
     public const ACTIONS = [
+        'marketplace-finance-bill-notes-read' => ['GET', 'marketplace/finance-bill-notes', false],
+        'marketplace-finance-bill-notes-append' => ['POST', 'marketplace/finance-bill-notes', false],
         'marketplace-finance-statements-read' => ['GET', 'marketplace/finance-statements', false],
         'marketplace-finance-statements-create' => ['POST', 'marketplace/finance-statements', false],
         'marketplace-finance-bills-read' => ['GET', 'marketplace/finance-bills', false],
@@ -109,6 +111,18 @@ final class PlatformAccessServices
         $this->authorizeScope($scope, 'marketplace-finance-statements-create');
         $this->authorizeCurrent($scope->adminId, 'marketplace-finance-statements-read');
         $this->authorizeCurrent($scope->adminId, 'marketplace-finance-bills-read');
+    }
+
+    public function financeBillNoteReadForAction(PlatformScope $scope): void
+    {
+        if (!in_array($scope->permission, ['marketplace-finance-bill-notes-read','marketplace-finance-bill-notes-append'], true)) {
+            throw new HttpException(403, '没有权限访问');
+        }
+        $this->authorizeScope($scope, $scope->permission);
+        $this->authorizeCurrent($scope->adminId, 'marketplace-finance-bills-read');
+        if ($scope->permission === 'marketplace-finance-bill-notes-append') {
+            $this->authorizeCurrent($scope->adminId, 'marketplace-finance-bill-notes-read');
+        }
     }
 
     public function authorizeScope(PlatformScope $scope, string $permission): void

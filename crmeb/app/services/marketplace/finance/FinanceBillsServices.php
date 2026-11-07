@@ -26,6 +26,8 @@ final class FinanceBillsServices
     public const STATEMENTS_READ = 'marketplace-finance-statements-read';
     public const STATEMENTS_CREATE = 'marketplace-finance-statements-create';
     public const MERCHANT_STATEMENTS_READ = 'finance.statement.read';
+    public const NOTES_READ = 'marketplace-finance-bill-notes-read';
+    public const NOTES_APPEND = 'marketplace-finance-bill-notes-append';
 
     public function __construct(private PlatformAccessServices $access, private AuditLogServices $audit,
         private FinanceBillSource $source, private EmployeeAuthServices $employees) {}
@@ -96,6 +98,46 @@ final class FinanceBillsServices
                 return $receipt+['record'=>$store->detail($captured['bill']['id'],$receipt['result_id'])];
             });
             return self::envelope($saved);
+        });
+    }
+
+    public function readNotes(PlatformScope $scope, array $query): array
+    {
+        return $this->guard(function () use ($scope, $query): array {
+            $this->authorize($scope, self::NOTES_READ);
+            Input::body($query, ['bill_id','result_id','before_id','limit'], ['bill_id','result_id']);
+            $billId = Facts::u64($query['bill_id']);
+            $resultId = Facts::u64($query['result_id']);
+            $before = isset($query['before_id']) ? Facts::u64($query['before_id']) : null;
+            $limit = Input::integer($query['limit'] ?? 20, 1, 50, true);
+            $page = $this->snapshot($scope, self::NOTES_READ,
+                function (PDO $pdo, string $prefix) use ($billId, $resultId, $before, $limit): array {
+                    $detail = (new FinanceBillStore($pdo, $prefix))->detail($billId, $resultId);
+                    return (new FinanceBillNoteStore($pdo, $prefix))->listing($detail, $before, $limit);
+                });
+            $this->write($scope, self::NOTES_READ, static fn(): array => []);
+            return self::noteEnvelope($page);
+        });
+    }
+
+    public function appendNote(PlatformScope $scope, array $body): array
+    {
+        return $this->guard(function () use ($scope, $body): array {
+            $this->authorize($scope, self::NOTES_APPEND);
+            $input = FinanceBillNoteStore::input($body);
+            $captured = $this->snapshot($scope, self::NOTES_APPEND,
+                function (PDO $pdo, string $prefix) use ($input, $scope): array {
+                    $detail = (new FinanceBillStore($pdo, $prefix))->detail($input['bill_id'], $input['result_id']);
+                    FinanceBillNoteStore::rowDigest($detail, $input['row_number']);
+                    $replay = (new FinanceBillNoteStore($pdo, $prefix))->replay($input, $detail, $scope->adminId);
+                    return ['detail' => $detail, 'replay' => $replay];
+                });
+            $saved = $this->write($scope, self::NOTES_APPEND,
+                function (PDO $pdo, string $prefix) use ($input, $captured, $scope): array {
+                    if ($captured['replay'] !== null) return ['record' => $captured['replay'], 'reused_note' => true];
+                    return (new FinanceBillNoteStore($pdo, $prefix))->append($input, $captured['detail'], $scope->adminId);
+                });
+            return self::noteEnvelope($saved);
         });
     }
 
@@ -242,6 +284,7 @@ final class FinanceBillsServices
         $this->access->authorizeScope($scope,$permission);
         if (in_array($permission, [self::IMPORT, self::RECONCILE], true)) $this->access->financeBillReadForMutation($scope);
         if ($permission === self::STATEMENTS_CREATE) $this->access->financeStatementReadForMutation($scope);
+        if (in_array($permission, [self::NOTES_READ, self::NOTES_APPEND], true)) $this->access->financeBillNoteReadForAction($scope);
     }
     private function guard(callable $run):array
     {try{return $run();}catch(AuthException|HttpException $error){throw $error;}catch(Throwable $error){throw new AuthUnavailableException();}}
@@ -249,4 +292,6 @@ final class FinanceBillsServices
     {return ['schema'=>1,'scope'=>'testing_bill_reconciliation_v1','real_funds_enabled'=>false]+$data;}
     private static function statementEnvelope(array $data): array
     {return ['schema'=>1,'scope'=>'testing_settlement_statement_v1','real_funds_enabled'=>false]+$data;}
+    private static function noteEnvelope(array $data): array
+    {return ['schema'=>1,'scope'=>'testing_bill_notes_v1','real_funds_enabled'=>false]+$data;}
 }

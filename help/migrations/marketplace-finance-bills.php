@@ -4,9 +4,11 @@ require_once __DIR__.'/marketplace-ms1.php';
 require_once __DIR__.'/marketplace-ms2-task7-submit-menu.php';
 require_once __DIR__.'/../../crmeb/app/services/marketplace/finance/FinanceBillStore.php';
 require_once __DIR__.'/../../crmeb/app/services/marketplace/finance/FinanceStatementStore.php';
+require_once __DIR__.'/../../crmeb/app/services/marketplace/finance/FinanceBillNoteStore.php';
 
 use app\services\marketplace\finance\FinanceBillStore;
 use app\services\marketplace\finance\FinanceStatementStore;
+use app\services\marketplace\finance\FinanceBillNoteStore;
 
 /** Additive tables and ungranted permission leaves. Existing material and roles are never updated. */
 final class MarketplaceFinanceBillsMigration
@@ -25,7 +27,7 @@ final class MarketplaceFinanceBillsMigration
     public function check():array
     {
         $tables=[];$issues=[];$pending=[];
-        foreach(FinanceBillStore::tables()+FinanceStatementStore::tables() as $name=>$definition){
+        foreach(FinanceBillStore::tables()+FinanceStatementStore::tables()+FinanceBillNoteStore::tables() as $name=>$definition){
             $meta=$this->rows('SELECT TABLE_TYPE,ENGINE,TABLE_COLLATION,TABLE_COMMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?',[$this->database,$this->prefix.$name]);
             $tables[$name]=$meta===[]?'missing':($this->matches($name,$definition,$meta)?'compatible':'incompatible');
             if($tables[$name]==='missing')$pending[]='table.'.$name;
@@ -64,7 +66,7 @@ final class MarketplaceFinanceBillsMigration
             if((string)$current['id']===(string)$current['owner'])throw new RuntimeException('Migration lock already held');
             if((string)$this->rows('SELECT GET_LOCK(?,0) AS acquired',[$lock])[0]['acquired']!=='1')throw new RuntimeException('Migration busy');
             $locked=true;$before=$this->check();if($before['state']==='incompatible')throw new RuntimeException('Structure changed');
-            foreach(FinanceBillStore::tables()+FinanceStatementStore::tables() as $name=>$definition)if($before['tables'][$name]==='missing'){
+            foreach(FinanceBillStore::tables()+FinanceStatementStore::tables()+FinanceBillNoteStore::tables() as $name=>$definition)if($before['tables'][$name]==='missing'){
                 if($this->pdo->exec($this->createSql($name,$definition))===false)throw new RuntimeException('Table creation unavailable');
                 $created[]=$name;
             }
@@ -99,7 +101,9 @@ final class MarketplaceFinanceBillsMigration
             $common+['menu_name'=>'导入测试账单','methods'=>'POST','unique_auth'=>'marketplace-finance-bills-import','api_url'=>'marketplace/finance-bills'],
             $common+['menu_name'=>'重新核对测试账单','methods'=>'POST','unique_auth'=>'marketplace-finance-bills-reconcile','api_url'=>'marketplace/finance-bills/reconcile'],
             $common+['menu_name'=>'查看测试结算试算单','methods'=>'GET','unique_auth'=>'marketplace-finance-statements-read','api_url'=>'marketplace/finance-statements'],
-            $common+['menu_name'=>'生成测试结算试算单','methods'=>'POST','unique_auth'=>'marketplace-finance-statements-create','api_url'=>'marketplace/finance-statements']];
+            $common+['menu_name'=>'生成测试结算试算单','methods'=>'POST','unique_auth'=>'marketplace-finance-statements-create','api_url'=>'marketplace/finance-statements'],
+            $common+['menu_name'=>'查看账单核查记录','methods'=>'GET','unique_auth'=>'marketplace-finance-bill-notes-read','api_url'=>'marketplace/finance-bill-notes'],
+            $common+['menu_name'=>'追加账单核查记录','methods'=>'POST','unique_auth'=>'marketplace-finance-bill-notes-append','api_url'=>'marketplace/finance-bill-notes']];
     }
     private static function sameMenu(array $actual,array $expected):bool
     {
