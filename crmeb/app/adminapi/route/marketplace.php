@@ -8,6 +8,10 @@ use app\adminapi\middleware\MarketplaceScopeMiddleware;
 use app\http\middleware\AllowOriginMiddleware;
 
 Route::group('marketplace', function () {
+    Route::get('finance-statements', 'v1.marketplace.FinanceStatements/read')->name('marketplace-finance-statements-read')
+        ->option(['marketplace_permission'=>'marketplace-finance-statements-read']);
+    Route::post('finance-statements', 'v1.marketplace.FinanceStatements/create')->name('marketplace-finance-statements-create')
+        ->option(['marketplace_permission'=>'marketplace-finance-statements-create']);
     Route::get('finance-bills', 'v1.marketplace.FinanceBills/read')->name('marketplace-finance-bills-read')
         ->option(['marketplace_permission'=>'marketplace-finance-bills-read']);
     Route::post('finance-bills', 'v1.marketplace.FinanceBills/import')->name('marketplace-finance-bills-import')

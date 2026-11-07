@@ -11,7 +11,7 @@ final class MerchantPermissions
         'merchant.profile.read', 'merchant.employee.manage', 'merchant.role.manage',
         'product.read', 'product.write', 'product.submit_review', 'stock.adjust',
         'attachment.manage', 'freight.manage',
-        'order.read', 'order.ship', 'aftersale.handle', 'aftersale.test_refund',
+        'order.read', 'order.ship', 'aftersale.handle', 'aftersale.test_refund', 'finance.statement.read',
     ];
     // The new financial test action is opt-in; old/default role grants retain their original set.
     public const BUILTIN_ADMIN = [

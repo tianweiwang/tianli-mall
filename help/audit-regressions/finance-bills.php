@@ -8,6 +8,8 @@ use app\services\marketplace\finance\FinanceBillReconciliation as Bills;
 use app\services\marketplace\finance\FinanceSettlementCalculation as Fees;
 use app\services\marketplace\finance\FinanceSettingsInput;
 use app\services\marketplace\finance\FinanceBillInput;
+use app\services\marketplace\finance\FinanceStatementProjection as Statements;
+use app\services\marketplace\payment\MarketplaceRefundEvidence;
 
 $checks=[];
 function billExpect(bool $ok,string $name):void
@@ -145,6 +147,32 @@ $unknownBasis = Fees::calculatePeriod(array_replace($draft, ['platform_fee_basis
 billExpect($unknownBasis['status']==='RULE_INCOMPLETE'&&$unknownBasis['missing_fields']===['platform_fee_basis']
     &&$unknownBasis['platform_fee_amount']===null&&$unknownBasis['merchant_receivable']===null,
     'MISSING_SELECTED_BASIS_LEAVES_PERIOD_CALCULATION_PENDING');
+
+$makeEvidence = static function (array $rows, array $orders): array {
+    $source = ['rows' => $rows, 'issues' => []];
+    return $source + ['orders' => $orders, 'source_sha256' => hash('sha256', MarketplaceRefundEvidence::canonical($source))];
+};
+$basis = ['root_order_id' => 1, 'sale_in_period' => true, 'goods_paid' => '40.30', 'shipping_paid' => '0.00',
+    'refunded_before' => '0.00', 'refunded_after' => '20.15', 'goods_refunded_before' => null, 'goods_refunded_after' => null,
+    'local_refs' => ['payment:11', 'refund:1:15']];
+$statementEvidence = $makeEvidence($local, [$basis]);
+$statementBill = ['source_sha256' => $statementEvidence['source_sha256'], 'source_issues' => [], 'comparison' => $match, 'period_open' => true];
+$estimate = Statements::build($statementBill, $statementEvidence, $draft);
+billExpect($estimate['status'] === 'PENDING_REVIEW' && $estimate['reasons'] === ['PERIOD_OPEN']
+    && $estimate['totals']['platform_fee_amount'] === '1.01' && $estimate['totals']['platform_fee_reversal'] === '0.51'
+    && $estimate['totals']['merchant_receivable'] === '19.53' && $estimate['totals']['settled_amount'] === null,
+    'MATCHED_SALE_AND_REFUND_PRODUCE_EXACT_TRIAL_AMOUNT_WITH_OPEN_PERIOD_NOTICE');
+$stale = Statements::build($statementBill, $makeEvidence([$local[0]], []), $draft);
+billExpect($stale['status'] === 'PENDING_REVIEW' && in_array('SOURCE_CHANGED', $stale['reasons'], true)
+    && $stale['orders'] === [] && count(array_filter($stale['totals'], static fn($value): bool => $value !== null)) === 0,
+    'OUTDATED_RECONCILIATION_PRODUCES_NO_ESTIMATE');
+$refundEvidence = $makeEvidence([$local[1]], [array_replace($basis, ['sale_in_period' => false, 'local_refs' => ['refund:1:15']])]);
+$refundBill = ['source_sha256' => $refundEvidence['source_sha256'], 'source_issues' => [], 'period_open' => false,
+    'comparison' => Bills::reconcile([$bill['rows'][1]], [$local[1]])];
+$refundOnly = Statements::build($refundBill, $refundEvidence, $draft);
+billExpect($refundOnly['reasons'] === ['ORIGINAL_SALE_RULE_UNKNOWN'] && $refundOnly['totals']['refund_amount'] === '20.15'
+    && $refundOnly['totals']['channel_fee_amount'] === '-0.12' && $refundOnly['totals']['merchant_receivable'] === null,
+    'REFUND_ONLY_WITHOUT_ORIGINAL_RULE_DOES_NOT_BORROW_SELECTED_CURRENT_RULE');
 
 echo json_encode(['status'=>'PASS_NORMAL_FINANCE_COMPONENTS_ONLY','count'=>count($checks),'checks'=>$checks,
     'database'=>'NOT_RUN','http'=>'NOT_RUN','ui'=>'NOT_RUN','real_funds'=>'NOT_RUN'],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";

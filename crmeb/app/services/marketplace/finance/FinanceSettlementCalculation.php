@@ -55,11 +55,25 @@ final class FinanceSettlementCalculation
             && ($goodsAfter < $goodsBefore || $goodsAfter - $goodsBefore > $after - $before)) {
             throw new HttpException(422, '商品及运费累计退款顺序不正确');
         }
-        $channelFee = $amounts['channel_fee'] === null ? null : FinanceBillReconciliation::cents($amounts['channel_fee'], true);
+        $channelFee = self::periodChannelFee($amounts['channel_fee']);
 
         return self::project($draft, $amounts['sale_in_period'], ['goods_paid'=>$goods,'order_paid'=>$paid],
             ['goods_paid'=>$goodsBefore,'order_paid'=>$before], ['goods_paid'=>$goodsAfter,'order_paid'=>$after],
             $channelFee, 'period_fee_calculation_only');
+    }
+
+    private static function periodChannelFee(mixed $value): ?int
+    {
+        if ($value === null) return null;
+        // A period's fee can sum up to all 1000 valid individual CSV amounts.
+        if (!is_string($value) || preg_match('/\A-?(?:0|[1-9][0-9]{0,12})\.[0-9]{2}\z/D', $value) !== 1 || $value === '-0.00') {
+            throw new HttpException(422, '期间通道费须为固定两位小数');
+        }
+        $cents = (int)str_replace('.', '', $value);
+        if (abs($cents) > FinanceBillReconciliation::MAX_ROWS * 999999999999) {
+            throw new HttpException(422, '期间通道费超过账单总额上限');
+        }
+        return $cents;
     }
 
     private static function goodsRefunded(mixed $value, int $refunded, int $goodsPaid, int $shippingPaid): ?int

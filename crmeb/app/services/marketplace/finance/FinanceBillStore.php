@@ -101,7 +101,7 @@ final class FinanceBillStore
             'created_at'=>(int)$bill['created_at'],'file_sha256'=>bin2hex($bill['source_sha']),'row_count'=>count($bill['normalized_rows']),
             'result_id'=>Facts::u64($saved['id']),'status'=>self::status((int)$saved['difference_count'],(int)$saved['issue_count']),
             'snapshot_at'=>(int)$saved['snapshot_at'],'period_open'=>(int)$saved['snapshot_at']<(int)$bill['period_end'],
-            'source_issues'=>$issues,'comparison'=>$comparison,'results'=>$results];
+            'source_sha256'=>bin2hex($saved['source_sha']),'source_issues'=>$issues,'comparison'=>$comparison,'results'=>$results];
     }
 
     public function import(array $input,array $account,array $source,int $snapshotAt,int $actor):array

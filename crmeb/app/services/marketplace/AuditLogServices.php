@@ -244,7 +244,9 @@ final class AuditLogServices
                 'marketplace-finance-transactions-read'=>['GET','marketplace/finance-transactions'],
                 'marketplace-finance-bills-read'=>['GET','marketplace/finance-bills'],
                 'marketplace-finance-bills-import'=>['POST','marketplace/finance-bills'],
-                'marketplace-finance-bills-reconcile'=>['POST','marketplace/finance-bills/reconcile']];
+                'marketplace-finance-bills-reconcile'=>['POST','marketplace/finance-bills/reconcile'],
+                'marketplace-finance-statements-read'=>['GET','marketplace/finance-statements'],
+                'marketplace-finance-statements-create'=>['POST','marketplace/finance-statements']];
             [$method,$path]=$routes[$scope->permission]??[null,null];
             $request=app()->request;$connection=Db::connect();
             if ($method===null||$scope->targetMerId!==null||!$request instanceof Request

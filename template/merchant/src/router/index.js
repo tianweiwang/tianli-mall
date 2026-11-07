@@ -17,6 +17,7 @@ const router = new Router({
       { path: 'orders/:id', name: 'order-detail', component: () => import('../pages/order/detail.vue'), meta: { title: '订单详情', permission: 'order.read' } },
       { path: 'aftersales', name: 'aftersales', component: () => import('../pages/aftersale/index.vue'), meta: { title: '多商户售后', permission: 'order.read' } },
       { path: 'aftersales/:id', name: 'aftersale-detail', component: () => import('../pages/aftersale/index.vue'), meta: { title: '售后详情', permission: 'order.read' } },
+      { path: 'finance-statements', name: 'finance-statements', component: () => import('../pages/financeStatements/index.vue'), meta: { title: '测试结算试算单', permission: 'finance.statement.read' } },
       { path: 'reviews', name: 'reviews', component: () => import('../pages/review/index.vue'), meta: { title: '本店商品评价', permission: 'product.read' } },
       { path: 'reviews/:id', name: 'review-detail', component: () => import('../pages/review/index.vue'), meta: { title: '评价详情', permission: 'product.read' } },
       { path: 'products', name: 'products', component: () => import('../pages/product/list.vue'), meta: { title: '商品列表', permission: 'product.read' } },

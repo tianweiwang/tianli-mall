@@ -101,6 +101,63 @@
           <el-table-column label="本地金额（元）" min-width="130"><template slot-scope="s">{{ s.row.local ? s.row.local.amount : '—' }}</template></el-table-column>
           <el-table-column label="账单通道费（元）" min-width="150"><template slot-scope="s">{{ s.row.bill && s.row.bill.channel_fee !== null ? s.row.bill.channel_fee : '未知' }}</template></el-table-column>
         </el-table>
+        <section v-if="canStatement('read')" class="bill-section" aria-labelledby="bill-statement-heading">
+          <h3 id="bill-statement-heading">测试结算试算单</h3>
+          <p class="note">按已保存的对账记录和指定费用规则生成试算。试算单只供核对，实际结算金额尚未产生。</p>
+          <el-alert v-if="statement.error" class="feedback" type="error" :closable="false" show-icon :title="statement.error" />
+          <p v-if="statement.notice" class="notice" role="status">{{ statement.notice }}</p>
+          <el-form v-if="canStatement('create')" class="statement-form" label-position="top" @submit.native.prevent="generateStatement">
+            <el-form-item label="费用规则版本" for="bill-statement-rule">
+              <el-select id="bill-statement-rule" v-model="statement.revision" :disabled="busy || !statement.versions.length"
+                placeholder="请选择费用规则版本">
+                <el-option v-for="version in statement.versions" :key="version.revision"
+                  :value="version.revision" :label="ruleOption(version)" />
+              </el-select>
+            </el-form-item>
+            <el-button type="primary" native-type="submit" :disabled="busy || statement.revision === null"
+              :loading="sending === 'statement'">生成试算单</el-button>
+          </el-form>
+          <p v-if="canStatement('create')" class="note">本次试算使用当前显示的对账记录 {{ record.result_id }}。相同账单、对账记录和规则版本会返回已有试算单。</p>
+          <div class="marketplace-actions">
+            <el-button :disabled="busy" @click="loadStatements()">刷新已保存试算单</el-button>
+            <el-button :disabled="busy || !statement.next" @click="loadStatements(statement.next)">下一页</el-button>
+          </div>
+          <el-table :data="statement.rows" border empty-text="暂无已保存试算单">
+            <el-table-column prop="id" label="试算单" min-width="95" />
+            <el-table-column prop="result_id" label="对账记录" min-width="100" />
+            <el-table-column label="费用规则" min-width="120"><template slot-scope="s">{{ ruleText(s.row.rule_revision) }}</template></el-table-column>
+            <el-table-column label="状态" min-width="100"><template slot-scope="s">{{ statementStatus(s.row.status) }}</template></el-table-column>
+            <el-table-column label="预计商家应收（元）" min-width="150"><template slot-scope="s">{{ moneyText(s.row.totals.merchant_receivable) }}</template></el-table-column>
+            <el-table-column label="生成时间" min-width="170"><template slot-scope="s">{{ timeText(s.row.created_at) }}</template></el-table-column>
+            <el-table-column label="操作" width="100"><template slot-scope="s"><el-button size="small" :disabled="busy"
+              :aria-label="'查看试算单 ' + s.row.id" @click="loadStatement(s.row.id)">查看</el-button></template></el-table-column>
+          </el-table>
+          <div v-if="statement.detail" class="bill-section" aria-labelledby="bill-statement-detail-heading">
+            <h3 id="bill-statement-detail-heading">试算单 {{ statement.detail.id }} · {{ statementStatus(statement.detail.status) }}</h3>
+            <p class="note">对账记录 {{ statement.detail.result_id }} · {{ ruleText(statement.detail.rule_revision) }} · {{ statement.detail.date_from }} 至 {{ statement.detail.date_to }}</p>
+            <ul v-if="statement.detail.reasons.length" class="source-issues">
+              <li v-for="reason in statement.detail.reasons" :key="reason">{{ reasonText(reason) }}</li>
+            </ul>
+            <dl class="bill-summary">
+              <div v-for="(label, key) in statementAmounts" :key="key">
+                <dt>{{ label }}（元）</dt><dd>{{ moneyText(statement.detail.totals[key]) }}</dd>
+              </div>
+            </dl>
+            <h4>试算采用的费用规则</h4>
+            <dl class="bill-summary">
+              <div v-for="item in feeRuleItems(statement.detail.fee_rule)" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+            </dl>
+            <h4>逐单试算（元）</h4>
+            <el-table :data="statement.detail.orders" border empty-text="没有可列出的订单">
+              <el-table-column prop="root_order_id" label="根订单" min-width="95" />
+              <el-table-column label="销售归属" min-width="100"><template slot-scope="s">{{ s.row.sale_in_period ? '本账期' : '往期' }}</template></el-table-column>
+              <el-table-column v-for="(label, key) in statementAmounts" :key="key" :label="label" min-width="120">
+                <template slot-scope="s">{{ moneyText(s.row.amounts[key]) }}</template>
+              </el-table-column>
+              <el-table-column label="待核事项" min-width="200"><template slot-scope="s">{{ s.row.reasons.map(reasonText).join('、') || '—' }}</template></el-table-column>
+            </el-table>
+          </div>
+        </section>
       </section>
     </el-card>
   </section>
@@ -108,17 +165,22 @@
 
 <script>
 import * as api from '@/api/marketplace-finance-bills';
+import * as statements from '@/api/marketplace-finance-statements';
 import { subscribePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 import '../style.css';
 function today() {
   const parts = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
   const value = name => parts.find(part => part.type === name).value; return value('year') + '-' + value('month') + '-' + value('day');
 }
+function emptyStatement() {
+  return { rows: [], next: null, versions: [], revision: null, detail: null, error: '', notice: '' };
+}
 export default {
   name: 'MarketplaceFinanceBills',
   data: () => ({ alive: true, context: null, contextRoute: '', busy: false, sending: '', error: '', notice: '', merchant: '',
     anchor: '', accountRows: [], dateFrom: today(), dateTo: today(), csv: '', filename: '', fileJob: 0, localRows: null,
-    bills: [], nextBefore: null, record: null, resultChoice: '', fieldLabels: api.fieldLabels }),
+    bills: [], nextBefore: null, record: null, resultChoice: '', fieldLabels: api.fieldLabels,
+    statement: emptyStatement(), statementAmounts: statements.amountLabels }),
   computed: {
     merchantId() {
       if (!/^[1-9]\d{0,9}$/.test(this.merchant)) return null;
@@ -141,13 +203,14 @@ export default {
   },
   methods: {
     can(action) { return api.can(this.$store, action); },
+    canStatement(action) { return statements.can(this.$store, action); },
     activeRoute() { return this.$route.name === 'marketplace_finance_bills'; },
     current(context) { return this.alive && this.activeRoute() && context === this.context && this.contextRoute === this.$route.fullPath && api.currentContext(context); },
     clearFile() { this.fileJob++; this.csv = ''; this.filename = ''; if (this.$refs.file) this.$refs.file.value = ''; },
     clear() {
       api.closeContext(this.context); this.context = null; this.contextRoute = ''; this.busy = false; this.sending = '';
       this.accountRows = []; this.anchor = ''; this.localRows = null; this.bills = []; this.nextBefore = null;
-      this.record = null; this.resultChoice = ''; this.error = ''; this.notice = ''; this.clearFile();
+      this.record = null; this.resultChoice = ''; this.error = ''; this.notice = ''; this.statement = emptyStatement(); this.clearFile();
     },
     reset() {
       this.clear(); if (!this.alive || !this.activeRoute()) return;
@@ -156,13 +219,17 @@ export default {
     },
     syncIdentity() {
       if (this.context && (!api.currentContext(this.context) || !this.can('read'))) { this.clear(); this.error = '身份或账单查看权限已变化，请重新进入'; }
+      else if (!this.canStatement('read') && (this.statement.rows.length || this.statement.detail || this.statement.versions.length))
+        this.statement = emptyStatement();
     },
-    async perform(action, success, sending = '') {
-      if (this.busy || !this.context) return; const context = this.context; this.busy = true; this.sending = sending; this.error = ''; this.notice = '';
+    async perform(action, success, sending = '', feedback = this) {
+      if (this.busy || !this.context) return;
+      const context = this.context;
+      this.busy = true; this.sending = sending; feedback.error = ''; feedback.notice = '';
       try {
         await api.refreshPermissions(context, () => this.current(context));
         const value = await action(context); if (this.current(context)) success(value);
-      } catch (error) { if (this.current(context)) this.error = error.message || '账单操作未完成'; }
+      } catch (error) { if (this.current(context)) feedback.error = error.message || '账单操作未完成'; }
       finally { if (this.current(context)) { this.busy = false; this.sending = ''; } }
     },
     merchantChanged() { this.accountRows = []; this.anchor = ''; this.sourceChanged(); },
@@ -184,13 +251,66 @@ export default {
       this.perform(context => api.importBill(context, body), value => { this.showRecord(value.record); this.notice = value.reused_batch ? '已读取原有批次，没有重复建立账单。' : '账单及首次对账结果已保存。'; }, 'import');
     },
     loadList(before) { this.perform(context => api.list(context, before), value => { this.bills = value.list; this.nextBefore = value.next_before_id; }); },
-    showRecord(record) { this.record = record; this.resultChoice = record.result_id; },
+    showRecord(record) {
+      const changed = !this.record || this.record.id !== record.id;
+      this.record = record; this.resultChoice = record.result_id;
+      if (changed) {
+        this.statement = emptyStatement();
+        this.$nextTick(() => { if (this.record === record) this.loadStatements(); });
+      }
+    },
     loadDetail(id, result) { this.perform(context => api.read(context, id, result), value => this.showRecord(value.record)); },
     loadResult() { if (this.record) this.loadDetail(this.record.id, this.resultChoice); },
     reconcileCurrent() {
       if (!this.record) return; const id = this.record.id; const key = api.requestKey();
       this.perform(context => api.reconcile(context, id, key), value => { this.showRecord(value.record); this.notice = value.reused_result ? '已读取本次请求原有结果。' : '新的对账结果已保存，原记录已保留。'; }, 'reconcile');
     },
+    loadStatements(before) {
+      if (!this.record || !this.canStatement('read')) return;
+      const billId = this.record.id;
+      this.perform(async context => {
+        const page = await statements.list(context, billId, before);
+        const versions = !before && this.canStatement('create') ? await statements.rules(context) : null;
+        return { page, versions };
+      }, ({ page, versions }) => {
+        this.statement.rows = page.list;
+        this.statement.next = page.next_before_id;
+        if (versions) {
+          this.statement.versions = versions;
+          if (!versions.some(item => item.revision === this.statement.revision)) this.statement.revision = null;
+        }
+      }, '', this.statement);
+    },
+    loadStatement(id) {
+      if (!this.record || !this.canStatement('read')) return;
+      const billId = this.record.id;
+      this.perform(context => statements.read(context, billId, id), value => { this.statement.detail = value; }, '', this.statement);
+    },
+    generateStatement() {
+      if (!this.record || !this.canStatement('create') || this.statement.revision === null) return;
+      const { id, result_id: resultId } = this.record;
+      const revision = this.statement.revision;
+      this.perform(async context => {
+        const data = await statements.create(context, id, resultId, revision);
+        let page = null;
+        try { page = await statements.list(context, id); } catch (error) { /* Preserve the confirmed saved record. */ }
+        return { data, page };
+      }, ({ data, page }) => {
+        if (!this.canStatement('read')) return;
+        this.statement.detail = data.record;
+        if (page) {
+          this.statement.rows = page.list;
+          this.statement.next = page.next_before_id;
+        } else this.statement.error = '试算单已保存，列表读取未完成，请刷新列表。';
+        this.statement.notice = data.reused_statement ? '已读取原试算单。' : '本次试算单已保存。';
+      }, 'statement', this.statement);
+    },
+    ruleText(revision) { return revision === 0 ? '未配置规则' : '规则第' + revision + '版'; },
+    ruleOption(version) { return this.ruleText(version.revision) + (version.created_at ? ' · ' + this.timeText(version.created_at) : ''); },
+    statementStatus(status) { return status === 'ESTIMATED' ? '已试算' : '待核查'; },
+    moneyText(value) { return value === null ? '待确认' : value; },
+    reasonText(code) { return statements.reasons[code] || '另有待核事项'; },
+    feeRuleItems: statements.feeRuleItems,
     downloadTemplate() {
       const url = URL.createObjectURL(new Blob(['\ufeff' + api.columns.join(',') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
       const link = document.createElement('a'); link.href = url; link.download = '测试账单标准模板.csv'; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -223,10 +343,14 @@ export default {
 .bill-summary dd, .comparison-values dd { margin: 0; line-height: 1.7; overflow-wrap: anywhere; }
 .result-actions .el-select { width: 340px; max-width: 100%; }
 .comparison-values { padding: 0 14px; }
+.statement-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin: 16px 0; }
+.statement-form .el-form-item { width: 320px; max-width: 100%; margin-bottom: 0; }
+.statement-form .el-select { width: 100%; }
 @media (max-width: 760px) {
   .bill-grid, .bill-summary, .comparison-values { grid-template-columns: minmax(0, 1fr); }
   .finance-bills >>> .el-card__body { padding: 16px; }
   .marketplace-actions .el-button, .result-actions .el-select { width: 100%; }
   .marketplace-actions .note { flex-basis: 100%; }
+  .statement-form .el-form-item, .statement-form .el-button { width: 100%; }
 }
 </style>

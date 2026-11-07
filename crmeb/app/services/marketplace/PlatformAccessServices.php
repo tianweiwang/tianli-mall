@@ -22,6 +22,8 @@ use think\Model;
 final class PlatformAccessServices
 {
     public const ACTIONS = [
+        'marketplace-finance-statements-read' => ['GET', 'marketplace/finance-statements', false],
+        'marketplace-finance-statements-create' => ['POST', 'marketplace/finance-statements', false],
         'marketplace-finance-bills-read' => ['GET', 'marketplace/finance-bills', false],
         'marketplace-finance-bills-import' => ['POST', 'marketplace/finance-bills', false],
         'marketplace-finance-bills-reconcile' => ['POST', 'marketplace/finance-bills/reconcile', false],
@@ -100,6 +102,13 @@ final class PlatformAccessServices
             throw new HttpException(403,'没有权限访问');
         $this->authorizeScope($scope,$scope->permission);
         $this->authorizeCurrent($scope->adminId,'marketplace-finance-bills-read');
+    }
+
+    public function financeStatementReadForMutation(PlatformScope $scope): void
+    {
+        $this->authorizeScope($scope, 'marketplace-finance-statements-create');
+        $this->authorizeCurrent($scope->adminId, 'marketplace-finance-statements-read');
+        $this->authorizeCurrent($scope->adminId, 'marketplace-finance-bills-read');
     }
 
     public function authorizeScope(PlatformScope $scope, string $permission): void

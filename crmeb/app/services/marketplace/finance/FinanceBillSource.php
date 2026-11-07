@@ -50,6 +50,17 @@ final class FinanceBillSource
 
     public function movements(PDO $pdo,array $account,int $start,int $end):array
     {
+        return $this->captureMovements($pdo, $account, $start, $end, false);
+    }
+
+    /** Uses the same verified movements, plus original order basis and refund cutoffs. */
+    public function statementEvidence(PDO $pdo, array $account, int $start, int $end): array
+    {
+        return $this->captureMovements($pdo, $account, $start, $end, true);
+    }
+
+    private function captureMovements(PDO $pdo, array $account, int $start, int $end, bool $withOrders): array
+    {
         [$connection,$prefix]=$this->native($pdo);$account=RefundFacts::account($account);
         if(!$this->intents->structure($pdo)||$this->families->readAftersaleStructureReadiness($connection,$pdo)!==['schema'=>2,'state'=>'READY'])
             throw new AuthUnavailableException();
@@ -62,7 +73,7 @@ final class FinanceBillSource
             ." WHERE a.root_order_id=o.id AND a.action='finance_observe' AND a.committed_at>=? AND a.committed_at<?))"
             .' ORDER BY o.id LIMIT 1001',[$account['mer_id'],RefundFacts::domain($account),(string)$account['version'],$start,$end,$start,$end]);
         if(count($headers)>1000)throw new HttpException(422,'期间超过1000根订单，请缩短账单期间');
-        $rows=[];$issues=[];
+        $rows=[];$issues=[];$statementOrders=[];
         foreach(array_chunk($headers,100) as $chunk){
             $observations=$this->payments->readObservationsForRoots($pdo,$chunk);
             $facts=$this->orders->readPaymentApplicationCaptureFactsBatch($connection,$pdo,$chunk);
@@ -86,9 +97,15 @@ final class FinanceBillSource
                 $inspection=MarketplaceOrderRefundFacts::inspectForAftersale($capture,$context,$locked);
                 $this->fulfillment->validateAftersaleFamilyFromFacts($root,$capture,$family,$inspection);
                 if($locked['registry']['fulfillment_hold']!==0)$issues[]=['root_order_id'=>$id,'reason'=>'PAYMENT_ON_HOLD'];
-                $at=$winner['evidence']['application']['at'];
-                if($at>=$start&&$at<$end)$rows[]=self::movement($account,'payment','payment:'.$winner['id'],
-                    $winner['amount'],$winner['applied_trade_no'],$at);
+                $paidAt = $winner['evidence']['application']['at'];
+                $saleInPeriod = $paidAt >= $start && $paidAt < $end;
+                $localRefs = [];
+                $before = $after = ['confirmed'=>0, 'goods_min'=>0, 'goods_max'=>0];
+                if ($saleInPeriod) {
+                    $paymentRef = 'payment:'.$winner['id'];
+                    $rows[] = self::movement($account, 'payment', $paymentRef, $winner['amount'], $winner['applied_trade_no'], $paidAt);
+                    if ($withOrders) $localRefs[] = $paymentRef;
+                }
                 foreach($inspection['history']['refunds'] as $refundId=>$history){
                     $refundId=RefundFacts::id($refundId);$state=$history['after'];$intent=$this->intents->find($pdo,$refundId);
                     $providerByAction=[];
@@ -103,25 +120,82 @@ final class FinanceBillSource
                             ($intent['evidence']['application']===null?[]:[$intent['evidence']['application']]);
                         foreach($applications as $application)$providerByAction[$application['action_id']]=$application['refund_no'];
                     }
-                    $sequence=[];
-                    foreach($inspection['actions'] as $action)if($action['refund_id']===$refundId&&$action['action']==='finance_observe')
-                        $sequence[]=['action_id'=>$action['id'],'applied_at'=>RefundFacts::id($action['committed_at'],4294967295),
+                    $sequence=[];$beforeAction=null;$afterAction=null;
+                    foreach ($history['actions'] as $action) {
+                        if ($action['action'] !== 'finance_observe') continue;
+                        $at = RefundFacts::id($action['committed_at'], 4294967295);
+                        $sequence[] = ['action_id'=>$action['id'], 'applied_at'=>$at,
                             'confirmed_amount'=>$action['result_payload']['after']['confirmed_amount']];
+                        if ($withOrders) {
+                            if ($at < $paidAt) throw new AuthUnavailableException();
+                            if ($at < $start) $beforeAction = $action;
+                            if ($at < $end) $afterAction = $action;
+                        }
+                    }
                     foreach(FinanceBillReconciliation::refundIncrements($sequence) as $increment){
                         $at=$increment['applied_at'];if($at<$start||$at>=$end)continue;
                         $action=$increment['action_id'];$linked=array_key_exists($action,$providerByAction);
                         $ref=$linked?'refund:'.$intent['id'].':'.$action:'legacy-refund:'.$refundId.':'.$action;
                         $provider=$providerByAction[$action]??null;
                         $rows[]=self::movement($account,'refund',$ref,$increment['amount'],$provider,$at);
+                        if ($withOrders) $localRefs[] = $ref;
                         if($provider===null)$issues[]=['root_order_id'=>$id,'local_ref'=>$ref,'reason'=>'REFUND_PROVIDER_REFERENCE_PENDING'];
                     }
+                    if ($withOrders) {
+                        self::addRefundBasis($before, $beforeAction);
+                        self::addRefundBasis($after, $afterAction);
+                    }
+                }
+                if ($withOrders && $localRefs !== []) {
+                    $goods = FinanceBillReconciliation::cents($root['total_price']);
+                    $shipping = FinanceBillReconciliation::cents($root['pay_postage']);
+                    $paid = FinanceBillReconciliation::cents($winner['amount']);
+                    if ($goods + $shipping !== $paid || $before['confirmed'] > $after['confirmed'] || $after['confirmed'] > $paid) {
+                        throw new AuthUnavailableException();
+                    }
+                    $statementOrders[] = ['root_order_id'=>$id, 'sale_in_period'=>$saleInPeriod,
+                        'goods_paid'=>$root['total_price'], 'shipping_paid'=>$root['pay_postage'],
+                        'refunded_before'=>FinanceBillReconciliation::amount($before['confirmed']),
+                        'refunded_after'=>FinanceBillReconciliation::amount($after['confirmed']),
+                        'goods_refunded_before'=>self::exactGoodsRefund($before, $goods, $shipping),
+                        'goods_refunded_after'=>self::exactGoodsRefund($after, $goods, $shipping), 'local_refs'=>$localRefs];
                 }
             }
             $this->native($pdo);
         }
         if(count($rows)>FinanceBillReconciliation::MAX_ROWS)throw new HttpException(422,'期间超过1000条资金流水，请缩短账单期间');
         usort($rows,static fn(array $a,array $b):int=>[$a['occurred_at'],$a['kind'],$a['local_ref']]<=>[$b['occurred_at'],$b['kind'],$b['local_ref']]);
-        return ['rows'=>$rows,'issues'=>$issues,'source_sha256'=>hash('sha256',RefundFacts::canonical(['rows'=>$rows,'issues'=>$issues]))];
+        $source = ['rows'=>$rows,'issues'=>$issues,'source_sha256'=>hash('sha256',RefundFacts::canonical(['rows'=>$rows,'issues'=>$issues]))];
+        if ($withOrders) $source['orders'] = $statementOrders;
+        return $source;
+    }
+
+    private static function addRefundBasis(array &$total, ?array $action): void
+    {
+        if ($action === null) return;
+        $result = $action['result_payload'];
+        $confirmed = 0;
+        foreach ($result['allocations'] as $allocation) {
+            $refund = FinanceBillReconciliation::cents($allocation['confirmed_amount']);
+            $goods = FinanceBillReconciliation::cents($allocation['goods']);
+            $shipping = FinanceBillReconciliation::cents($allocation['postage']);
+            $confirmed += $refund;
+            // The saved allocation gives capacities, not an order of refunding goods and shipping.
+            $total['goods_min'] += max(0, $refund - $shipping);
+            $total['goods_max'] += min($refund, $goods);
+        }
+        if ($confirmed !== FinanceBillReconciliation::cents($result['after']['confirmed_amount'])) {
+            throw new AuthUnavailableException();
+        }
+        $total['confirmed'] += $confirmed;
+    }
+
+    private static function exactGoodsRefund(array $basis, int $goods, int $shipping): ?string
+    {
+        $minimum = max($basis['goods_min'], $basis['confirmed'] - $shipping);
+        $maximum = min($basis['goods_max'], $goods);
+        if ($minimum > $maximum) throw new AuthUnavailableException();
+        return $minimum === $maximum ? FinanceBillReconciliation::amount($minimum) : null;
     }
 
     private function anchors(PDO $pdo,array $ids):array

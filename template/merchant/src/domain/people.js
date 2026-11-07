@@ -13,6 +13,7 @@ export const permissions = [
   { value: 'order.ship', label: '订单发货', description: '按保存商品数量分包发货，读取实际物流与履约结果' },
   { value: 'aftersale.handle', label: '售后处理', description: '批准或拒绝本店售后申请，验收退回商品；查看需同时具备订单查看权限' },
   { value: 'aftersale.test_refund', label: '执行测试退款', description: '对本店符合条件的已批准售后执行剩余全额测试退款，不涉及真实资金；查看需同时具备订单查看权限' },
+  { value: 'finance.statement.read', label: '查看本店测试结算试算单', description: '读取本店试算明细及所用费用规则' },
 ];
 const known = permissions.map((item) => item.value);
 const phpTrim = (value) => value.replace(/^[ \t\n\r\u0000\u000b]+|[ \t\n\r\u0000\u000b]+$/g, '');

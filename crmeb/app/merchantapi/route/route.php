@@ -22,6 +22,11 @@ Route::get('me', 'Me/index')
     ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])
     ->name('merchant.me');
 
+Route::get('finance-statements', 'FinanceStatements/read')
+    ->option(['merchant_permission' => 'finance.statement.read'])
+    ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])
+    ->name('merchant.finance.statements.read');
+
 Route::get('employees', 'Employee/index')->option(['merchant_permission' => 'merchant.employee.manage'])
     ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.employee.list');
 Route::post('employees', 'Employee/create')->option(['merchant_permission' => 'merchant.employee.manage'])
