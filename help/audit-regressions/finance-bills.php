@@ -107,5 +107,44 @@ billExpect($empty['status']==='RULE_INCOMPLETE'&&$empty['platform_fee_amount']==
 $none=Fees::calculate(array_replace(FinanceSettingsInput::emptyDraft(),['platform_fee_enabled'=>false,'channel_fee_payer'=>'merchant']),$amounts);
 billExpect($none['platform_fee_amount']==='0.00'&&$none['merchant_receivable']==='59.40',
     'EXPLICIT_NO_PLATFORM_FEE_NEEDS_NO_RATE_OR_REFUND_RULE');
+
+$periodAmounts = ['sale_in_period'=>true,'goods_paid'=>'100.00','shipping_paid'=>'10.00',
+    'refunded_before'=>'0.00','refunded_after'=>'50.00','goods_refunded_before'=>null,
+    'goods_refunded_after'=>'50.00','channel_fee'=>'0.60'];
+$salePeriod = Fees::calculatePeriod($draft, $periodAmounts);
+billExpect($salePeriod === array_replace($fees, ['scope'=>'period_fee_calculation_only']),
+    'SALE_PERIOD_MATCHES_CUMULATIVE_CALCULATION_WHEN_REFUNDS_BEGIN_AT_ZERO');
+
+$refundPeriod = array_replace($periodAmounts, ['sale_in_period'=>false,'refunded_before'=>'50.00','refunded_after'=>'110.00',
+    'goods_refunded_before'=>'50.00','goods_refunded_after'=>null,'channel_fee'=>'-0.20']);
+$finalPeriod = Fees::calculatePeriod($draft, $refundPeriod);
+billExpect($finalPeriod['sales_amount']==='0.00'&&$finalPeriod['refund_amount']==='60.00'
+    &&$finalPeriod['platform_fee_amount']==='0.00'&&$finalPeriod['platform_fee_reversal']==='1.25'
+    &&$finalPeriod['platform_fee_net']==='-1.25'&&$finalPeriod['channel_fee_amount']==='-0.20'
+    &&$finalPeriod['merchant_receivable']==='-58.55'&&$finalPeriod['settled_amount']===null
+    &&$finalPeriod['real_funds_enabled']===false,'REFUND_ONLY_PERIOD_REVERSES_REMAINING_ORIGINAL_FEE_AND_PRESERVES_NEGATIVE_BALANCE');
+
+$smallPeriod = Fees::calculatePeriod(array_replace($draft, ['platform_fee_rate'=>'50.00']), [
+    'sale_in_period'=>false,'goods_paid'=>'0.03','shipping_paid'=>'0.00','refunded_before'=>'0.01',
+    'refunded_after'=>'0.02','goods_refunded_before'=>null,'goods_refunded_after'=>null,'channel_fee'=>'0.00']);
+billExpect($smallPeriod['platform_fee_reversal']==='0.00'&&$smallPeriod['merchant_receivable']==='-0.01',
+    'PERIOD_USES_DIFFERENCE_OF_ROUNDED_CUMULATIVES_NOT_ROUNDING_OF_INCREMENT');
+
+$unsplitAmounts = array_replace($periodAmounts, ['goods_refunded_after'=>null]);
+$unsplit = Fees::calculatePeriod($draft, $unsplitAmounts);
+billExpect($unsplit['refund_amount']==='50.00'&&$unsplit['platform_fee_amount']==='2.50'
+    &&$unsplit['platform_fee_reversal']===null&&$unsplit['merchant_receivable']===null
+    &&$unsplit['status']==='REFUND_BASIS_UNKNOWN','PARTIAL_GOODS_REFUND_WITHOUT_PROVEN_SHIPPING_SPLIT_IS_PENDING');
+$combined = Fees::calculatePeriod(array_replace($draft, ['platform_fee_basis'=>'order_paid']), $unsplitAmounts);
+billExpect($combined['platform_fee_reversal']==='1.25'&&$combined['merchant_receivable']==='57.90',
+    'ORDER_BASIS_USES_PROVEN_COMBINED_REFUND_WITHOUT_REQUIRING_A_SPLIT');
+$noReversal = Fees::calculatePeriod(array_replace($draft, ['refund_platform_fee'=>'none']), $unsplitAmounts);
+billExpect($noReversal['platform_fee_reversal']==='0.00'&&$noReversal['merchant_receivable']==='56.90',
+    'EXPLICITLY_RETAINED_PLATFORM_FEE_NEEDS_NO_REFUND_SPLIT');
+$unknownBasis = Fees::calculatePeriod(array_replace($draft, ['platform_fee_basis'=>null]), $periodAmounts);
+billExpect($unknownBasis['status']==='RULE_INCOMPLETE'&&$unknownBasis['missing_fields']===['platform_fee_basis']
+    &&$unknownBasis['platform_fee_amount']===null&&$unknownBasis['merchant_receivable']===null,
+    'MISSING_SELECTED_BASIS_LEAVES_PERIOD_CALCULATION_PENDING');
+
 echo json_encode(['status'=>'PASS_NORMAL_FINANCE_COMPONENTS_ONLY','count'=>count($checks),'checks'=>$checks,
     'database'=>'NOT_RUN','http'=>'NOT_RUN','ui'=>'NOT_RUN','real_funds'=>'NOT_RUN'],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";
