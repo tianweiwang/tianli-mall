@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shutil
 import socket
 import subprocess
 import sys
@@ -37,12 +38,15 @@ def read_config(path: Path) -> tuple[Path, int]:
 
 
 def check_local_docker() -> None:
-    host = os.environ.get('DOCKER_HOST')
-    if not host:
-        context = preview.native([preview.DOCKER, 'context', 'show'])
-        host = preview.native([preview.DOCKER, 'context', 'inspect', context,
+    if not shutil.which('docker') or not shutil.which('git'):
+        raise RuntimeError('Git and Docker must be on PATH')
+    context = preview.native([preview.DOCKER, 'context', 'show'])
+    endpoint = preview.native([preview.DOCKER, 'context', 'inspect', context,
                                '--format', '{{.Endpoints.docker.Host}}'])
-    if not host.startswith(('unix:///', 'npipe:///')):
+    hosts = [endpoint]
+    if os.environ.get('DOCKER_HOST'):
+        hosts.append(os.environ['DOCKER_HOST'])
+    if any(not host.startswith(('unix:///', 'npipe:///')) for host in hosts):
         raise RuntimeError('This installer requires a local Docker context')
     platform = preview.native([preview.DOCKER, 'info', '--format', '{{.OSType}}/{{.Architecture}}'])
     if platform not in {'linux/x86_64', 'linux/amd64'}:

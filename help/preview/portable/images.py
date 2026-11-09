@@ -8,8 +8,9 @@ import json
 import re
 import shutil
 import subprocess
+import tarfile
 import tempfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 PLATFORM = "linux/amd64"
 PUBLIC_IMAGES = {
@@ -60,6 +61,24 @@ def _public_image(docker: str, reference: str) -> str:
     return image[0]
 
 
+def _unpack_context(git: list[str], head: str, context: Path) -> None:
+    with tempfile.TemporaryFile(dir=context.parent) as archive:
+        subprocess.run([*git, "archive", "--format=tar", head, *CONTEXT_PATHS],
+                       stdout=archive, check=True)
+        archive.seek(0)
+        with tarfile.open(fileobj=archive, mode="r:") as source:
+            members = []
+            for member in source:
+                name = PurePosixPath(member.name)
+                if (name.is_absolute() or ".." in name.parts or ":" in member.name or "\\" in member.name
+                        or not (member.isdir() or member.isfile())):
+                    raise RuntimeError("Unexpected file in the committed PHP build context")
+                # Composer installs the locked dependencies inside the image.
+                if name.parts[:2] != ("crmeb", "vendor"):
+                    members.append(member)
+            source.extractall(context, members=members)
+
+
 def _php_image(repo: Path, docker: str) -> str:
     git = [shutil.which("git") or "git", "--no-optional-locks", "-C", str(repo)]
     head = _output([*git, "rev-parse", "--verify", "HEAD"])
@@ -80,7 +99,7 @@ def _php_image(repo: Path, docker: str) -> str:
 
     objects = [_output([*git, "rev-parse", "--verify", f"{head}:{path}"])
                for path in CONTEXT_PATHS]
-    inputs = {"schema": 1, "context": dict(zip(CONTEXT_PATHS, objects)),
+    inputs = {"schema": 2, "context": dict(zip(CONTEXT_PATHS, objects)),
               "platform": PLATFORM, "bases": BUILD_BASES}
     fingerprint = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode("utf-8")).hexdigest()
     tag = f"mall-portable/php:{fingerprint}"
@@ -91,11 +110,15 @@ def _php_image(repo: Path, docker: str) -> str:
                    "--label", f"{INPUT_LABEL}={fingerprint}"]
         for alias, reference in BUILD_BASES.items():
             command.extend(["--build-context", f"{alias}=docker-image://{reference}"])
-        with tempfile.TemporaryFile(dir=repo) as context:
-            subprocess.run([*git, "archive", "--format=tar", head, *CONTEXT_PATHS],
-                           stdout=context, check=True)
-            context.seek(0)
-            subprocess.run([*command, "-"], stdin=context, check=True)
+        context = Path(tempfile.mkdtemp(prefix=".portable-php-context-", dir=repo))
+        try:
+            _unpack_context(git, head, context)
+            # A local directory lets Docker apply .dockerignore before COPY.
+            subprocess.run([*command, str(context)], check=True)
+        finally:
+            if context.parent != repo or context.resolve() != context:
+                raise RuntimeError("PHP build context path changed before cleanup")
+            shutil.rmtree(context)
         image = _inspect(docker, tag)
     if image is None or image[1] != fingerprint:
         raise RuntimeError(f"PHP image does not match the expected portable inputs: {tag}")
