@@ -124,10 +124,8 @@ def main() -> None:
     args = parser.parse_args()
     root, port = read_config(args.config)
     check_local_docker()
-    if args.action == 'status':
-        owned_state(root, port)
-        run_preview(root, 'status')
-        return
+    if args.action != 'start' and not root.is_dir():
+        raise FileNotFoundError(f'Preview directory does not exist: {root}')
     root.parent.mkdir(parents=True, exist_ok=True)
     lock_path = root.with_name(root.name + '.portable.lock')
     with lock_path.open('x', encoding='utf-8') as lock:
@@ -138,7 +136,7 @@ def main() -> None:
                 start(root, port)
             else:
                 owned_state(root, port)
-                run_preview(root, 'stop')
+                run_preview(root, args.action)
         finally:
             lock.close()
             lock_path.unlink()
@@ -147,6 +145,6 @@ def main() -> None:
 if __name__ == '__main__':
     try:
         main()
-    except (OSError, ValueError, RuntimeError, KeyError) as error:
+    except (OSError, ValueError, RuntimeError, KeyError, subprocess.SubprocessError) as error:
         print(str(error), file=sys.stderr)
         sys.exit(1)
