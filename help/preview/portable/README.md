@@ -5,7 +5,7 @@
 在 Windows PowerShell 中执行：
 
 ```powershell
-git -c core.autocrlf=false clone --branch feature/portable-preview-install-20261109 https://github.com/tianweiwang/tianli-mall.git mall-dev
+git clone --config core.autocrlf=false --branch feature/portable-preview-install-20261109 https://github.com/tianweiwang/tianli-mall.git mall-dev
 Set-Location mall-dev
 Copy-Item help/preview/portable/config.example.json ../mall-preview.json
 ```

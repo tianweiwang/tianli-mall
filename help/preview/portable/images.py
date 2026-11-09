@@ -22,7 +22,7 @@ BUILD_BASES = {
     "composer:2.10.2": "docker.io/library/composer@sha256:d020706319701a44468968321dccd0fce6620190159a7a9ec195d78e6e971c71",
     "php:8.2-fpm-bookworm": "docker.io/library/php@sha256:4d81f8b24a4b9cbe263093d5e2fbaa49647b1290193488b936f08355933a5060",
 }
-CONTEXT_PATHS = (".dockerignore", "docker/php", "crmeb")
+CONTEXT_PATHS = (".dockerignore", ".gitattributes", "docker/php", "crmeb")
 INPUT_LABEL = "marketplace.portable.php-input"
 
 
@@ -63,7 +63,8 @@ def _public_image(docker: str, reference: str) -> str:
 
 def _unpack_context(git: list[str], head: str, context: Path) -> None:
     with tempfile.TemporaryFile(dir=context.parent) as archive:
-        subprocess.run([*git, "archive", "--format=tar", head, *CONTEXT_PATHS],
+        # Archive otherwise applies the machine's checkout line endings, including on Windows.
+        subprocess.run([*git, "-c", "core.autocrlf=false", "archive", "--format=tar", head, *CONTEXT_PATHS],
                        stdout=archive, check=True)
         archive.seek(0)
         with tarfile.open(fileobj=archive, mode="r:") as source:
@@ -99,7 +100,7 @@ def _php_image(repo: Path, docker: str) -> str:
 
     objects = [_output([*git, "rev-parse", "--verify", f"{head}:{path}"])
                for path in CONTEXT_PATHS]
-    inputs = {"schema": 2, "context": dict(zip(CONTEXT_PATHS, objects)),
+    inputs = {"schema": 3, "context": dict(zip(CONTEXT_PATHS, objects)),
               "platform": PLATFORM, "bases": BUILD_BASES}
     fingerprint = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode("utf-8")).hexdigest()
     tag = f"mall-portable/php:{fingerprint}"
