@@ -28,6 +28,12 @@
           {{ footerswitch ? $t(`管理`) : $t(`取消`) }}
         </view>
       </view>
+      <view v-if="footerswitch && (combinedMode || (combinedAvailable && eligibleStores.length > 1))" class="store-header combined-header">
+        <text>{{ combinedMode ? '统一付款，店铺分别发货' : '支持跨店结算' }}</text>
+        <button class="store-select combined-toggle" @click="toggleCombinedCheckout">
+          {{ combinedMode ? '切换单店结算' : '切换跨店结算' }}
+        </button>
+      </view>
       <view
         v-if="
           (cartList.valid.length > 0 || cartList.invalid.length > 0) && canShow
@@ -40,10 +46,10 @@
                 <view class="store-title">
                   <text class="store-name">{{ group.store.name }}</text>
                   <text v-if="group.merchant_accepting_orders === false" class="store-selected">{{ $t(`店铺暂不接单`) }}</text>
-                  <text v-else-if="footerswitch && isCheckoutStore(group)" class="store-selected">{{ $t(`当前结算店铺`) }}</text>
+                  <text v-else-if="footerswitch && !combinedMode && isCheckoutStore(group)" class="store-selected">{{ $t(`当前结算店铺`) }}</text>
                 </view>
                 <button
-                  v-if="footerswitch && group.merchant_accepting_orders !== false && !isCheckoutStore(group)"
+                  v-if="footerswitch && !combinedMode && group.merchant_accepting_orders !== false && !isCheckoutStore(group)"
                   class="store-select"
                   :disabled="!canCheckoutStore(group)"
                   @click="selectCheckoutStore(group)"
@@ -215,17 +221,17 @@
       >
         <view>
           <checkbox-group @change="checkboxAllChange">
-            <checkbox value="all" :checked="!!isAllSelect" :disabled="footerswitch && !checkoutGroup" />
+            <checkbox value="all" :checked="!!isAllSelect" :disabled="footerswitch && !checkoutCandidates.length" />
             <text class="checkAll"
-              >{{ footerswitch ? $t(`本店全选`) : $t(`全选`) }}({{ selectValue.length }})</text
+              >{{ footerswitch && !combinedMode ? $t(`本店全选`) : $t(`全选`) }}({{ selectValue.length }})</text
             >
           </checkbox-group>
         </view>
         <view class="money acea-row row-middle" v-if="footerswitch == true">
           <text class="font-color">{{ $t(`￥`) }}{{ selectCountPrice }}</text>
-          <form v-if="checkoutGroup" @submit="subOrder">
+          <form v-if="combinedMode || checkoutGroup" @submit="subOrder">
             <button class="placeOrder bg-color" formType="submit">
-              {{ $t(`立即下单`) }}
+              {{ combinedMode ? '跨店结算' : $t(`立即下单`) }}
             </button>
           </form>
         </view>
@@ -277,6 +283,7 @@ import {
   changeCartNum,
   cartDel,
   getResetCart,
+  getCombinedCheckoutAvailability,
 } from "@/api/order.js";
 import { getProductHot, collectAll, getProductDetail } from "@/api/store.js";
 import { toLogin } from "@/libs/login.js";
@@ -317,6 +324,8 @@ export default {
       },
       serverGroups: [],
       selectedMerId: null,
+      combinedAvailable: false,
+      combinedMode: false,
       isAllSelect: false, //全选
       selectValue: [], //选中的数据
       selectCountPrice: 0.0,
@@ -374,6 +383,16 @@ export default {
     checkoutGroup() {
       return this.cartGroups.find((group) => this.isCheckoutStore(group) && this.canCheckoutStore(group));
     },
+    eligibleStores() {
+      return this.cartGroups.filter((group) => this.canCheckoutStore(group));
+    },
+    checkoutCandidates() {
+      if (!this.footerswitch) return this.cartList.valid;
+      const groups = this.combinedMode ? this.eligibleStores : [this.checkoutGroup].filter(Boolean);
+      return groups.reduce((items, group) => items.concat(
+        group.entries.filter((entry) => entry.item.attrStatus).map((entry) => entry.item)
+      ), []);
+    },
     componentStyle() {
       if (this.btmNum) {
         let styleObject = {};
@@ -415,6 +434,11 @@ export default {
       this.cartList.valid = [];
       this.serverGroups = [];
       this.selectedMerId = null;
+      this.combinedMode = false;
+      this.combinedAvailable = false;
+      getCombinedCheckoutAvailability().then(({ data }) => {
+        this.combinedAvailable = this.isLogin && !!data.available;
+      }).catch(() => {});
       this.getCartList(1);
       this.loadendInvalid = false;
       this.pageInvalid = 1;
@@ -503,7 +527,20 @@ export default {
       this.selectValue = group.entries.filter((entry) => entry.item.attrStatus).map((entry) => entry.item.id);
       this.switchSelect();
     },
+    toggleCombinedCheckout() {
+      if (this.combinedMode) {
+        this.combinedMode = false;
+        this.restoreCheckoutStore();
+      } else if (this.combinedAvailable && this.eligibleStores.length > 1) {
+        this.combinedMode = true;
+        this.setAllSelectValue(true);
+      }
+    },
     restoreCheckoutStore() {
+      if (this.combinedMode) {
+        this.switchSelect();
+        return;
+      }
       const group = this.cartGroups.find((candidate) => this.isCheckoutStore(candidate) && this.canCheckoutStore(candidate))
         || this.cartGroups.find((candidate) => this.canCheckoutStore(candidate));
       if (group) this.selectCheckoutStore(group);
@@ -787,6 +824,18 @@ export default {
     },
     subOrder(event) {
       this.switchSelect();
+      if (this.footerswitch && this.combinedMode) {
+        const groups = this.eligibleStores.map((group) => ({
+          mer_id: Number(group.mer_id),
+          cart_ids: group.entries.filter((entry) => this.inArray(entry.item.id, this.selectValue))
+            .map((entry) => String(entry.item.id)),
+        })).filter((group) => group.cart_ids.length);
+        if (groups.length < 2) return this.$util.Tips({ title: '请选择至少两家店的商品' });
+        uni.navigateTo({
+          url: "/pages/goods/combined_checkout/index?groups=" + encodeURIComponent(JSON.stringify(groups)),
+        });
+        return;
+      }
       if (this.footerswitch && this.checkoutGroup && this.selectValue.length > 0) {
         // This is the customer's store choice, not server-side ownership or trade authorization.
         uni.navigateTo({
@@ -801,15 +850,13 @@ export default {
       this.setAllSelectValue(event.detail.value.length > 0);
     },
     setAllSelectValue: function (status) {
-      const candidates = this.footerswitch
-        ? (this.checkoutGroup ? this.checkoutGroup.entries.filter((entry) => entry.item.attrStatus).map((entry) => entry.item) : [])
-        : this.cartList.valid;
+      const candidates = this.checkoutCandidates;
       this.selectValue = status ? candidates.map((item) => item.id) : [];
       this.switchSelect();
     },
     checkboxChange: function (event) {
       let value = event.detail.value;
-      if (this.footerswitch) {
+      if (this.footerswitch && !this.combinedMode) {
         const added = value.find((reference) => !this.inArray(reference, this.selectValue));
         const nextGroup = this.cartGroups.find((group) => this.canCheckoutStore(group) && group.entries.some((entry) =>
           entry.item.attrStatus && String(entry.item.id) === String(added)));
@@ -825,9 +872,7 @@ export default {
       return array.some((value) => String(value) === String(search));
     },
     switchSelect: function () {
-      const candidates = this.footerswitch
-        ? (this.checkoutGroup ? this.checkoutGroup.entries.filter((entry) => entry.item.attrStatus).map((entry) => entry.item) : [])
-        : this.cartList.valid;
+      const candidates = this.checkoutCandidates;
       const selected = candidates.filter((item) => this.inArray(item.id, this.selectValue));
       const references = selected.map((item) => item.id);
       this.cartList.valid.forEach((item) => {
@@ -1230,6 +1275,7 @@ export default {
   margin-bottom: 15rpx;
 }
 
+.shoppingCart .combined-header,
 .shoppingCart .list .store-header {
   display: flex;
   align-items: center;
@@ -1256,6 +1302,7 @@ export default {
   color: #868686;
 }
 
+.shoppingCart .combined-toggle,
 .shoppingCart .list .store-select {
   display: flex;
   align-items: center;
@@ -1276,6 +1323,12 @@ export default {
   background: #fff;
 }
 
+.shoppingCart .combined-toggle {
+  flex-basis: 208rpx;
+  width: 208rpx;
+}
+
+.shoppingCart .combined-toggle::after,
 .shoppingCart .list .store-select::after {
   border: 0;
 }

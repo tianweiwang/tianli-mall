@@ -227,6 +227,13 @@ Route::group(function () {
         Route::get('order/fulfillment/packages/:childNo','v1.order.FulfillmentController/read')->name('fulfillmentPackage')->option(['real_name'=>'履约包裹详情']);
         Route::post('order/fulfillment/packages/:childNo/receipt','v1.order.FulfillmentController/receipt')->name('fulfillmentReceipt')->option(['real_name'=>'履约包裹收货']);
         Route::post('order/check_shipping', 'v1.order.StoreOrderController/checkShipping')->name('checkShipping')->option(['real_name' => '检测是否显示快递和自提标签']); //检测是否显示快递和自提标签
+        Route::get('order/combined/availability', 'v1.order.CombinedCheckoutController/availability')->name('combinedCheckoutAvailability');
+        Route::post('order/combined/confirm', 'v1.order.CombinedCheckoutController/confirm')->name('combinedCheckoutConfirm')->middleware(BlockerMiddleware::class);
+        Route::post('order/combined/:orderNo/create', 'v1.order.CombinedCheckoutController/create')->name('combinedCheckoutCreate')->middleware(BlockerMiddleware::class);
+        Route::post('order/combined/:orderNo/pay', 'v1.order.CombinedCheckoutController/pay')->name('combinedCheckoutPay')->middleware(BlockerMiddleware::class);
+        Route::post('order/combined/:orderNo/cancel', 'v1.order.CombinedCheckoutController/cancel')->name('combinedCheckoutCancel')->middleware(BlockerMiddleware::class);
+        Route::get('order/combined/:orderNo', 'v1.order.CombinedCheckoutController/detail')->name('combinedCheckoutDetail');
+        Route::get('order/combined', 'v1.order.CombinedCheckoutController/listing')->name('combinedCheckoutList');
         Route::post('order/confirm', 'v1.order.StoreOrderController/confirm')->name('orderConfirm')->option(['real_name' => '订单确认']); //订单确认
         Route::post('order/form/legacy/confirm/<key>/products/<product_id>/fields/<field_index>/files','v1.order.LegacyOrderFormController/upload')->option(['real_name'=>'旧订单资料图片上传','legacy_order_form_files'=>true]);
         Route::get('order/form/legacy/confirm/<key>/files/<asset_id>/content','v1.order.LegacyOrderFormController/confirmation')->option(['real_name'=>'旧订单确认资料原图','legacy_order_form_reader'=>'confirmation']);

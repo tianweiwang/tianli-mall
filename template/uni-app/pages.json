@@ -315,6 +315,9 @@
 						}
 					}
 				}, {
+					"path": "combined_checkout/index",
+					"style": { "navigationBarTitleText": "跨店订单" }
+				}, {
 					"path": "marketplace_aftersale/index",
                     "style": { "navigationBarTitleText": "多商户售后" }
                 }, {

@@ -38,7 +38,7 @@ export async function read(context, query = {}) {
       method: 'GET',
       url: 'marketplace/finance-transactions',
       params,
-      headers: { 'Authori-zation': 'Bearer ' + context.token },
+      headers: { 'Authori-zation': 'Bearer ' + context.token, 'X-Marketplace-Combined': '1' },
       cancelToken: source.token,
     });
     requireCurrent(context);

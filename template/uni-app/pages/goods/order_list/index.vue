@@ -34,8 +34,21 @@
 					<view class="num">{{ orderData.evaluated_count || 0 }}</view>
 				</view>
 			</view>
+			<view v-if="visibleCombinedOrders.length" class="combined-orders">
+				<view class="combined-title">跨店订单</view>
+				<navigator v-for="order in visibleCombinedOrders" :key="order.order_no" class="combined-order" :url="combinedOrderUrl(order.order_no)">
+					<view>
+						<view class="combined-number">{{ order.order_no }}</view>
+						<view class="combined-store-count">{{ order.stores.length }} 家店铺 · {{ combinedStateText(order.state) }}</view>
+					</view>
+					<view class="combined-amount">
+						<view class="font-color">¥{{ order.total_amount }}</view>
+						<view class="combined-store-count">查看详情 ›</view>
+					</view>
+				</navigator>
+			</view>
 			<view class="list">
-				<view class="item" v-for="(item, index) in orderList" :key="index">
+				<view class="item" v-for="(item, index) in orderList" :key="index" v-show="!combinedChildNumbers[item.order_id]">
 					<view @click="goOrderDetails(item.order_id)">
 						<view class="acea-row row-middle gift" v-if="!isSavedMarketplaceV1(item) && item.is_gift == 1">
 							<text class="iconfont icon-ic_gift2 mr-16"></text>
@@ -139,7 +152,7 @@
 				{{ loadTitle }}
 			</view>
 			<view v-if="listError" class="saved-list-error" role="alert"><text>{{ listError }}</text><button class="saved-list-retry" :disabled="loading" @tap="getOrderList">重新加载</button></view>
-			<view v-if="orderList.length == 0 && !listError">
+			<view v-if="!hasVisibleOrders && !listError">
 				<emptyPage v-if="!loading" :title="$t(`暂无订单`)"></emptyPage>
 				<view class="loadingicon acea-row row-center-wrapper">
 					<text class="loading iconfont icon-jiazai" :hidden="loading == false"></text>
@@ -153,7 +166,7 @@
 </template>
 
 <script>
-import { getOrderList, orderData, orderCancel, orderDel, orderPay } from '@/api/order.js';
+import { getOrderList, orderData, orderCancel, orderDel, orderPay, getCombinedOrders } from '@/api/order.js';
 import { openOrderSubscribe } from '@/utils/SubscribeMessage.js';
 import home from '@/components/home';
 import { toLogin } from '@/libs/login.js';
@@ -181,6 +194,7 @@ export default {
 			loadend: false, //是否加载完毕
 			loadTitle: this.$t(`加载更多`), //提示语
 			orderList: [], //订单数组
+			combinedOrders: [],
 			orderData: {}, //订单详细统计
 			orderStatus: 9, //订单状态
 			page: 1,
@@ -196,11 +210,30 @@ export default {
 			uid: 0
 		};
 	},
-	computed: mapGetters(['isLogin']),
+	computed: {
+		...mapGetters(['isLogin']),
+		visibleCombinedOrders() {
+			if (this.orderStatus == 9) return this.combinedOrders;
+			if (this.orderStatus == 0) return this.combinedOrders.filter((order) => order.state === 'pending');
+			return [];
+		},
+		combinedChildNumbers() {
+			const numbers = Object.create(null);
+			this.visibleCombinedOrders.forEach((order) => {
+				order.stores.forEach((store) => {
+					if (store.order_no) numbers[store.order_no] = true;
+				});
+			});
+			return numbers;
+		},
+		hasVisibleOrders() {
+			return this.visibleCombinedOrders.length > 0 || this.orderList.some((order) => !this.combinedChildNumbers[order.order_id]);
+		},
+	},
 	watch: {
 		'$store.state.app.uid'() {
 			this.clearSavedOrderList();
-			if (this.isLogin) { this.onLoadFun(); this.getOrderList(); }
+			if (this.isLogin) { this.onLoadFun(); this.getOrderList(); this.loadCombinedOrders(); }
 		},
 		isLogin(value) { if (!value) this.clearSavedOrderList(); }
 	},
@@ -241,6 +274,7 @@ export default {
 			this.onLoadFun();
 			this.getOrderList();
 			this.uid = this.$store.state.app.uid;
+			this.loadCombinedOrders();
 		} else {
 			toLogin();
 		}
@@ -255,10 +289,23 @@ export default {
 			// #endif
 		},
 		rootOrderStatusText,
+		combinedOrderUrl(number) {
+			return '/pages/goods/combined_checkout/index?order_no=' + encodeURIComponent(number);
+		},
+		combinedStateText(state) {
+			return { pending: '待支付', paid: '已支付', cancelled: '已取消' }[state] || '';
+		},
+		loadCombinedOrders() {
+			const uid = this.$store.state.app.uid;
+			getCombinedOrders().then(({ data }) => {
+				if (this.isLogin && this.$store.state.app.uid === uid) this.combinedOrders = data.list || [];
+			}).catch(() => {});
+		},
 		clearSavedOrderList() {
 			this.listRevision++;
 			this.orderList = [];
 			this.orderData = {};
+			this.combinedOrders = [];
 			this.page = 1;
 			this.loadend = false;
 			this.loading = false;
@@ -702,4 +749,12 @@ export default {
 	margin-top: 10rpx;
 	font-size: 24rpx;
 }
+
+.combined-orders { margin: 20rpx 24rpx; padding: 20rpx 24rpx; border-radius: 16rpx; background: #fff; }
+.combined-title { font-size: 30rpx; font-weight: 600; }
+.combined-order { display: flex; justify-content: space-between; align-items: center; gap: 16rpx; padding: 20rpx 0; border-bottom: 1rpx solid #eee; color: #282828; }
+.combined-order:last-child { padding-bottom: 0; border-bottom: 0; }
+.combined-number { font-size: 27rpx; overflow-wrap: anywhere; }
+.combined-store-count { font-size: 24rpx; color: #666; }
+.combined-amount { flex-shrink: 0; text-align: right; }
 </style>

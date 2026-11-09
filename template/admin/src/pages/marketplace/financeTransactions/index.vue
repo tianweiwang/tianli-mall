@@ -101,6 +101,24 @@
             <dd>{{ moneyText(view.settled_amount) }}</dd>
           </div>
         </dl>
+        <section
+          v-if="view.combined_payments && view.combined_payments.length"
+          class="finance-rule"
+          aria-labelledby="finance-combined-payments"
+        >
+          <h2 id="finance-combined-payments">本页合单测试收款</h2>
+          <p class="finance-note">每个合单号对应一笔测试收款。下方标有“店铺分摊”的金额已包含在该笔收款中。</p>
+          <el-table :data="view.combined_payments" row-key="order_no" border>
+            <el-table-column prop="order_no" label="合单号" min-width="240" />
+            <el-table-column prop="test_trade_no" label="测试交易号" min-width="240" />
+            <el-table-column label="合单实付" min-width="140">
+              <template slot-scope="scope">{{ moneyText(scope.row.total_amount) }}</template>
+            </el-table-column>
+            <el-table-column label="付款时间" min-width="180">
+              <template slot-scope="scope">{{ timeText(scope.row.paid_at) }}</template>
+            </el-table-column>
+          </el-table>
+        </section>
         <p class="finance-note">
           下列金额是根单保存金额，不按售后批准金额冲减。展开行可查看该根单全部付款尝试；估算值不能作为账单、收入统计或结算依据。
           退款事实是本次读取的累计已确认金额与当前占用，不将多次观察相加；测试记录不代表真实资金退款。
@@ -110,7 +128,7 @@
           <el-table-column type="expand" width="48">
             <template slot-scope="scope">
               <section class="finance-attempts" :aria-label="'根单 ' + scope.row.root_order_id + ' 的全部付款尝试'">
-                <h2>全部付款尝试（{{ scope.row.attempts.length }}）</h2>
+                <h2>{{ scope.row.combined_checkout ? '店铺分摊记录' : '全部付款尝试' }}（{{ scope.row.attempts.length }}）</h2>
                 <el-table :data="scope.row.attempts" row-key="attempt_id" border>
                   <el-table-column prop="attempt_id" label="尝试编号" min-width="170" />
                   <el-table-column prop="admitted_generation" label="登记代次" min-width="100" />
@@ -136,6 +154,9 @@
               ><div class="finance-order">{{ scope.row.order_no }}</div>
               <div class="finance-note">
                 根单编号 {{ scope.row.root_order_id }} · 商家 {{ scope.row.mer_id }}
+              </div>
+              <div v-if="scope.row.combined_checkout" class="finance-note">
+                店铺分摊 · 合单 {{ scope.row.combined_checkout.order_no }}
               </div></template
             ></el-table-column
           >
@@ -159,7 +180,7 @@
           </el-table-column>
           <el-table-column label="付款与履约" min-width="160"
             ><template slot-scope="scope"
-              ><div>{{ scope.row.attempts.length }} 次付款尝试</div>
+              ><div>{{ scope.row.combined_checkout ? '店铺分摊' : scope.row.attempts.length + ' 次付款尝试' }}</div>
               <div class="finance-note">{{ scope.row.fulfillment_hold ? '履约暂缓' : '未标记履约暂缓' }}</div></template
             ></el-table-column
           >

@@ -17,6 +17,7 @@ use crmeb\compat\think\orm\db\connector\Mysql;
 use crmeb\exceptions\AuthException;
 use crmeb\exceptions\AuthUnavailableException;
 use PDO;
+use think\facade\Config;
 use think\facade\Db;
 use think\exception\HttpException;
 use Throwable;
@@ -28,7 +29,7 @@ final class FinanceTransactionsServices
         private MarketplaceOrderDao $orders,private MarketplaceOrderFulfillmentDao $families,
         private MarketplaceOrderRefundDao $refunds,private MarketplaceOrderFulfillmentServices $fulfillment) {}
 
-    public function read(PlatformScope $scope,array $query=[]): array
+    public function read(PlatformScope $scope,array $query=[],bool $includeCombined=false): array
     {
         try{
             $this->authorize($scope);MerchantManagementInput::body($query,['before_id','limit','revision']);
@@ -65,10 +66,15 @@ final class FinanceTransactionsServices
                 foreach($headers as $header){
                     $id=self::number($header['id'],1);$list[]=FinanceTransactionProjection::row($header,$observations[$id],$draft,$summaries[$id]);
                 }
+                $combinedPayments = $includeCombined && Config::get('marketplace.combined_checkout.enabled', false) === true
+                    ? self::projectCombinedPayments($pdo, $prefix, $list) : null;
                 $data=['schema'=>1,'scope'=>'testing_persisted_payment_v1','real_funds_enabled'=>false,
                     'available_revisions'=>$available,'selected_revision'=>$revision,'rule'=>$draft===null?null:FinanceTransactionProjection::rule($draft),
                     'list'=>$list,'next_before_id'=>$hasMore?$list[count($list)-1]['root_order_id']:null,
                     'channel_fee_amount'=>null,'merchant_receivable'=>null,'settled_amount'=>null];
+                if ($combinedPayments !== null) {
+                    $data['combined_payments'] = $combinedPayments;
+                }
                 $this->authorize($scope);$this->connection($connection,$pdo,$prefix,true);
                 if(!$pdo->commit())throw new AuthUnavailableException();$set=false;$this->connection($connection,$pdo,$prefix,false);
             }catch(Throwable $error){
@@ -80,6 +86,56 @@ final class FinanceTransactionsServices
             $this->connection($connection,$pdo,$prefix,false);return $data;
         }catch(AuthException|HttpException $error){throw $error;}
         catch(Throwable $error){throw new AuthUnavailableException();}
+    }
+
+    /** Join only the authorized page's root orders to their saved combined payment. */
+    private static function projectCombinedPayments(PDO $pdo, string $prefix, array &$list): array
+    {
+        if ($list === []) {
+            return [];
+        }
+        $ids = array_column($list, 'root_order_id');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = self::rows($pdo,
+            'SELECT m.`root_order_id`, m.`mer_id`, m.`amount`, c.`order_no`, c.`state`, c.`test_trade_no`, c.`total_amount`, c.`paid_at`'
+            . ' FROM `' . $prefix . 'marketplace_combined_checkout_order` m'
+            . ' JOIN `' . $prefix . 'marketplace_combined_checkout` c ON c.`id` = m.`checkout_id`'
+            . ' WHERE m.`root_order_id` IN (' . $placeholders . ')', $ids);
+        $allocations = [];
+        foreach ($rows as $row) {
+            $id = self::number($row['root_order_id'], 1);
+            if (isset($allocations[$id]) || !in_array($id, $ids, true)) {
+                throw new AuthUnavailableException();
+            }
+            $allocations[$id] = $row;
+        }
+        $groups = [];
+        foreach ($list as &$payment) {
+            $allocation = $allocations[$payment['root_order_id']] ?? null;
+            if ($allocation === null) {
+                continue;
+            }
+            $orderNo = $allocation['order_no'];
+            $tradeNo = $allocation['test_trade_no'];
+            $total = $allocation['total_amount'];
+            if ($allocation['state'] !== 'paid' || self::number($allocation['mer_id'], 1) !== $payment['mer_id']
+                || $allocation['amount'] !== $payment['order_amount'] || array_column($payment['attempts'], 'state') !== ['applied']
+                || !is_string($orderNo) || preg_match('/\Acc[0-9a-f]{24}\z/D', $orderNo) !== 1
+                || $tradeNo !== 'ct' . substr($orderNo, 2)
+                || !is_string($total) || preg_match('/\A(?:0|[1-9][0-9]{0,9})\.[0-9]{2}\z/D', $total) !== 1
+                || bccomp($total, $allocation['amount'], 2) <= 0) {
+                throw new AuthUnavailableException();
+            }
+            $group = ['order_no' => $orderNo, 'test_trade_no' => $tradeNo,
+                'total_amount' => $total, 'paid_at' => self::number($allocation['paid_at'], 1)];
+            if (isset($groups[$orderNo]) && $groups[$orderNo] !== $group) {
+                throw new AuthUnavailableException();
+            }
+            $groups[$orderNo] = $group;
+            $payment['combined_checkout'] = ['payment_role' => 'allocation', 'order_no' => $orderNo, 'total_amount' => $total];
+        }
+        unset($payment);
+        return array_values($groups);
     }
 
     /** Existing same-PDO facts only. Unapplied payment roots never enter the aftersale reader. */

@@ -25,6 +25,10 @@ final class MarketplaceOrderCancelServices
         $pdo=self::defaultPdo();if($pdo->inTransaction())throw new AuthUnavailableException();
         $candidate=$this->dao->customerCancellationCandidate($pdo,$uid,$orderNo);
         if($candidate===null)throw new ApiException('订单不存在');
+        if(MarketplaceCombinedCheckoutCancellation::enabled()
+            &&app()->make(MarketplaceCombinedCheckoutCancellation::class)->containsOrder($pdo,$candidate)){
+            throw new ApiException('请在合单中取消');
+        }
         return $this->cancel($pdo,$candidate,false,$uid);
     }
 
@@ -35,6 +39,15 @@ final class MarketplaceOrderCancelServices
         $pdo=self::defaultPdo();if($pdo->inTransaction())throw new AuthUnavailableException();
         $candidate=$this->dao->expiryCancellationCandidate($pdo,$orderId);
         if($candidate===null)throw new AuthUnavailableException();
+        if(MarketplaceCombinedCheckoutCancellation::enabled()){
+            try{
+                $combined=app()->make(MarketplaceCombinedCheckoutCancellation::class)->cancelExpiredMember($pdo,$candidate);
+                if($combined!==null)return $combined;
+            }catch(\Throwable $error){
+                self::recordPending($orderId);
+                return ['state'=>'pending','order_id'=>$candidate['order_no']];
+            }
+        }
         return $this->cancel($pdo,$candidate,true,null);
     }
 

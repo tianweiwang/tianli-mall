@@ -33,67 +33,101 @@ final class MarketplaceOrderCreateServices
     /** The caller supplies the actual authenticated UID, route key, and unfiltered parsed POST. */
     public function create(int $uid,string $routeKey,array $rawPost):array
     {
-        $input=MarketplaceOrderInput::create($uid,$routeKey,$rawPost);$request=$input['request'];
-        $committed=Db::transaction(function(ConnectionInterface $connection)use($uid,$routeKey,$rawPost,$input,$request):array{
-            $pdo=self::pdo($connection);$now=time();
-            // UID lock and durable replay precede every cache/current-configuration dependency.
-            $claim=$this->dao->claim($pdo,$request,$input['idem_key'],$now,0);
-            if(!$claim['claimed'])return ['order_id'=>$claim['order']['order_id'],'key'=>$routeKey,
-                'order_pk'=>MarketplaceOrderInput::unsigned($claim['order']['id'],'订单编号',2147483647)];
-            MarketplaceTradePolicy::assertV1CreateEnabled();
-            $options=$request['options'];MarketplaceTradePolicy::preview($rawPost,$options);
-            $cached=CacheService::get('user_order_'.$uid.$routeKey);
-            if(!is_array($cached)||!is_array($cached['cartInfo']??null))throw new ApiException('订单已过期,请刷新当前页面');
-            $frame=MarketplaceCartSelection::frame($cached,$uid);
-            if($frame['mer_id']!==$request['mer_id']||$frame['source_kind']!==$request['source_kind']
-                ||$frame['cart_refs']!==$request['cart_refs'])throw new ApiException('购物车选择已变化，请重新确认');
-            // No ordinary SQL read before all selected catalog/freight/address/cart rows are locked.
-            $locked=$this->dao->lockInputs($pdo,$uid,$request['mer_id'],$frame,$request['address_id'],$options['invoice_id']);
-            $group=$this->orders->getCacheOrderInfo($uid,$routeKey);
-            if(!is_array($group)||MarketplaceCartSelection::frame($group,$uid)!==$frame)throw new ApiException('请重新确认本店商品');
-            $userModel=$this->users->getUserInfo($uid);
-            if($userModel===null)throw new AuthUnavailableException();
-            $user=$userModel->toArray();
-            if((int)($user['uid']??0)!==$uid)throw new AuthUnavailableException();
-            $rawConfiguration=$this->configuration->getConfigAll(self::CONFIGURATION);
-            self::validatePayment($options['payType'],$rawConfiguration);
-            $cancelAt=self::cancelAt($now,$rawConfiguration['order_cancel_time']??null);
-            $group['other']['offlinePostage']=self::configurationValue($rawConfiguration,'offline_postage','0');
-            if($options['invoice_id']!==0)$this->invoices->checkInvoice($options['invoice_id'],$uid);
-            $computed=$this->computed->setParamData([])->computedOrder($uid,$user,$group,$request['address_id'],
-                $options['payType'],false,0,true,1,0,true);
-            if(self::pdo($connection)!==$pdo)throw new AuthUnavailableException();
-            $quote=MarketplaceOrderLockedQuote::verify($uid,$request['mer_id'],$request['address_id'],$locked,$group,$computed);
-            $customForm=MarketplaceOrderCustomForm::snapshot($frame['custom_form'],$options['custom_form'],
-                $locked['products'],$locked['selection'],$locked['source_kind']);
-            $address=$quote['address'];$orderNumber=$this->orderNumbers->getNewOrderId('cp');
-            $order=['uid'=>$uid,'mer_id'=>$request['mer_id'],'order_id'=>$orderNumber,'unique'=>$routeKey,
-                'cart_id'=>$locked['cart_refs'],'total_num'=>array_sum(array_column($locked['selection'],'qty')),
-                'total_price'=>$group['priceGroup']['totalPrice'],'total_postage'=>$computed['pay_postage'],
-                'pay_price'=>$computed['pay_price'],'pay_postage'=>$computed['pay_postage'],'cost'=>$group['priceGroup']['costPrice'],
-                'add_time'=>$now,'real_name'=>$address['real_name'],'user_phone'=>$address['phone'],
-                'user_address'=>$address['province'].' '.$address['city'].' '.$address['district'].' '.$address['detail'],
-                'mark'=>$options['mark'],'gift_mark'=>$options['gift_mark'],'pay_type'=>$options['payType'],
-                'channel_type'=>$user['user_type'],'province'=>'','custom_form'=>$customForm,
-                'merchant_name_snapshot'=>$locked['merchant']['name'],
-                'merchant_after_sale_contact_snapshot'=>$locked['merchant']['after_sale_contact']];
-            return app()->make(\app\services\marketplace\assets\CustomerOrderFormAssetServices::class)
-                ->withCreateAssets($connection,$pdo,$uid,$routeKey,$frame,$locked,$customForm,
-                    function()use($pdo,$order,$locked,$uid,$request,$now,$quote,$claim,$cancelAt,$orderNumber,$routeKey):array{
-                        $orderId=$this->dao->insertOrder($pdo,$order,$locked['invoice']);
-                        $reserves=$this->dao->reserve($pdo,$uid,$request['mer_id'],$orderId,$locked,$now);
-                        $this->dao->insertItems($pdo,$uid,$request['mer_id'],$orderId,$quote['cartInfo'],$reserves);
-                        $this->dao->markCreated($pdo,$uid,$claim['idem_key'],$orderId,$locked,$cancelAt);
-                        // The internal PK wakes the finisher only after this transaction actually ends.
-                        return ['order_id'=>$orderNumber,'key'=>$routeKey,'order_pk'=>$orderId];
-                    });
-        });
-        // Only completion is best effort. A post-commit/logging error must not turn an existing order into a create failure.
-        try{
-            $finished=$this->postCommit->finish($committed['order_pk']);
-            if($finished['post_commit_done']!==1)MarketplaceOrderPostCommitServices::recordPending($committed['order_pk']);
-        }catch(\Throwable $error){MarketplaceOrderPostCommitServices::recordPending($committed['order_pk']);}
+        $input=MarketplaceOrderInput::create($uid,$routeKey,$rawPost);
+        $committed=Db::transaction(fn(ConnectionInterface $connection):array=>
+            $this->createInTransaction($connection,$uid,$routeKey,$rawPost,$input));
+        $this->finishCheckoutOrder($committed['order_pk']);
         return ['order_id'=>$committed['order_id'],'key'=>$committed['key']];
+    }
+
+    /** Creates one fresh shop order in the caller's checkout transaction using its confirmed amounts. */
+    public function createWithinCheckout(ConnectionInterface $connection,int $uid,string $routeKey,
+        array $rawPost,array $expectedAmounts):array
+    {
+        if($connection->transactionDepth()!==1||count($expectedAmounts)!==3)throw new AuthUnavailableException();
+        foreach(['total_price','pay_postage','pay_price']as$field){
+            $amount=$expectedAmounts[$field]??null;
+            if(!is_string($amount)||MarketplaceDecimal::value($amount)!==$amount)throw new AuthUnavailableException();
+        }
+        $input=MarketplaceOrderInput::create($uid,$routeKey,$rawPost);
+        return $this->createInTransaction($connection,$uid,$routeKey,$rawPost,$input,$expectedAmounts);
+    }
+
+    private function createInTransaction(ConnectionInterface $connection,int $uid,string $routeKey,
+        array $rawPost,array $input,?array $expectedAmounts=null):array
+    {
+        $request=$input['request'];
+        $pdo=self::pdo($connection);$now=time();
+        // UID lock and durable replay precede every cache/current-configuration dependency.
+        $claim=$this->dao->claim($pdo,$request,$input['idem_key'],$now,0);
+        if(!$claim['claimed']){
+            if($expectedAmounts!==null)throw new ApiException('店铺订单已提交，请重新确认合单');
+            return ['order_id'=>$claim['order']['order_id'],'key'=>$routeKey,
+                'order_pk'=>MarketplaceOrderInput::unsigned($claim['order']['id'],'订单编号',2147483647)];
+        }
+        MarketplaceTradePolicy::assertV1CreateEnabled();
+        $options=$request['options'];MarketplaceTradePolicy::preview($rawPost,$options);
+        $cached=CacheService::get('user_order_'.$uid.$routeKey);
+        if(!is_array($cached)||!is_array($cached['cartInfo']??null))throw new ApiException('订单已过期,请刷新当前页面');
+        $frame=MarketplaceCartSelection::frame($cached,$uid);
+        if($frame['mer_id']!==$request['mer_id']||$frame['source_kind']!==$request['source_kind']
+            ||$frame['cart_refs']!==$request['cart_refs'])throw new ApiException('购物车选择已变化，请重新确认');
+        // No ordinary SQL read before all selected catalog/freight/address/cart rows are locked.
+        $locked=$this->dao->lockInputs($pdo,$uid,$request['mer_id'],$frame,$request['address_id'],$options['invoice_id']);
+        $group=$this->orders->getCacheOrderInfo($uid,$routeKey);
+        if(!is_array($group)||MarketplaceCartSelection::frame($group,$uid)!==$frame)throw new ApiException('请重新确认本店商品');
+        $userModel=$this->users->getUserInfo($uid);
+        if($userModel===null)throw new AuthUnavailableException();
+        $user=$userModel->toArray();
+        if((int)($user['uid']??0)!==$uid)throw new AuthUnavailableException();
+        $rawConfiguration=$this->configuration->getConfigAll(self::CONFIGURATION);
+        self::validatePayment($options['payType'],$rawConfiguration);
+        $cancelAt=self::cancelAt($now,$rawConfiguration['order_cancel_time']??null);
+        $group['other']['offlinePostage']=self::configurationValue($rawConfiguration,'offline_postage','0');
+        if($options['invoice_id']!==0)$this->invoices->checkInvoice($options['invoice_id'],$uid);
+        $computed=$this->computed->setParamData([])->computedOrder($uid,$user,$group,$request['address_id'],
+            $options['payType'],false,0,true,1,0,true);
+        if(self::pdo($connection)!==$pdo)throw new AuthUnavailableException();
+        $quote=MarketplaceOrderLockedQuote::verify($uid,$request['mer_id'],$request['address_id'],$locked,$group,$computed);
+        if($expectedAmounts!==null){
+            foreach(['total_price','pay_postage','pay_price']as$field){
+                if(MarketplaceDecimal::value($computed[$field])!==$expectedAmounts[$field]){
+                    throw new ApiException('订单金额已变化，请重新确认合单');
+                }
+            }
+        }
+        $customForm=MarketplaceOrderCustomForm::snapshot($frame['custom_form'],$options['custom_form'],
+            $locked['products'],$locked['selection'],$locked['source_kind']);
+        $address=$quote['address'];$orderNumber=$this->orderNumbers->getNewOrderId('cp');
+        $order=['uid'=>$uid,'mer_id'=>$request['mer_id'],'order_id'=>$orderNumber,'unique'=>$routeKey,
+            'cart_id'=>$locked['cart_refs'],'total_num'=>array_sum(array_column($locked['selection'],'qty')),
+            'total_price'=>$group['priceGroup']['totalPrice'],'total_postage'=>$computed['pay_postage'],
+            'pay_price'=>$computed['pay_price'],'pay_postage'=>$computed['pay_postage'],'cost'=>$group['priceGroup']['costPrice'],
+            'add_time'=>$now,'real_name'=>$address['real_name'],'user_phone'=>$address['phone'],
+            'user_address'=>$address['province'].' '.$address['city'].' '.$address['district'].' '.$address['detail'],
+            'mark'=>$options['mark'],'gift_mark'=>$options['gift_mark'],'pay_type'=>$options['payType'],
+            'channel_type'=>$user['user_type'],'province'=>'','custom_form'=>$customForm,
+            'merchant_name_snapshot'=>$locked['merchant']['name'],
+            'merchant_after_sale_contact_snapshot'=>$locked['merchant']['after_sale_contact']];
+        return app()->make(\app\services\marketplace\assets\CustomerOrderFormAssetServices::class)
+            ->withCreateAssets($connection,$pdo,$uid,$routeKey,$frame,$locked,$customForm,
+                function()use($pdo,$order,$locked,$uid,$request,$now,$quote,$claim,$cancelAt,$orderNumber,$routeKey):array{
+                    $orderId=$this->dao->insertOrder($pdo,$order,$locked['invoice']);
+                    $reserves=$this->dao->reserve($pdo,$uid,$request['mer_id'],$orderId,$locked,$now);
+                    $this->dao->insertItems($pdo,$uid,$request['mer_id'],$orderId,$quote['cartInfo'],$reserves);
+                    $this->dao->markCreated($pdo,$uid,$claim['idem_key'],$orderId,$locked,$cancelAt);
+                    // The internal PK wakes the finisher only after this transaction actually ends.
+                    return ['order_id'=>$orderNumber,'key'=>$routeKey,'order_pk'=>$orderId];
+                });
+    }
+
+    /** The caller invokes this after its transaction commits. A completion error leaves a retryable record. */
+    public function finishCheckoutOrder(int $orderPk):void
+    {
+        try{
+            $finished=$this->postCommit->finish($orderPk);
+            if($finished['post_commit_done']!==1)MarketplaceOrderPostCommitServices::recordPending($orderPk);
+        }catch(\Throwable $error){MarketplaceOrderPostCommitServices::recordPending($orderPk);}
     }
 
     /** A point-in-time owner-only result lookup, not cancellation or proof that a delayed request ended. */

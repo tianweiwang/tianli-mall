@@ -18,6 +18,8 @@ use crmeb\services\pay\marketplace\TestPaymentDriver;
 use PDO;
 use think\App;
 use think\db\ConnectionInterface;
+use think\exception\HttpException;
+use think\facade\Config;
 use think\facade\Db;
 
 /** Testing-only durable admission. Saved intent can never manufacture another driver create opportunity. */
@@ -25,6 +27,7 @@ final class MarketplacePaymentServices
 {
     private readonly App $app;
     private ?array $createContext=null;
+    private ?array $combinedAllocationContext = null;
 
     public function __construct(private MarketplacePaymentDao $dao,private PaymentAccountResolver $accounts,private MarketplaceOrderDao $orders,
         private MarketplaceOrderFulfillmentDao $fulfillments,private MarketplaceOrderRefundDao $refunds)
@@ -44,7 +47,9 @@ final class MarketplacePaymentServices
         if(!$driver instanceof TestPaymentDriver)self::unavailable();
         $candidate=$this->dao->customerPaymentCandidate($pdo,$uid,$orderNo);$orderId=$candidate['order_id'];
         $first=$this->transaction($connection,$pdo,function()use($pdo,$uid,$orderId,$orderNo):array{
-            return $this->dao->lockPayment($pdo,$uid,$orderId,$orderNo);
+            $locked = $this->dao->lockPayment($pdo, $uid, $orderId, $orderNo);
+            $this->assertStandalonePayment($pdo, $orderId);
+            return $locked;
         });
         $existing=self::byKey($first,$paymentIdem);
         if($existing!==null)return self::dto($first,$existing['id']);
@@ -54,7 +59,9 @@ final class MarketplacePaymentServices
         try{$account=$this->accounts->forOrder($first['root']);}
         catch(\Throwable $error){$candidateError=$error;}
         $admission=$this->transaction($connection,$pdo,function()use($pdo,$uid,$orderId,$orderNo,$paymentIdem,$account,$candidateError):array{
-            $locked=$this->dao->lockPayment($pdo,$uid,$orderId,$orderNo);$existing=self::byKey($locked,$paymentIdem);
+            $locked=$this->dao->lockPayment($pdo,$uid,$orderId,$orderNo);
+            $this->assertStandalonePayment($pdo, $orderId);
+            $existing=self::byKey($locked,$paymentIdem);
             if($existing!==null)return ['new'=>false,'locked'=>$locked,'attempt_id'=>$existing['id']];
             if($candidateError!==null)throw $candidateError;
             if(!$account instanceof PaymentAccount)self::unavailable();
@@ -97,6 +104,176 @@ final class MarketplacePaymentServices
         }
         $this->logSavedPayment('payment.fact_saved',$saved,$admission['attempt_id'],'createPayment');
         return self::dto($saved,$row['id']);
+    }
+
+    /** Apply an allocation from the single saved test charge in the caller's outer transaction. */
+    public function applyCombinedTestAllocation(
+        ConnectionInterface $connection,
+        PDO $pdo,
+        int $uid,
+        int $checkoutId,
+        int $rootId,
+        string $orderNo,
+        PaymentAccount $account,
+        int $paidAt
+    ): array {
+        $this->connection($connection, $pdo);
+        self::customerIdentity($uid, $orderNo);
+        if (Config::get('marketplace.combined_checkout.enabled', false) !== true
+            || $this->createContext !== null || $this->combinedAllocationContext !== null
+            || $connection->transactionDepth() !== 1 || !$pdo->inTransaction()
+            || $checkoutId < 1 || $rootId < 1 || $rootId > 2147483647 || $paidAt < 1 || $paidAt > self::now()) {
+            self::unavailable();
+        }
+        $allocation = $this->combinedAllocation($pdo, $checkoutId, $uid, $rootId, $paidAt);
+        $locked = $this->dao->lockPayment($pdo, $uid, $rootId, $orderNo);
+        $root = $locked['root'];
+        if ($locked['attempts'] !== [] || $root['mer_id'] !== $allocation['mer_id']
+            || $root['mer_id'] !== $account->mer_id || $root['pay_price'] !== $allocation['amount']) {
+            self::unavailable();
+        }
+
+        $driver = $this->app->make(PaymentAdapter::class);
+        if (!$driver instanceof TestPaymentDriver) {
+            self::unavailable();
+        }
+        $idem = 'combined:' . $checkoutId . ':allocation:' . $rootId;
+        $admission = $this->dao->admit($pdo, $uid, $rootId, $orderNo, $idem, $account->snapshot());
+        if ($admission['new'] !== true || $admission['locked']['root'] !== $root) {
+            self::unavailable();
+        }
+        $attemptId = $admission['attempt_id'];
+        $attempt = self::byId($admission['locked'], $attemptId);
+        $this->combinedAllocationContext = [
+            'connection' => $connection, 'pdo' => $pdo, 'driver' => $driver,
+            'root' => $root, 'account' => $account, 'idem' => $idem,
+            'trade_no' => $allocation['trade_no'],
+        ];
+        try {
+            $pending = $driver->allocateCombinedTestPayment($root, $account, $idem, $allocation['trade_no']);
+        } finally {
+            $this->combinedAllocationContext = null;
+        }
+
+        $created = $this->dao->saveCreateResult($pdo, $uid, $rootId, $orderNo, $attemptId, $attempt, $pending, $paidAt);
+        $attempt = self::byId($created, $attemptId);
+        $descriptor = self::descriptor($attempt);
+        if ($descriptor === null || $driver->completeTestPayment($descriptor)['state'] !== 'succeeded') {
+            self::unavailable();
+        }
+        $result = $driver->queryPayment($descriptor);
+        $initial = $this->dao->lockObservation($pdo, $uid, $rootId, $orderNo);
+        $before = $this->captureApplicationContext($connection, $pdo, $uid, $rootId, $orderNo, $initial);
+        $saved = $this->dao->saveObservation(
+            $pdo, $uid, $rootId, $orderNo, $attemptId, $attempt, 'queryPayment', $result,
+            $paidAt, $before['capture'], $before['context']
+        );
+        $saved = $this->finalApplicationReadback($connection, $pdo, $uid, $rootId, $orderNo, $before, $saved);
+        $dto = self::dto($saved['locked'], $attemptId);
+        if (!$saved['root_payment_consistent'] || $saved['locked']['registry']['fulfillment_hold'] !== 0
+            || $dto['state'] !== 'applied') {
+            self::unavailable();
+        }
+        return $dto;
+    }
+
+    public function consumeCombinedAllocationContext(
+        TestPaymentDriver $driver,
+        array $root,
+        PaymentAccount $account,
+        string $idem,
+        string $tradeNo
+    ): void {
+        $context = $this->combinedAllocationContext;
+        $this->combinedAllocationContext = null;
+        if ($context === null || $context['driver'] !== $driver || $this->app->make(PaymentAdapter::class) !== $driver
+            || $context['root'] !== $root || $context['account'] !== $account || $context['idem'] !== $idem
+            || $context['trade_no'] !== $tradeNo) {
+            self::unavailable();
+        }
+        $this->connection($context['connection'], $context['pdo']);
+        if ($context['connection']->transactionDepth() !== 1 || !$context['pdo']->inTransaction()) {
+            self::unavailable();
+        }
+    }
+
+    private function assertStandalonePayment(PDO $pdo, int $rootId): void
+    {
+        if ($this->isCombinedCheckoutOrder($pdo, $rootId)) {
+            throw new HttpException(409, '请在合并结算单支付');
+        }
+    }
+
+    /** Caller has already resolved the buyer-owned order or locked the root in its admission transaction. */
+    public function isCombinedCheckoutOrder(PDO $pdo, int $rootId): bool
+    {
+        if (Config::get('marketplace.combined_checkout.enabled', false) !== true) {
+            return false;
+        }
+        $members = $this->combinedTable('marketplace_combined_checkout_order');
+        $statement = $pdo->prepare('SELECT `root_order_id` FROM ' . $members . ' WHERE `root_order_id` = ? LIMIT 1');
+        if (!$statement instanceof \PDOStatement || !$statement->execute([$rootId])) {
+            self::unavailable();
+        }
+        return $statement->fetchColumn() !== false;
+    }
+
+    private function combinedAllocation(PDO $pdo, int $checkoutId, int $uid, int $rootId, int $paidAt): array
+    {
+        $checkouts = $this->combinedTable('marketplace_combined_checkout');
+        $members = $this->combinedTable('marketplace_combined_checkout_order');
+        $statement = $pdo->prepare(
+            'SELECT c.`state`, c.`test_trade_no`, c.`paid_at`, c.`total_amount`, o.`root_order_id`, o.`mer_id`, o.`amount`'
+            . ' FROM ' . $checkouts . ' c JOIN ' . $members . ' o ON o.`checkout_id` = c.`id`'
+            . ' WHERE c.`id` = ? AND c.`uid` = ? ORDER BY o.`root_order_id` FOR UPDATE'
+        );
+        if (!$statement instanceof \PDOStatement || !$statement->execute([$checkoutId, $uid])) {
+            self::unavailable();
+        }
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        if (count($rows) < 2) {
+            self::unavailable();
+        }
+        $tradeNo = $rows[0]['test_trade_no'];
+        $total = $rows[0]['total_amount'];
+        if ($rows[0]['state'] !== 'paid' || (string) $rows[0]['paid_at'] !== (string) $paidAt
+            || !is_string($tradeNo) || preg_match('/\Act[A-Za-z0-9_-]{1,126}\z/D', $tradeNo) !== 1
+            || !is_string($total) || preg_match('/\A(?:0|[1-9][0-9]{0,11})\.[0-9]{2}\z/D', $total) !== 1) {
+            self::unavailable();
+        }
+        $sum = '0.00';
+        $stores = [];
+        $allocation = null;
+        foreach ($rows as $row) {
+            $merchant = MarketplaceOrderInput::unsigned($row['mer_id'], '商家编号', 4294967295);
+            $amount = $row['amount'];
+            if ($merchant === 0 || isset($stores[$merchant]) || !is_string($amount)
+                || preg_match('/\A(?:0|[1-9][0-9]{0,9})\.[0-9]{2}\z/D', $amount) !== 1
+                || bccomp($amount, '0.00', 2) <= 0) {
+                self::unavailable();
+            }
+            $stores[$merchant] = true;
+            $sum = bcadd($sum, $amount, 2);
+            if ((string) $row['root_order_id'] === (string) $rootId) {
+                if ($allocation !== null) {
+                    self::unavailable();
+                }
+                $allocation = ['mer_id' => $merchant, 'amount' => $amount, 'trade_no' => $tradeNo];
+            }
+        }
+        if ($allocation === null || $sum !== $total) {
+            self::unavailable();
+        }
+        return $allocation;
+    }
+
+    private function combinedTable(string $name): string
+    {
+        $prefix = Db::connect()->getConfig('prefix');
+        if (!is_string($prefix) || preg_match('/\A[A-Za-z0-9_]*\z/D', $prefix) !== 1 || strlen($prefix . $name) > 64) {
+            self::unavailable();
+        }
+        return '`' . $prefix . $name . '`';
     }
 
     /** Consume-only driver gate: no public grant, fresh flag, reconstructed intent or caller-provided context. */

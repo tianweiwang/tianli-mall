@@ -54,6 +54,33 @@ final class TestPaymentDriver implements PaymentAdapter
         return self::result($reference,$saved);
     }
 
+    /** Project one allocation from an authorized group test charge. This does not create another charge. */
+    public function allocateCombinedTestPayment(
+        array $actualOrder,
+        PaymentAccount $account,
+        string $idempotencyKey,
+        string $groupTradeNo
+    ): array {
+        $this->assertScope();
+        $this->app->make(MarketplacePaymentServices::class)
+            ->consumeCombinedAllocationContext($this, $actualOrder, $account, $idempotencyKey, $groupTradeNo);
+
+        $binding = self::binding($actualOrder, $account);
+        $suffix = substr(hash('sha256', "combined-test-allocation\0" . $groupTradeNo . "\0" . $binding['order_pk']), 0, 32);
+        $reference = 'test-attempt:' . $suffix;
+        if (isset($this->attempts[$reference])) {
+            throw new AuthUnavailableException();
+        }
+        $saved = [
+            'state' => 'pending', 'binding' => $binding,
+            'binding_sha256' => hash('sha256', MarketplaceOrderInput::canonical($binding)),
+            'provider_trade_no' => null,
+        ];
+        $this->attempts[$reference] = $saved;
+        $this->byOrder[$binding['order_pk']][] = $reference;
+        return self::result($reference, $saved);
+    }
+
     /** This private map is the only state authority; supplied descriptor status is ignored. */
     public function queryPayment(array $paymentAttempt): array
     {

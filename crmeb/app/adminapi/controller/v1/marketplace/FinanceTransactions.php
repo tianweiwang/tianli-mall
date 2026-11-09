@@ -10,5 +10,9 @@ final class FinanceTransactions
 {
     public function __construct(private FinanceTransactionsServices $services) {}
     public function read(Request $request): Response
-    { return Response::create(['status'=>200,'msg'=>'操作成功','data'=>$this->services->read($request->platformScope(),$request->get(false))],'json',200); }
+    {
+        $includeCombined = $request->header('X-Marketplace-Combined') === '1';
+        $data = $this->services->read($request->platformScope(), $request->get(false), $includeCombined);
+        return Response::create(['status' => 200, 'msg' => '操作成功', 'data' => $data], 'json', 200);
+    }
 }

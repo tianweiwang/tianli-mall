@@ -38,11 +38,19 @@ final class TestPaymentController
     public function options(Request $request): Response
     {
         $candidate = $this->candidate($request);
-        return app('json')->success([
+        $available = getenv('APP_ENV') === 'testing' && Config::get('marketplace.payment.test_enabled', false) === true;
+        $combined = $available && app()->make(MarketplacePaymentServices::class)
+            ->isCombinedCheckoutOrder(Db::connect()->getPdo(), $candidate['order_id']);
+        $result = [
             'schema' => 1, 'scope' => 'testing_payment_availability_v1', 'order_no' => $candidate['order_no'],
-            'available' => getenv('APP_ENV') === 'testing' && Config::get('marketplace.payment.test_enabled', false) === true,
+            'available' => $available && !$combined,
             'real_payment_available' => false,
-        ]);
+        ];
+        if ($combined) {
+            $result['reason'] = 'combined_checkout';
+            $result['message'] = '请在合并结算单支付';
+        }
+        return app('json')->success($result);
     }
 
     public function pay(Request $request): Response

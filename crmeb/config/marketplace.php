@@ -72,6 +72,11 @@ return [
         'qiniu_upload_url'=>Env::get('marketplace.product_video_cloud_upload.qiniu_upload_url',''),
         'qiniu_rs_url'=>Env::get('marketplace.product_video_cloud_upload.qiniu_rs_url',''),
     ],
+    'combined_checkout'=>[
+        'enabled'=>getenv('APP_ENV')==='testing'
+            && (Env::get('marketplace.combined_checkout_enabled',false)
+                || is_file(root_path().'runtime/combined-checkout.enabled')),
+    ],
     'payment'=>[
         // Think Env reads PHP_MARKETPLACE_PAYMENT_TEST_ENABLED; APP_ENV is checked separately at resolution.
         'test_enabled'=>Env::get('marketplace.payment.test_enabled',false),

@@ -61,6 +61,7 @@ export function transactionQuery(query = {}) {
 }
 export function transactionsView(value, query = {}) {
   const requested = transactionQuery(query);
+  const hasCombinedPayments = value && Object.prototype.hasOwnProperty.call(value, 'combined_payments');
   exact(value, [
     'schema',
     'scope',
@@ -73,6 +74,7 @@ export function transactionsView(value, query = {}) {
     'channel_fee_amount',
     'merchant_receivable',
     'settled_amount',
+    ...(hasCombinedPayments ? ['combined_payments'] : []),
   ]);
   if (
     value.schema !== 1 ||
@@ -110,8 +112,29 @@ export function transactionsView(value, query = {}) {
   }
   if ((value.selected_revision === null) !== (rule === null)) throw new Error('保存版本与平台费规则不一致');
   if (!Array.isArray(value.list) || value.list.length > requested.limit) throw new Error('测试根单列表未确认');
+  const combinedPayments = new Map();
+  if (hasCombinedPayments) {
+    if (!Array.isArray(value.combined_payments) || value.combined_payments.length > value.list.length)
+      throw new Error('合单测试收款列表未确认');
+    for (const payment of value.combined_payments) {
+      exact(payment, ['order_no', 'test_trade_no', 'total_amount', 'paid_at']);
+      if (
+        typeof payment.order_no !== 'string' ||
+        !/^cc[0-9a-f]{24}(?![\s\S])/.test(payment.order_no) ||
+        payment.test_trade_no !== 'ct' + payment.order_no.slice(2) ||
+        !amount(payment.total_amount) ||
+        payment.total_amount === '0.00' ||
+        !integer(payment.paid_at) ||
+        combinedPayments.has(payment.order_no)
+      )
+        throw new Error('合单测试收款数据未确认');
+      combinedPayments.set(payment.order_no, payment);
+    }
+  }
+  const visibleCombinedPayments = new Set();
   let previousRoot = requested.before_id || Infinity;
   const list = value.list.map((row) => {
+    const hasAllocation = hasCombinedPayments && row && Object.prototype.hasOwnProperty.call(row, 'combined_checkout');
     exact(row, [
       'root_order_id',
       'order_no',
@@ -125,6 +148,7 @@ export function transactionsView(value, query = {}) {
       'refund_summary',
       'estimate_status',
       'fee_estimate',
+      ...(hasAllocation ? ['combined_checkout'] : []),
     ]);
     if (
       !integer(row.root_order_id, 2147483647) ||
@@ -154,6 +178,21 @@ export function transactionsView(value, query = {}) {
         throw new Error('测试付款尝试状态未确认');
       return { ...attempt };
     });
+    if (hasAllocation) {
+      const allocation = row.combined_checkout;
+      exact(allocation, ['payment_role', 'order_no', 'total_amount']);
+      const payment = combinedPayments.get(allocation.order_no);
+      if (
+        allocation.payment_role !== 'allocation' ||
+        !payment ||
+        allocation.total_amount !== payment.total_amount ||
+        Number(row.order_amount) >= Number(payment.total_amount) ||
+        attempts.length !== 1 ||
+        attempts[0].state !== 'applied'
+      )
+        throw new Error('店铺分摊与合单收款不一致');
+      visibleCombinedPayments.add(allocation.order_no);
+    }
     let refundSummary = null;
     if (row.refund_summary !== null) {
       exact(row.refund_summary, ['confirmed_amount', 'held_amount']);
@@ -177,6 +216,7 @@ export function transactionsView(value, query = {}) {
     if ((row.estimate_status === 'ESTIMATED') !== (estimate !== null)) throw new Error('平台费估算状态与金额不一致');
     return { ...row, attempts, refund_summary: refundSummary, fee_estimate: estimate };
   });
+  if (visibleCombinedPayments.size !== combinedPayments.size) throw new Error('合单收款缺少本页店铺分摊');
   if (
     value.next_before_id !== null &&
     (!integer(value.next_before_id, 2147483647) ||

@@ -11,6 +11,38 @@
 import request from "@/utils/request.js";
 import { fulfillmentPageQuery, fulfillmentChildNumber } from "@/utils/marketplace-fulfillment.js";
 
+export function getCombinedCheckoutAvailability() {
+	return request.get("order/combined/availability");
+}
+
+export function confirmCombinedCheckout(data) {
+	return request.post("order/combined/confirm", data);
+}
+
+export function createCombinedCheckout(orderNo) {
+	return request.post("order/combined/" + encodeURIComponent(orderNo) + "/create", {
+		idempotency_key: "h5-combined-create:" + orderNo,
+	});
+}
+
+export function payCombinedCheckout(orderNo) {
+	return request.post("order/combined/" + encodeURIComponent(orderNo) + "/pay", {
+		idempotency_key: "h5-combined-pay:" + orderNo,
+	});
+}
+
+export function cancelCombinedCheckout(orderNo) {
+	return request.post("order/combined/" + encodeURIComponent(orderNo) + "/cancel", {});
+}
+
+export function getCombinedCheckout(orderNo) {
+	return request.get("order/combined/" + encodeURIComponent(orderNo));
+}
+
+export function getCombinedOrders() {
+	return request.get("order/combined");
+}
+
 /**
  * 获取购物车列表
  * @param numType boolean true 购物车数量,false=购物车产品数量
