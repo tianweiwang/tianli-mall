@@ -14,7 +14,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import preview
 from assets import install_assets, verify_assets
-from images import prepare_images
+from images import docker_platform, prepare_images
 
 
 SCOPE = 'local_synthetic_portable_preview'
@@ -37,7 +37,7 @@ def read_config(path: Path) -> tuple[Path, int]:
     return root, port
 
 
-def check_local_docker() -> None:
+def check_local_docker() -> str:
     if not shutil.which('docker') or not shutil.which('git'):
         raise RuntimeError('Git and Docker must be on PATH')
     context = preview.native([preview.DOCKER, 'context', 'show'])
@@ -48,10 +48,9 @@ def check_local_docker() -> None:
         hosts.append(os.environ['DOCKER_HOST'])
     if any(not host.startswith(('unix:///', 'npipe:///')) for host in hosts):
         raise RuntimeError('This installer requires a local Docker context')
-    platform = preview.native([preview.DOCKER, 'info', '--format', '{{.OSType}}/{{.Architecture}}'])
-    if platform not in {'linux/x86_64', 'linux/amd64'}:
-        raise RuntimeError('The development package requires a Linux amd64 Docker engine')
+    platform = docker_platform(preview.DOCKER)
     preview.native([preview.DOCKER, 'compose', 'version', '--short'])
+    return platform
 
 
 def checkout_head() -> str:
@@ -62,10 +61,11 @@ def checkout_head() -> str:
     return preview.native([*git, 'rev-parse', 'HEAD'])
 
 
-def run_preview(root: Path, action: str, *args: str) -> None:
+def run_preview(root: Path, platform: str, action: str, *args: str) -> None:
     environment = {key: value for key, value in os.environ.items()
                    if not key.startswith(('COMPOSE_', 'PREVIEW_'))}
     environment['COMPOSE_DISABLE_ENV_FILE'] = 'true'
+    environment['DOCKER_DEFAULT_PLATFORM'] = platform
     result = subprocess.run([sys.executable, '-B', str(preview.COMPOSE.parent / 'preview.py'),
                              action, '--root', str(root), *args], cwd=preview.REPO, env=environment)
     if result.returncode:
@@ -80,7 +80,7 @@ def owned_state(root: Path, port: int) -> dict:
     return state
 
 
-def start(root: Path, port: int) -> None:
+def start(root: Path, port: int, platform: str) -> None:
     head = checkout_head()
     if root.exists():
         state = owned_state(root, port)
@@ -90,23 +90,23 @@ def start(root: Path, port: int) -> None:
         expected = {'project': state['project'], 'source': head}
         if json.loads(marker.read_text(encoding='utf-8')) != expected or state['base_head'] != head:
             raise RuntimeError('Restart this instance from the same Git revision used for its installation')
-        run_preview(root, 'runtime')
+        run_preview(root, platform, 'runtime')
     else:
         with socket.socket() as probe:
             probe.bind(('127.0.0.1', port))
         verify_assets(preview.REPO)
-        images = prepare_images(preview.REPO, preview.DOCKER)
+        images = prepare_images(preview.REPO, preview.DOCKER, platform)
         source_args = [arg for role, image in sorted(images.items())
                        for arg in ('--source-image', f'{role}={image}')]
-        run_preview(root, 'prepare', '--full-runtime', '--marketplace-queue-autostart', '--combined-checkout',
+        run_preview(root, platform, 'prepare', '--full-runtime', '--marketplace-queue-autostart', '--combined-checkout',
                     '--port', str(port), *source_args)
         state = owned_state(root, port)
-        run_preview(root, 'initialize')
+        run_preview(root, platform, 'initialize')
         install_assets(preview.REPO, root)
-        run_preview(root, 'storefront')
-        run_preview(root, 'runtime')
-        run_preview(root, 'smoke')
-        run_preview(root, 'accounts-file')
+        run_preview(root, platform, 'storefront')
+        run_preview(root, platform, 'runtime')
+        run_preview(root, platform, 'smoke')
+        run_preview(root, platform, 'accounts-file')
         with (root / READY).open('x', encoding='utf-8', newline='\n') as marker:
             json.dump({'project': state['project'], 'source': head}, marker)
             marker.write('\n')
@@ -123,7 +123,7 @@ def main() -> None:
     parser.add_argument('--config', type=Path, required=True)
     args = parser.parse_args()
     root, port = read_config(args.config)
-    check_local_docker()
+    platform = check_local_docker()
     if args.action != 'start' and not root.is_dir():
         raise FileNotFoundError(f'Preview directory does not exist: {root}')
     root.parent.mkdir(parents=True, exist_ok=True)
@@ -133,10 +133,10 @@ def main() -> None:
             lock.write(f'{os.getpid()}\n')
             lock.flush()
             if args.action == 'start':
-                start(root, port)
+                start(root, port, platform)
             else:
                 owned_state(root, port)
-                run_preview(root, args.action)
+                run_preview(root, platform, args.action)
         finally:
             lock.close()
             lock_path.unlink()
