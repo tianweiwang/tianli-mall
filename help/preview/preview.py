@@ -532,6 +532,8 @@ def main():
                         help='prepare only, with full runtime: persist marketplace Supervisor autostart')
     parser.add_argument('--php-image', help='prepare only: existing PHP image, paired with --nginx-image and --full-runtime')
     parser.add_argument('--nginx-image', help='prepare only: existing Nginx image, paired with --php-image and --full-runtime')
+    parser.add_argument('--source-image', action='append', default=[], metavar='ROLE=sha256:ID',
+                        help='new source-full prepare only: immutable IDs for PHP, MYSQL, REDIS and NGINX')
     parser.add_argument('--runtime-php-image', help='enable-video only: approved local immutable PHP image for the existing runtime')
     parser.add_argument('--preview-subnet', help='new prepare only: RFC1918 IPv4 CIDR, paired with ingress; check host routes separately')
     parser.add_argument('--ingress-subnet', help='new prepare only: separate RFC1918 IPv4 CIDR, paired with preview; check host routes separately')
@@ -544,6 +546,17 @@ def main():
     if args.marketplace_queue_autostart and (args.action != 'prepare' or not args.full_runtime):
         raise RuntimeError('Queue autostart is configured only for a new full-runtime preview')
     image_runtime = args.php_image is not None or args.nginx_image is not None
+    source_images = {}
+    if args.source_image:
+        if args.action != 'prepare' or not args.full_runtime or image_runtime or args.release_runtime:
+            raise RuntimeError('Source image IDs are only accepted for a new source-full preview')
+        for entry in args.source_image:
+            role, _, image_id = entry.partition('=')
+            if role not in IMAGES or role in source_images or not re.fullmatch(r'sha256:[0-9a-f]{64}', image_id):
+                raise RuntimeError('Provide one immutable image ID per source runtime role')
+            source_images[role] = image_id
+        if set(source_images) != set(IMAGES):
+            raise RuntimeError('Source runtime requires all four immutable image IDs')
     if args.release_runtime and (args.action != 'prepare' or not args.full_runtime or not image_runtime
                                  or not args.checker_image or root.exists()):
         raise RuntimeError('Release runtime requires a new full/image prepare and an explicit checker image')
@@ -575,11 +588,13 @@ def main():
             probe.bind(('127.0.0.1', args.port))
         run = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S') + secrets.token_hex(3)
         project = 'mall-preview-' + run
-        image_references = dict(IMAGES)
+        image_references = source_images or dict(IMAGES)
         if image_runtime:
             image_references.update(PHP=args.php_image, NGINX=args.nginx_image)
         images = {key: native([DOCKER, 'image', 'inspect', '--format', '{{.Id}}', image])
                   for key, image in image_references.items()}
+        if source_images and images != source_images:
+            raise RuntimeError('Resolved source runtime images differ from the requested IDs')
         if args.release_runtime and native([DOCKER, 'image', 'inspect', '--format', '{{.Id}}', args.checker_image]) != args.checker_image:
             raise RuntimeError('Approved checker image ID differs from the local image')
         head = native([GIT, '-c', f'safe.directory={REPO.as_posix()}', '-C', str(REPO), 'rev-parse', 'HEAD'])
@@ -594,6 +609,8 @@ def main():
                  'legacy_review_fixture': args.legacy_review_fixture, 'full_runtime': args.full_runtime,
                  'image_runtime': image_runtime, 'marketplace_queue_autostart': args.marketplace_queue_autostart,
                  'release_runtime': args.release_runtime}
+        if source_images:
+            state['scope'] = 'local_synthetic_portable_preview'
         if args.release_runtime:
             state['checker_image'] = args.checker_image
             state['release_env_file'] = (root / 'empty.env').as_posix()
