@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+const PREVIEW_COMBINED_CHECKOUT_TABLES = ['eb_marketplace_combined_checkout', 'eb_marketplace_combined_checkout_order'];
+
 function preview_config(): array
 {
     $config = json_decode(file_get_contents('/run/preview-app/config.json'), true, 512, JSON_THROW_ON_ERROR);
@@ -58,6 +60,21 @@ function preview_video_ready(array $config): bool
     return true;
 }
 
+function preview_combined_checkout_ready(array $config): bool
+{
+    if (($config['combined_checkout'] ?? false) !== true) return false;
+    $path = '/run/preview-app/initialized.json';
+    if (is_link($path)) throw new RuntimeException('Invalid combined checkout initialization receipt');
+    if (!file_exists($path)) return false;
+    $receipt = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+    if (($receipt['project'] ?? null) !== $config['project']
+        || ($receipt['run_id'] ?? null) !== $config['run_id']
+        || ($receipt['result']['combined_checkout'] ?? null) !== PREVIEW_COMBINED_CHECKOUT_TABLES) {
+        throw new RuntimeException('Combined checkout initialization receipt mismatch');
+    }
+    return true;
+}
+
 /** One source for the original process environment and the separate runtime INI. */
 function preview_environment_values(bool $migrator = false): array
 {
@@ -69,7 +86,7 @@ function preview_environment_values(bool $migrator = false): array
     // Only a separately prepared fixture uses the old create flow, after normal initialization.
     $legacyRuntime = $legacyFixture && is_file('/run/preview-app/initialized.json');
     $videoReady = preview_video_ready($config);
-    return [
+    $values = [
         'APP_ENV' => 'testing', 'PHP_APP_DEBUG' => 'false', 'PHP_DATABASE_DEBUG' => 'false',
         'PHP_APP_APP_KEY' => $config['signing_key'],
         'PHP_DATABASE_HOSTNAME' => 'preview-mysql', 'PHP_DATABASE_HOSTPORT' => '3306',
@@ -95,6 +112,8 @@ function preview_environment_values(bool $migrator = false): array
         'PHP_MARKETPLACE_PRODUCT_MEDIA_SCAN_PRIVATE_ROOT' => $videoReady ? '/private/product-media-scan' : '',
         'PHP_UPGRADE_REMOTE_ENABLED' => 'false',
     ];
+    if (preview_combined_checkout_ready($config)) $values['PHP_MARKETPLACE_COMBINED_CHECKOUT_ENABLED'] = 'true';
+    return $values;
 }
 
 function preview_environment(bool $migrator = false): void

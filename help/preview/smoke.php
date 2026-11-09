@@ -32,14 +32,31 @@ try {
     // Full runtime readiness is the original container health, checked by its lifecycle command.
     if (($config['full_runtime'] ?? false) !== true) preview_http('GET', '/preview-health');
     preview_http('GET', '/adminapi/login/info');
-    foreach (['admin' => '/adminapi/login', 'merchant' => '/merchantapi/login', 'customer' => '/api/login'] as $role => $path) {
+    $combined = preview_combined_checkout_ready($config);
+    $paths = ['admin' => '/adminapi/login', 'merchant' => '/merchantapi/login', 'customer' => '/api/login'];
+    if ($combined) $paths['merchant_second'] = '/merchantapi/login';
+    $shops = [];
+    foreach ($paths as $role => $path) {
         $credentials = $config['credentials'][$role];
         $payload = ['account' => $credentials['account'], $role === 'admin' ? 'pwd' : 'password' => $credentials['password']];
         if ($role === 'customer') $payload += ['spread' => 0, 'agent_id' => 0];
         $result = preview_http('POST', $path, $payload);
         $token = $result['data']['token'] ?? null;
         if (!is_string($token) || $token === '') throw new RuntimeException('Actual login token missing');
-        if ($role === 'merchant') preview_http('GET', '/merchantapi/me', null, $token);
+        if (str_starts_with($role, 'merchant')) {
+            $identity = preview_http('GET', '/merchantapi/me', null, $token);
+            $shops[] = (int)($identity['data']['merchant']['mer_id'] ?? 0);
+        }
+        if ($role === 'customer' && $combined) {
+            $available = preview_http('GET', '/api/order/combined/availability', null, $token);
+            if (($available['data']['available'] ?? null) !== true) {
+                throw new RuntimeException('Installed combined checkout is not available');
+            }
+        }
     }
-    echo "PASS preview initialization and three actual logins; trade and browser checks remain pending\n";
+    if ($combined && (in_array(0, $shops, true) || count(array_unique($shops)) !== 2)) {
+        throw new RuntimeException('Installed preview requires two separate merchant identities');
+    }
+    echo $combined ? "PASS portable preview logins and combined checkout availability\n"
+        : "PASS preview initialization and three actual logins; trade and browser checks remain pending\n";
 } catch (Throwable $error) { preview_error($error); exit(1); }

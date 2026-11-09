@@ -112,6 +112,11 @@ def load(root):
     if not isinstance(state.get('release_runtime', False), bool) or (
             state.get('release_runtime', False) and not state.get('image_runtime', False)):
         raise RuntimeError('Invalid preview release mode')
+    combined_checkout = state.get('combined_checkout', False)
+    if not isinstance(combined_checkout, bool) or (combined_checkout and (
+            state.get('scope') != 'local_synthetic_portable_preview' or not state.get('full_runtime')
+            or state.get('image_runtime') or state.get('release_runtime') or state.get('legacy_review_fixture'))):
+        raise RuntimeError('Combined checkout requires a new portable source preview')
     if state.get('release_runtime', False):
         if not re.fullmatch(r'sha256:[0-9a-f]{64}', state.get('checker_image', '')):
             raise RuntimeError('Release runtime requires an explicit immutable checker image')
@@ -136,6 +141,7 @@ def environment(state, root):
                PREVIEW_LEGACY_REVIEW_FIXTURE='1' if legacy_fixture else '0',
                PREVIEW_FULL_RUNTIME='1' if full_runtime else '0',
                PREVIEW_IMAGE_RUNTIME='1' if image_runtime else '0',
+               PREVIEW_COMBINED_CHECKOUT='1' if state.get('combined_checkout', False) else '0',
                PREVIEW_MARKETPLACE_QUEUE_AUTOSTART='true' if queue_autostart else 'false',
                PREVIEW_NGINX_CONFIG=(COMPOSE.parent / ('nginx-runtime.conf' if full_runtime else 'nginx.conf')).as_posix(),
                PREVIEW_ADMIN_DIST=(root / 'build/admin/dist').as_posix(),
@@ -506,7 +512,11 @@ def export_accounts(state, root):
     raw = native(compose_command(state, 'run', '--rm', '--no-deps', '-T', 'bootstrap', '-r', code),
                  environment=environment(state, root))
     value = json.loads(raw)
-    if value.get('project') != state['project'] or set(value.get('accounts', {})) != {'admin', 'merchant', 'customer'}:
+    expected_roles = {'admin', 'merchant', 'customer'}
+    if state.get('combined_checkout') is True:
+        expected_roles.add('merchant_second')
+    if (value.get('project') != state['project'] or value.get('synthetic_only') is not True
+            or set(value.get('accounts', {})) != expected_roles):
         raise RuntimeError('Private preview credentials do not match this instance')
     with path.open('x', encoding='utf-8', newline='\n') as output:
         json.dump(value, output, ensure_ascii=False, indent=2)
@@ -534,6 +544,8 @@ def main():
     parser.add_argument('--nginx-image', help='prepare only: existing Nginx image, paired with --php-image and --full-runtime')
     parser.add_argument('--source-image', action='append', default=[], metavar='ROLE=sha256:ID',
                         help='new source-full prepare only: immutable IDs for PHP, MYSQL, REDIS and NGINX')
+    parser.add_argument('--combined-checkout', action='store_true',
+                        help='new portable source-full prepare only: initialize combined test checkout')
     parser.add_argument('--runtime-php-image', help='enable-video only: approved local immutable PHP image for the existing runtime')
     parser.add_argument('--preview-subnet', help='new prepare only: RFC1918 IPv4 CIDR, paired with ingress; check host routes separately')
     parser.add_argument('--ingress-subnet', help='new prepare only: separate RFC1918 IPv4 CIDR, paired with preview; check host routes separately')
@@ -557,6 +569,8 @@ def main():
             source_images[role] = image_id
         if set(source_images) != set(IMAGES):
             raise RuntimeError('Source runtime requires all four immutable image IDs')
+    if args.combined_checkout and (not source_images or args.legacy_review_fixture or root.exists()):
+        raise RuntimeError('Combined checkout requires a new portable source preview')
     if args.release_runtime and (args.action != 'prepare' or not args.full_runtime or not image_runtime
                                  or not args.checker_image or root.exists()):
         raise RuntimeError('Release runtime requires a new full/image prepare and an explicit checker image')
@@ -611,6 +625,8 @@ def main():
                  'release_runtime': args.release_runtime}
         if source_images:
             state['scope'] = 'local_synthetic_portable_preview'
+        if args.combined_checkout:
+            state['combined_checkout'] = True
         if args.release_runtime:
             state['checker_image'] = args.checker_image
             state['release_env_file'] = (root / 'empty.env').as_posix()

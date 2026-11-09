@@ -32,6 +32,34 @@ function preview_runtime_permissions(): void
     chmod('/workspace/crmeb/vendor/autoload.php', 0644);
 }
 
+/** Only called while initializing the new portable synthetic database. */
+function preview_initialize_combined_checkout(array $config): array
+{
+    preview_assert_isolated();
+    $db = preview_pdo(true);
+    if ($db->query('SELECT DATABASE()')->fetchColumn() !== 'mall_preview'
+        || $db->query('SELECT run_id FROM audit_sentinel')->fetchAll(PDO::FETCH_COLUMN) !== [$config['run_id']]) {
+        throw new RuntimeException('Combined checkout migration requires the owned database');
+    }
+    $tables = $db->prepare('SELECT TABLE_NAME FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN (?, ?) ORDER BY TABLE_NAME');
+    $tables->execute(PREVIEW_COMBINED_CHECKOUT_TABLES);
+    if ($tables->fetchAll(PDO::FETCH_COLUMN) !== []) throw new RuntimeException('Existing combined checkout tables refused');
+
+    $schema = file_get_contents('/workspace/help/migrations/marketplace-combined-checkout-preview.sql');
+    if ($schema === false) throw new RuntimeException('Combined checkout migration file unavailable');
+    $statements = explode(';', trim($schema));
+    if (count($statements) !== 3 || $statements[2] !== '') {
+        throw new RuntimeException('Unexpected combined checkout migration statements');
+    }
+    $db->exec($statements[0]);
+    $db->exec($statements[1]);
+    $tables->execute(PREVIEW_COMBINED_CHECKOUT_TABLES);
+    $created = $tables->fetchAll(PDO::FETCH_COLUMN);
+    if ($created !== PREVIEW_COMBINED_CHECKOUT_TABLES) throw new RuntimeException('Combined checkout tables missing after migration');
+    return $created;
+}
+
 try {
     umask(0077);
     $operation = $argv[1] ?? '';
@@ -61,6 +89,12 @@ try {
             || ($releaseRuntime === '1' && ($fullRuntime !== '1' || $imageRuntime !== '1' || $legacyMode !== '0'))) {
             throw new RuntimeException('Invalid new release runtime mode');
         }
+        $combinedCheckout = getenv('PREVIEW_COMBINED_CHECKOUT') ?: '0';
+        if (!in_array($combinedCheckout, ['0', '1'], true)
+            || ($combinedCheckout === '1' && ($fullRuntime !== '1' || $imageRuntime !== '0'
+                || $releaseRuntime !== '0' || $legacyMode !== '0'))) {
+            throw new RuntimeException('Invalid combined checkout preview mode');
+        }
         $config = ['project' => $project, 'run_id' => $run, 'legacy_review_fixture' => $legacyMode === '1',
             'full_runtime' => $fullRuntime === '1', 'image_runtime' => $imageRuntime === '1',
             'release_runtime' => $releaseRuntime === '1',
@@ -68,8 +102,13 @@ try {
                 'app' => ['username' => 'preview_app', 'password' => bin2hex(random_bytes(24))]],
             'redis_password' => bin2hex(random_bytes(24)), 'signing_key' => bin2hex(random_bytes(32)),
             'auth' => ['session_epoch' => 'preview-' . $run, 'stamp_key' => bin2hex(random_bytes(32)), 'issuer' => 'marketplace-preview']];
+        $roles = ['admin', 'merchant', 'customer'];
+        if ($combinedCheckout === '1') {
+            $config['combined_checkout'] = true;
+            $roles[] = 'merchant_second';
+        }
         $credentials = [];
-        foreach (['admin', 'merchant', 'customer'] as $role) {
+        foreach ($roles as $role) {
             $credentials[$role] = ['account' => 'p' . bin2hex(random_bytes(4)), 'password' => bin2hex(random_bytes(8))];
         }
         preview_private_json('/run/preview-app/config.json', $config, 1000);
@@ -149,6 +188,9 @@ try {
     } elseif (in_array($operation, ['initialize', 'resume-initialize'], true)) {
         $config = preview_config();
         if (is_file('/run/preview-app/initialized.json')) throw new RuntimeException('Preview already initialized');
+        if (($config['combined_checkout'] ?? false) !== (getenv('PREVIEW_COMBINED_CHECKOUT') === '1')) {
+            throw new RuntimeException('Combined checkout preview mode differs from prepare');
+        }
         $resume = $operation === 'resume-initialize';
         if (!$resume) {
         $password = file_get_contents('/run/preview-bootstrap/root-password');
@@ -175,6 +217,9 @@ try {
         chmod('/workspace/crmeb/public/uploads', 0755);
         require __DIR__ . '/seed.php';
         $result = preview_seed($resume);
+        if (($config['combined_checkout'] ?? false) === true) {
+            $result['combined_checkout'] = preview_initialize_combined_checkout($config);
+        }
         preview_runtime_permissions();
         preview_private_json('/run/preview-app/initialized.json', ['project' => $config['project'],
             'run_id' => $config['run_id'], 'result' => $result], 1000);

@@ -280,23 +280,51 @@ function preview_seed_configuration(PDO $db): void
     }
 }
 
-function preview_seed_picture(string $run): string
+function preview_seed_picture(string $run, bool $second = false): string
 {
-    $relative = '/uploads/preview-' . $run . '/product.png';
+    $relative = '/uploads/preview-' . $run . ($second ? '/product-second.png' : '/product.png');
     $directory = '/workspace/crmeb/public' . dirname($relative);
-    preview_seed_require(!file_exists($directory) && mkdir($directory, 0755), 'new preview picture directory required');
+    preview_seed_require($second
+        ? is_dir($directory) && !is_link($directory) && !file_exists('/workspace/crmeb/public' . $relative)
+        : !file_exists($directory) && mkdir($directory, 0755), 'new preview picture destination required');
     $image = imagecreatetruecolor(320, 240);
     preview_seed_require($image instanceof GdImage, 'preview image allocation');
     try {
         imagefilledrectangle($image, 0, 0, 319, 239, imagecolorallocate($image, 234, 244, 255));
-        imagefilledrectangle($image, 95, 45, 225, 175, imagecolorallocate($image, 54, 119, 221));
-        imagestring($image, 5, 103, 100, 'PREVIEW', imagecolorallocate($image, 255, 255, 255));
+        $accent = $second ? imagecolorallocate($image, 28, 125, 97) : imagecolorallocate($image, 54, 119, 221);
+        imagefilledrectangle($image, 95, 45, 225, 175, $accent);
+        imagestring($image, 5, 103, 100, $second ? 'PREVIEW 2' : 'PREVIEW', imagecolorallocate($image, 255, 255, 255));
         preview_seed_require(imagepng($image, '/workspace/crmeb/public' . $relative), 'preview picture write');
     } finally { imagedestroy($image); }
     preview_seed_require(chmod('/workspace/crmeb/public' . $relative, 0644)
         && chmod($directory, 0755)
         && chown($directory, 1000) && chown('/workspace/crmeb/public' . $relative, 1000), 'preview picture ownership');
     return $relative;
+}
+
+function preview_seed_merchant(PDO $db, string $name, string $account, int $now): array
+{
+    $merchantId = preview_seed_insert($db, 'eb_marketplace_merchant', ['name' => $name, 'review_status' => 1,
+        'accept_orders' => 1, 'fulfillment_enabled' => 1, 'security_locked' => 0, 'closed_at' => null,
+        'after_sale_contact' => '隔离预览售后', 'add_time' => $now, 'update_time' => $now]);
+    $roleId = preview_seed_insert($db, 'eb_marketplace_role', ['mer_id' => $merchantId, 'name' => '预览管理员',
+        'permissions' => preview_seed_json(\app\services\marketplace\MerchantPermissions::BUILTIN_ADMIN),
+        'add_time' => $now, 'update_time' => $now]);
+    $employeeId = preview_seed_insert($db, 'eb_marketplace_employee', ['mer_id' => $merchantId, 'role_id' => $roleId,
+        'account' => $account, 'pwd' => null, 'name' => '预览商家员工',
+        'status' => 1, 'is_del' => 0, 'add_time' => $now, 'update_time' => $now]);
+    $capability = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+    preview_seed_insert($db, 'eb_marketplace_password_setup', ['mer_id' => $merchantId, 'employee_id' => $employeeId,
+        'token_hash' => hash('sha256', $capability, true), 'expires_at' => $now + 86400, 'consumed_at' => null, 'add_time' => $now]);
+    return [$merchantId, $employeeId, $capability];
+}
+
+function preview_seed_attachment(PDO $db, string $picture, int $merchantId, int $now): void
+{
+    preview_seed_insert($db, 'eb_system_attachment', ['mer_id' => $merchantId, 'name' => basename($picture),
+        'att_dir' => $picture, 'satt_dir' => $picture, 'att_size' => (string)filesize('/workspace/crmeb/public' . $picture),
+        'att_type' => 'image/png', 'pid' => 0, 'time' => $now, 'image_type' => 1, 'module_type' => 1,
+        'real_name' => 'preview-' . basename($picture), 'scan_token' => '', 'type' => 0]);
 }
 
 function preview_seed(bool $resume = false): array
@@ -315,7 +343,9 @@ function preview_seed(bool $resume = false): array
         }
     }
     $credentials = $config['credentials'] ?? null;
-    foreach (['admin', 'merchant', 'customer'] as $role) {
+    $combined = ($config['combined_checkout'] ?? false) === true;
+    $roles = $combined ? ['admin', 'merchant', 'customer', 'merchant_second'] : ['admin', 'merchant', 'customer'];
+    foreach ($roles as $role) {
         $actor = $credentials[$role] ?? null;
         preview_seed_require(is_array($actor) && is_string($actor['account'] ?? null)
             && preg_match('/\A[a-z0-9_]{4,32}\z/D', $actor['account']) === 1
@@ -328,15 +358,15 @@ function preview_seed(bool $resume = false): array
     require_once '/workspace/crmeb/vendor/autoload.php';
     preview_seed_configuration($db);
     $picture = preview_seed_picture($config['run_id']); $now = time();
+    $secondPicture = $combined ? preview_seed_picture($config['run_id'], true) : $picture;
     $db->beginTransaction();
     try {
         // These are explicit fixtures, not evidence of real management create/review workflows.
         $adminId = preview_seed_insert($db, 'eb_system_admin', ['account' => $credentials['admin']['account'],
             'pwd' => password_hash($credentials['admin']['password'], PASSWORD_BCRYPT), 'real_name' => '预览平台管理员',
             'roles' => '', 'level' => 0, 'status' => 1, 'is_del' => 0, 'add_time' => $now]);
-        $merchantId = preview_seed_insert($db, 'eb_marketplace_merchant', ['name' => '预览合成商家', 'review_status' => 1,
-            'accept_orders' => 1, 'fulfillment_enabled' => 1, 'security_locked' => 0, 'closed_at' => null,
-            'after_sale_contact' => '隔离预览售后', 'add_time' => $now, 'update_time' => $now]);
+        [$merchantId, $employeeId, $capability] = preview_seed_merchant(
+            $db, '预览合成商家', $credentials['merchant']['account'], $now);
         $productMerchantId = $merchantId;
         if (($config['legacy_review_fixture'] ?? false) === true) {
             // The original catalog reads only the explicitly configured self-operated owner.
@@ -350,15 +380,10 @@ function preview_seed(bool $resume = false): array
                 'first' => '1.00', 'first_price' => '0.00', 'continue' => '1.00', 'continue_price' => '0.00',
                 'type' => 1, 'uniqid' => 'preview-legacy-default']);
         }
-        $roleId = preview_seed_insert($db, 'eb_marketplace_role', ['mer_id' => $merchantId, 'name' => '预览管理员',
-            'permissions' => preview_seed_json(\app\services\marketplace\MerchantPermissions::BUILTIN_ADMIN),
-            'add_time' => $now, 'update_time' => $now]);
-        $employeeId = preview_seed_insert($db, 'eb_marketplace_employee', ['mer_id' => $merchantId, 'role_id' => $roleId,
-            'account' => $credentials['merchant']['account'], 'pwd' => null, 'name' => '预览商家员工',
-            'status' => 1, 'is_del' => 0, 'add_time' => $now, 'update_time' => $now]);
-        $capability = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
-        preview_seed_insert($db, 'eb_marketplace_password_setup', ['mer_id' => $merchantId, 'employee_id' => $employeeId,
-            'token_hash' => hash('sha256', $capability, true), 'expires_at' => $now + 86400, 'consumed_at' => null, 'add_time' => $now]);
+        if ($combined) {
+            [$secondMerchantId, $secondEmployeeId, $secondCapability] = preview_seed_merchant(
+                $db, '预览合成商家二', $credentials['merchant_second']['account'], $now);
+        }
         $customerId = preview_seed_insert($db, 'eb_user', ['account' => $credentials['customer']['account'],
             'nickname' => '预览合成顾客', 'user_type' => 'h5', 'is_money_level' => 0,
             'now_money' => ($config['legacy_review_fixture'] ?? false) === true ? '200.00' : '0.00',
@@ -368,27 +393,27 @@ function preview_seed(bool $resume = false): array
             'detail' => '专用隔离合成地址', 'is_default' => 1, 'add_time' => $now]);
         $categoryId = preview_seed_insert($db, 'eb_store_category', ['pid' => 0, 'cate_name' => '预览商品',
             'is_show' => 1, 'sort' => 0, 'pic' => $picture, 'add_time' => $now]);
-        preview_seed_insert($db, 'eb_system_attachment', ['mer_id' => $productMerchantId, 'name' => 'product.png',
-            'att_dir' => $picture, 'satt_dir' => $picture, 'att_size' => (string)filesize('/workspace/crmeb/public' . $picture),
-            'att_type' => 'image/png', 'pid' => 0, 'time' => $now, 'image_type' => 1, 'module_type' => 1,
-            'real_name' => 'preview-product.png', 'scan_token' => '', 'type' => 0]);
+        preview_seed_attachment($db, $picture, $productMerchantId, $now);
+        if ($combined) preview_seed_attachment($db, $secondPicture, $secondMerchantId, $now);
         $products = [];
-        foreach ([['name' => '基础体验商品', 'price' => '20.15'], ['name' => '第二件体验商品', 'price' => '30.25']] as $spec) {
-            $id = preview_seed_insert($db, 'eb_store_product', ['mer_id' => $productMerchantId, 'store_name' => $spec['name'],
+        foreach ([['name' => '基础体验商品', 'price' => '20.15'], ['name' => '第二件体验商品', 'price' => '30.25']] as $index => $spec) {
+            $owner = $combined && $index === 1 ? $secondMerchantId : $productMerchantId;
+            $photo = $index === 1 ? $secondPicture : $picture;
+            $id = preview_seed_insert($db, 'eb_store_product', ['mer_id' => $owner, 'store_name' => $spec['name'],
                 'store_info' => '仅供当前隔离环境体验，不产生真实交易', 'unit_name' => '件', 'spec_type' => 0,
                 'stock' => 100, 'sales' => 0, 'price' => $spec['price'], 'cost' => '7.45', 'postage' => '0.00',
                 'freight' => 1, 'temp_id' => 0, 'is_show' => 1, 'review_status' => 2, 'is_vip' => 0,
-                'logistics' => '1', 'min_qty' => 1, 'is_limit' => 0, 'image' => $picture,
-                'slider_image' => preview_seed_json([$picture]), 'cate_id' => (string)$categoryId, 'custom_form' => '[]', 'add_time' => $now]);
+                'logistics' => '1', 'min_qty' => 1, 'is_limit' => 0, 'image' => $photo,
+                'slider_image' => preview_seed_json([$photo]), 'cate_id' => (string)$categoryId, 'custom_form' => '[]', 'add_time' => $now]);
             $unique = bin2hex(random_bytes(4));
             $sku = ['product_id' => $id, 'type' => 0, 'unique' => $unique, 'suk' => '默认', 'stock' => 100, 'sales' => 0,
                 'price' => $spec['price'], 'cost' => '7.45', 'ot_price' => '0.00', 'vip_price' => '0.00',
                 'is_show' => 1, 'is_default_select' => 1, 'is_virtual' => 0, 'weight' => '0.00', 'volume' => '0.00',
-                'bar_code' => '', 'bar_code_number' => '', 'image' => $picture];
+                'bar_code' => '', 'bar_code_number' => '', 'image' => $photo];
             $skuId = preview_seed_insert($db, 'eb_store_product_attr_value', $sku);
             preview_seed_insert($db, 'eb_store_product_attr', ['product_id' => $id, 'type' => 0, 'attr_name' => '规格', 'attr_values' => '默认']);
             $definition = $sku; unset($definition['stock'], $definition['sales'], $definition['is_virtual'], $definition['image']);
-            $definition += ['id' => $skuId, 'pic' => $picture, 'detail' => ['规格' => '默认'], 'attr_arr' => ['默认']];
+            $definition += ['id' => $skuId, 'pic' => $photo, 'detail' => ['规格' => '默认'], 'attr_arr' => ['默认']];
             preview_seed_insert($db, 'eb_store_product_attr_result', ['product_id' => $id, 'type' => 0, 'change_time' => $now,
                 'result' => preview_seed_json(['attr' => [['value' => '规格', 'detail' => [['value' => '默认', 'pic' => '']]]], 'value' => [$definition]])]);
             preview_seed_insert($db, 'eb_store_product_description', ['product_id' => $id, 'type' => 0,
@@ -401,10 +426,12 @@ function preview_seed(bool $resume = false): array
     } catch (Throwable $error) { if ($db->inTransaction()) $db->rollBack(); throw $error; }
     // Use original password writers; do not fabricate a request, token, session or paid order.
     $app = preview_app(true);
-    $app->make(\app\services\marketplace\EmployeeAuthServices::class)->setupPassword($capability, $credentials['merchant']['password']);
+    $employees = $app->make(\app\services\marketplace\EmployeeAuthServices::class);
+    $employees->setupPassword($capability, $credentials['merchant']['password']);
+    if ($combined) $employees->setupPassword($secondCapability, $credentials['merchant_second']['password']);
     preview_seed_require($app->make(\app\services\user\LoginServices::class)->reset($credentials['customer']['account'],
         $credentials['customer']['password']) === true, 'customer password initialization');
-    unset($capability, $credentials, $config);
+    unset($capability, $secondCapability, $credentials, $config);
     preview_seed_require($app->make(\app\services\system\log\SystemFileServices::class)->writeMd5() === true,
         'original file checksum initialization');
     $cache = $app->make(\app\services\other\CacheServices::class);
@@ -414,7 +441,8 @@ function preview_seed(bool $resume = false): array
         preview_seed_require((int)$db->query('SELECT COUNT(*) FROM `' . $table . '`')->fetchColumn() === 0, 'seed created transaction state');
     }
     preview_assert_isolated();
-    return $install + ['self_operated_mer_id' => $selfId, 'admin_id' => $adminId, 'merchant_id' => $merchantId,
+    $fixture = $combined ? ['second_merchant_id' => $secondMerchantId, 'second_employee_id' => $secondEmployeeId] : [];
+    return $install + $fixture + ['self_operated_mer_id' => $selfId, 'admin_id' => $adminId, 'merchant_id' => $merchantId,
         'employee_id' => $employeeId, 'customer_id' => $customerId, 'address_id' => $addressId,
         'products' => $products, 'schema_bootstrap' => $schemaBootstrap,
         'synthetic_only' => true, 'orders_created' => 0, 'management_workflows_verified' => false];

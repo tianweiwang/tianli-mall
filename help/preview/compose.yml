@@ -21,6 +21,9 @@ services:
   bootstrap:
     <<: *php
     cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    environment:
+      <<: *environment
+      PREVIEW_COMBINED_CHECKOUT: ${PREVIEW_COMBINED_CHECKOUT:-0}
     volumes:
       - ${PREVIEW_REPO:?required}:/workspace:ro
       - ${PREVIEW_REPO}:/source:ro

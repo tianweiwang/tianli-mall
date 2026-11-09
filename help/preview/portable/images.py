@@ -106,7 +106,7 @@ def _php_image(repo: Path, docker: str) -> str:
     image = _inspect(docker, tag)
     if image is None:
         command = [docker, "build", "--platform", PLATFORM, "--progress", "plain",
-                   "--file", "docker/php/Dockerfile", "--tag", tag,
+                   "--tag", tag,
                    "--label", f"{INPUT_LABEL}={fingerprint}"]
         for alias, reference in BUILD_BASES.items():
             command.extend(["--build-context", f"{alias}=docker-image://{reference}"])
@@ -114,7 +114,7 @@ def _php_image(repo: Path, docker: str) -> str:
         try:
             _unpack_context(git, head, context)
             # A local directory lets Docker apply .dockerignore before COPY.
-            subprocess.run([*command, str(context)], check=True)
+            subprocess.run([*command, "--file", str(context / "docker/php/Dockerfile"), str(context)], check=True)
         finally:
             if context.parent != repo or context.resolve() != context:
                 raise RuntimeError("PHP build context path changed before cleanup")

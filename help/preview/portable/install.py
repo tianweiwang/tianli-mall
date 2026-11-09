@@ -32,8 +32,8 @@ def read_config(path: Path) -> tuple[Path, int]:
     if root.is_relative_to(preview.REPO) or preview.REPO.is_relative_to(root):
         raise ValueError('Choose a preview directory outside the Git checkout')
     port = config['port']
-    if type(port) is not int or not 1024 <= port <= 65535 or port in {8011, 18212}:
-        raise ValueError('Choose an unused local port from 1024 to 65535, excluding 8011 and 18212')
+    if type(port) is not int or not 1024 <= port <= 65535 or port in {8011, 18212, 18218}:
+        raise ValueError('Choose an unused local port from 1024 to 65535, excluding 8011, 18212 and 18218')
     return root, port
 
 
@@ -57,7 +57,7 @@ def check_local_docker() -> None:
 def checkout_head() -> str:
     git = [preview.GIT, '--no-optional-locks', '-c', f'safe.directory={preview.REPO.as_posix()}',
            '-C', str(preview.REPO)]
-    if preview.native([*git, 'status', '--porcelain=v1', '--', 'crmeb', 'docker', 'template', 'help/preview']):
+    if preview.native([*git, 'status', '--porcelain=v1', '--', 'crmeb', 'docker', 'template', 'help/migrations', 'help/preview']):
         raise RuntimeError('Install from a clean checkout of the package branch')
     return preview.native([*git, 'rev-parse', 'HEAD'])
 
@@ -98,7 +98,7 @@ def start(root: Path, port: int) -> None:
         images = prepare_images(preview.REPO, preview.DOCKER)
         source_args = [arg for role, image in sorted(images.items())
                        for arg in ('--source-image', f'{role}={image}')]
-        run_preview(root, 'prepare', '--full-runtime', '--marketplace-queue-autostart',
+        run_preview(root, 'prepare', '--full-runtime', '--marketplace-queue-autostart', '--combined-checkout',
                     '--port', str(port), *source_args)
         state = owned_state(root, port)
         run_preview(root, 'initialize')
